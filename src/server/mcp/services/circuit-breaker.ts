@@ -57,7 +57,7 @@ export function isCircuitOpen(domain: string): boolean {
   }
 
   // half-open: gate subsequent callers so only one probe is in flight at a time.
-  if (entry.probePending) return true; // probe already running — fail-fast
+  if (entry.probePending) return true; // probe already running - fail-fast
   // Defensive: half-open with probePending=false should not occur in normal flow
   // (recordSuccess/recordFailure both clear it AND leave half-open); guard against
   // a future code path or an external resetCircuit race.

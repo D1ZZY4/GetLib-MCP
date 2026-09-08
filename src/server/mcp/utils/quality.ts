@@ -20,8 +20,8 @@ const SOURCE_WEIGHTS: Record<string, number> = {
  * Score how strongly the content matches the requested version(s).
  * Returns 1 when no versions are requested (preserves prior behaviour for
  * every non-version tool). Otherwise it looks for the target versions in the
- * leading third of the content — where a correct migration/changelog names its
- * target — and returns 0.3 on a complete miss so version-mismatched docs
+ * leading third of the content - where a correct migration/changelog names its
+ * target - and returns 0.3 on a complete miss so version-mismatched docs
  * collapse below the trust threshold instead of being stamped ~0.96.
  */
 function computeVersionRelevance(content: string, versions: string[]): number {
@@ -31,7 +31,7 @@ function computeVersionRelevance(content: string, versions: string[]): number {
   let hits = 0;
   for (const v of norms) {
     // Escape ALL regex metacharacters (not just dots) before building a dynamic
-    // RegExp from caller-supplied version text — prevents ReDoS / pattern injection.
+    // RegExp from caller-supplied version text - prevents ReDoS / pattern injection.
     const esc = v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     // Boundary guards stop "15" matching inside "2015" or "150".
     if (new RegExp(`(?<![\\d.])${esc}(?![\\d])`).test(head)) hits += 1;
@@ -46,14 +46,14 @@ export function computeQualityScore(
   sourceType: string,
   targetVersions?: string[],
 ): QualityResult {
-  // Same meta-word-filtered token set as checkEvidence — the quality footer
+  // Same meta-word-filtered token set as checkEvidence - the quality footer
   // and the evidence footer must not disagree about subject coverage.
   const topicTokens = substantiveTokens(topic);
   let topicCoverage = 1;
   if (topicTokens.length > 0) {
-    // Same URL stripping as checkEvidence — a token appearing only inside link
+    // Same URL stripping as checkEvidence - a token appearing only inside link
     // hrefs must not inflate qualityScore while the evidence gate reports a miss.
-    // Word-start matching, identical to checkEvidence — a substring hit inside
+    // Word-start matching, identical to checkEvidence - a substring hit inside
     // an unrelated word ("rls" in "urls") must not inflate the quality score
     // while the evidence footer reports the same term as missing.
     const contentLower = normalizeForMatching(stripUrlNoise(content));
@@ -101,7 +101,7 @@ export function computeQualityScore(
 
   // When the caller asks about specific versions (gl_migration 15 -> 16),
   // content that never names the target version is almost always the wrong
-  // band — multiply the score down rather than reporting a misleading high one.
+  // band - multiply the score down rather than reporting a misleading high one.
   const versionFactor =
     targetVersions && targetVersions.length > 0
       ? computeVersionRelevance(content, targetVersions)

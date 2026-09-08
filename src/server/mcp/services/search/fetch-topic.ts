@@ -13,7 +13,7 @@ export interface SearchSource {
 }
 
 export async function fetchTopicContent(url: string, query: string, tokens: number): Promise<string> {
-  // Hash the FULL query — a 50-char prefix let distinct long queries silently
+  // Hash the FULL query - a 50-char prefix let distinct long queries silently
   // share cached BM25-extracted content.
   const cacheKey = `search:${url}:${hashContent(query)}`;
   const cached = docCache.get(cacheKey);
@@ -27,7 +27,7 @@ export async function fetchTopicContent(url: string, query: string, tokens: numb
   // Evidence gate: pages whose extracted text never mentions a single query
   // term (soft-404s, search-results shells, off-topic landing pages) are
   // dropped instead of being served as answers. Only verified text is cached.
-  // Specific queries (3+ substantive tokens) demand the full coverage bar —
+  // Specific queries (3+ substantive tokens) demand the full coverage bar -
   // a "performance" match alone must not let a Web-Vitals page answer a
   // Postgres row-level-security question.
   const check = checkEvidence(text, query);

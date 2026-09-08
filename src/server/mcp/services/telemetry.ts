@@ -1,5 +1,5 @@
 /**
- * Telemetry — request lifecycle tracking, structured logs, and success/error
+ * Telemetry - request lifecycle tracking, structured logs, and success/error
  * rate observability for every MCP tool invocation.
  *
  * Every tool handler should be wrapped with `withTelemetry` so every call gets:

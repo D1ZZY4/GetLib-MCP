@@ -108,7 +108,7 @@ export async function deepFetchForTopic(
   }
 
   const pipeline = async (): Promise<FetchResult> => {
-    // Real links from an index/TOC (llms.txt) beat fabricated slug URLs — try
+    // Real links from an index/TOC (llms.txt) beat fabricated slug URLs - try
     // them FIRST. Guessed slugs mostly 404 and used to burn the deep-fetch
     // time budget before the reliable path ever ran.
     if (isIndexContent(initialResult.content)) {

@@ -1,12 +1,12 @@
 import { substantiveTokens, tokenVariants } from "../extract";
 
 /**
- * Evidence verification layer — the "never generic" gate.
+ * Evidence verification layer - the "never generic" gate.
  *
  * Every content tool runs its final output through checkEvidence() before
  * returning. Content that does not demonstrably cover the requested topic
  * (token coverage + occurrence depth + heading/code presence) is either
- * escalated to a deeper fetch or replaced with an explicit honest miss —
+ * escalated to a deeper fetch or replaced with an explicit honest miss -
  * it is never silently served as if it answered the question.
  */
 
@@ -44,7 +44,7 @@ export function normalizeForMatching(text: string): string {
  * Plain substring counting inflated coverage on mid-word noise: "rls" matched
  * every "urls", "api" matched "rapid", "auth" matched "coauthor". Requiring the
  * match to begin at a word boundary kills that class outright while keeping
- * the morphological tolerance docs actually need — "auth" still matches
+ * the morphological tolerance docs actually need - "auth" still matches
  * "authentication", "cache" still matches "cached".
  *
  * `haystack` must already be normalizeForMatching()-ed.
@@ -60,7 +60,7 @@ export function countTokenHits(haystack: string, token: string): number {
 
 /**
  * Drop markdown link targets and bare URLs so topic tokens are only counted in
- * prose/headings/code — never inside hrefs or utm params. Link TEXT is kept.
+ * prose/headings/code - never inside hrefs or utm params. Link TEXT is kept.
  * Shared by checkEvidence and computeQualityScore so the evidence gate and the
  * quality score can never disagree about what counts as topic coverage.
  */
@@ -74,13 +74,13 @@ export function stripUrlNoise(content: string): string {
  * Strict topic-evidence check on FINAL output text.
  *
  * Deliberately stricter than scoreTopicRelevance (deep-fetch trigger):
- * a single passing mention of a topic word is NOT evidence — generic
+ * a single passing mention of a topic word is NOT evidence - generic
  * READMEs mention everything once. Real topic coverage shows up as
  * repeated occurrences, a heading, or topic tokens inside code.
  */
 export function checkEvidence(content: string, topic: string): EvidenceCheck {
   // Meta words ("best", "practices", "latest") are filtered so coverage is
-  // measured on the SUBJECT — otherwise any docs page passes any query.
+  // measured on the SUBJECT - otherwise any docs page passes any query.
   const tokens = substantiveTokens(topic);
   if (tokens.length === 0) {
     return {
@@ -100,7 +100,7 @@ export function checkEvidence(content: string, topic: string): EvidenceCheck {
 
   const lower = normalizeForMatching(prose);
   const headings = normalizeForMatching((prose.match(/^#{1,4}\s+.+$/gm) ?? []).join("\n"));
-  // Code blocks keep their URLs — `curl https://api.x.com/webhooks` is real
+  // Code blocks keep their URLs - `curl https://api.x.com/webhooks` is real
   // topic evidence, unlike nav hrefs. Extract from the ORIGINAL content.
   const code = normalizeForMatching((content.match(/```[\s\S]*?```/g) ?? []).join("\n"));
 

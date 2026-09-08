@@ -13,7 +13,7 @@ export async function fetchSitemapUrls(docsUrl: string): Promise<string[]> {
   const origin = parsedUrl.origin;
 
   // Path-hosted docs (docs.swmansion.com/react-native-reanimated/) publish
-  // their sitemap under the project path, not the domain root — try the
+  // their sitemap under the project path, not the domain root - try the
   // path-scoped location first, then fall back to the root.
   const firstSegment = parsedUrl.pathname.split("/").filter(Boolean)[0];
   const sitemapCandidates = firstSegment
@@ -28,7 +28,7 @@ export async function fetchSitemapUrls(docsUrl: string): Promise<string[]> {
       if (Array.isArray(parsed) && parsed.every((v): v is string => typeof v === "string")) {
         return parsed;
       }
-    } catch { /* invalid cache — fall through to re-fetch */ }
+    } catch { /* invalid cache - fall through to re-fetch */ }
   }
 
   const locRegex = /<loc>\s*(https?:\/\/[^<]+)\s*<\/loc>/g;

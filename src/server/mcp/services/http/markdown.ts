@@ -8,7 +8,7 @@ import { isGarbageContent } from "../content-guards";
 
 /**
  * Docsify sites address pages via hash fragments (https://getpino.io/#/docs/web)
- * that never reach the server — a direct fetch always lands on the homepage
+ * that never reach the server - a direct fetch always lands on the homepage
  * shell regardless of the fragment. The markdown source conventionally lives at
  * the fragment path + ".md" on the same origin/base path. Returns null for
  * non-hash-routed URLs.
@@ -26,7 +26,7 @@ export function docsifyToRaw(url: string): string | null {
 /**
  * Fetch a URL as markdown, trying direct HTML extraction first (fast, no Jina dependency),
  * then falling back to Jina Reader for JS-rendered pages.
- * This is the core reliability improvement — provides two independent paths to content.
+ * This is the core reliability improvement - provides two independent paths to content.
  */
 export async function fetchAsMarkdown(url: string): Promise<string | null> {
   const cacheKey = `md:${url}`;
@@ -45,7 +45,7 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
   if (inFlight) return inFlight;
 
   const fetchPromise = (async (): Promise<string | null> => {
-    // Path 0: Docsify hash-route URLs — the fragment never reaches the server,
+    // Path 0: Docsify hash-route URLs - the fragment never reaches the server,
     // so a direct fetch would return the homepage shell for EVERY page. Try the
     // conventional raw-markdown location first; skip the direct path entirely.
     const docsifyRaw = docsifyToRaw(url);
@@ -55,7 +55,7 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
         cacheDoc(cacheKey, rawMd, CACHE_TTLS.DOCS_PAGE);
         return rawMd;
       }
-      // Hash-routed page without raw .md — only Jina can render it correctly.
+      // Hash-routed page without raw .md - only Jina can render it correctly.
       const jinaHash = await fetchViaJina(url);
       if (jinaHash && jinaHash.length >= 100) {
         cacheDoc(cacheKey, jinaHash, CACHE_TTLS.DOCS_PAGE);
@@ -101,7 +101,7 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
 }
 
 /**
- * Race direct HTML extraction against Jina Reader — first good result wins.
+ * Race direct HTML extraction against Jina Reader - first good result wins.
  * Use this when you need fast, reliable content and the URL might or might not need JS rendering.
  */
 export async function fetchAsMarkdownRace(url: string): Promise<string | null> {
@@ -134,7 +134,7 @@ export async function fetchAsMarkdownRace(url: string): Promise<string | null> {
         })(),
         // Path 1: Direct fetch + HTML extraction (usually faster)
         (async () => {
-          if (docsifyRaw) throw new Error("hash-routed URL — direct fetch returns homepage");
+          if (docsifyRaw) throw new Error("hash-routed URL - direct fetch returns homepage");
           const html = await tryFetch(url, 0);
           if (!html) throw new Error("no content");
           const tagDensity = (html.match(/<[a-z]/gi) ?? []).length / Math.max(html.length, 1);

@@ -22,7 +22,7 @@ export async function sitemapCandidates(docsUrl: string, topic: string): Promise
   const topicWords = topic ? tokenize(topic) : [];
   return sitemapUrls
     .filter((u) => bpPatterns.test(u) || (topicSlug && u.toLowerCase().includes(topicSlug)))
-    // Topic-matching URLs first — a generic pattern hit (e.g. /docs/security)
+    // Topic-matching URLs first - a generic pattern hit (e.g. /docs/security)
     // must not outrank an actual topic page (e.g. /docs/app/guides/caching).
     .map((u) => ({ u, hits: topicWords.filter((w) => u.toLowerCase().includes(w)).length }))
     .sort((a, b) => b.hits - a.hits)
@@ -52,7 +52,7 @@ export async function fetchDocsLlmsTxt(
     const raw = await fetchAsMarkdownRace(url).catch(() => null);
     if (!raw || raw.length <= 500) continue;
     const { text, truncated } = extractRelevantContent(sanitizeContent(raw), enrichedTopic, tokens);
-    // llms.txt is a directory of links — a link list is a pointer to the
+    // llms.txt is a directory of links - a link list is a pointer to the
     // answer, never the answer itself. Fall through to deep-fetch, which
     // traverses the index to the actual pages.
     if (text.length > 200 && !isIndexContent(text)) {

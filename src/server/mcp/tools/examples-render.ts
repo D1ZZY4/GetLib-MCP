@@ -28,7 +28,7 @@ export function renderCodeSearch(params: {
   const { library, pattern, language, totalCount, items } = params;
 
   const lines: string[] = [
-    `# Code Examples: ${library}${pattern ? ` — ${pattern}` : ""}`,
+    `# Code Examples: ${library}${pattern ? ` - ${pattern}` : ""}`,
     `> Found ${totalCount} results, showing top ${items.length}`,
     "",
     "---",

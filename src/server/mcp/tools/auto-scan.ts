@@ -46,9 +46,9 @@ export function registerAutoScanTools(): void {
       title: "Auto-Scan Project Dependencies",
       description: `Automatically detect all dependencies in a project and fetch latest best practices for each. Say "use gl" to invoke.
 
-Reads: package.json, requirements.txt, pyproject.toml, Cargo.toml, go.mod, pom.xml, composer.json, build.gradle — whichever exist.
+Reads: package.json, requirements.txt, pyproject.toml, Cargo.toml, go.mod, pom.xml, composer.json, build.gradle - whichever exist.
 
-Fetches best practices for your installed DEPENDENCIES — to scan your own source code for issues, use gl_audit instead. Unrecognized dependencies are listed separately, never fail the call.`,
+Fetches best practices for your installed DEPENDENCIES - to scan your own source code for issues, use gl_audit instead. Unrecognized dependencies are listed separately, never fail the call.`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,
@@ -66,7 +66,7 @@ Fetches best practices for your installed DEPENDENCIES — to scan your own sour
           return { content: [{ type: "text", text: `Invalid project path.` }] };
         }
 
-        // No extraction guard on `topic` — it only scopes what to look up per
+        // No extraction guard on `topic` - it only scopes what to look up per
         // already-detected dependency and cannot enumerate the registry.
         const sources = await detectDependencies(resolvedPath);
 

@@ -152,7 +152,7 @@ export async function resolveFromCrates(packageName: string): Promise<LibraryMat
  */
 function isGoPkgNotFound(content: string): boolean {
   const head = content.slice(0, 1500).toLowerCase();
-  // Common pkg.go.dev 404 signals — title contains "404 Not Found" and
+  // Common pkg.go.dev 404 signals - title contains "404 Not Found" and
   // body mentions the redirect / search-help text.
   if (/title:\s*404 not found\b/i.test(content.slice(0, 500))) return true;
   if (/404 not found - go packages/i.test(head)) return true;
@@ -169,7 +169,7 @@ export async function resolveFromGo(moduleName: string): Promise<LibraryMatch | 
   const content = await fetchAsMarkdownRace(pageUrl);
   if (!content) return null;
 
-  // pkg.go.dev serves a 200-OK 404 page for unknown modules — reject it so we
+  // pkg.go.dev serves a 200-OK 404 page for unknown modules - reject it so we
   // do not surface "Title: 404 Not Found - Go Packages" as a real result.
   if (isGoPkgNotFound(content)) return null;
 

@@ -38,28 +38,28 @@ function tomlArrayNames(block: string): string[] {
 export function parsePyproject(content: string): string[] {
   const deps: string[] = [];
 
-  // [tool.poetry.dependencies] — Poetry format
+  // [tool.poetry.dependencies] - Poetry format
   const poetryBlock = content.match(/\[tool\.poetry\.dependencies\]([\s\S]*?)(?:\[|$)/);
   if (poetryBlock?.[1]) deps.push(...tomlTableKeys(poetryBlock[1]));
 
-  // [project.dependencies] — PEP 517 format (uv, hatch, rye, pdm)
+  // [project.dependencies] - PEP 517 format (uv, hatch, rye, pdm)
   const pep517Block = content.match(/\[project\]([\s\S]*?)(?:\n\[(?!project\.)|$)/);
   if (pep517Block?.[1]) {
     const depsArray = pep517Block[1].match(/dependencies\s*=\s*\[([\s\S]*?)\]/);
     if (depsArray?.[1]) deps.push(...tomlArrayNames(depsArray[1]));
   }
 
-  // [project.optional-dependencies.*] — extras/optional deps
+  // [project.optional-dependencies.*] - extras/optional deps
   for (const block of content.matchAll(/\[project\.optional-dependencies\.[^\]]+\]([\s\S]*?)(?:\[|$)/g)) {
     if (block[1]) deps.push(...tomlArrayNames(block[1]));
   }
 
-  // [tool.poetry.dev-dependencies] — Poetry dev-only deps (legacy section,
+  // [tool.poetry.dev-dependencies] - Poetry dev-only deps (legacy section,
   // dropped silently before this; deduped by the caller).
   const poetryDevBlock = content.match(/\[tool\.poetry\.dev-dependencies\]([\s\S]*?)(?:\[|$)/);
   if (poetryDevBlock?.[1]) deps.push(...tomlTableKeys(poetryDevBlock[1]));
 
-  // [dependency-groups] — PEP 735 (pip 24+, uv). Each group is an array; a
+  // [dependency-groups] - PEP 735 (pip 24+, uv). Each group is an array; a
   // `{ include-group = "x" }` entry references another group and is skipped.
   const groupBlock = content.match(/\[dependency-groups\]([\s\S]*?)(?:\n\[|$)/);
   if (groupBlock?.[1]) {

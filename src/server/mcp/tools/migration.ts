@@ -45,7 +45,7 @@ const InputSchema = z.object({
     .describe("Max tokens to return"),
 });
 
-/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+/** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = {
   content: [{ type: "text" as const, text: "Migration lookup timed out. Retry with explicit fromVersion/toVersion, or call gl_changelog instead." }],
@@ -131,7 +131,7 @@ Use this when the user asks HOW to upgrade their code from one version to anothe
 
           const combined = sections.map((s) => `## ${s.source}\n\n${s.content}`).join("\n\n---\n\n");
 
-          // Slice to the requested version band BEFORE ranking — this is what stops
+          // Slice to the requested version band BEFORE ranking - this is what stops
           // ancient sections (e.g. Next.js v8-v11) reaching the BM25 pass at all.
           const banded = (fromVersion || toVersion)
             ? sliceVersionBand(combined, fromVersion, toVersion)
@@ -143,13 +143,13 @@ Use this when the user asks HOW to upgrade their code from one version to anothe
 
           const evidence = checkEvidence(text, topic);
           const header = [
-            `# ${displayName} — Migration Guide`,
+            `# ${displayName} - Migration Guide`,
             fromVersion || toVersion
               ? `> ${fromVersion ? `From: v${fromVersion.replace(/^v/, "")}` : ""}${toVersion ? ` To: v${toVersion.replace(/^v/, "")}` : ""}`
               : "",
             `> Sources: ${sections.map((s) => s.source).join(", ")}`,
             truncated ? "> Note: Response truncated. Specify fromVersion/toVersion for focused results." : "",
-            qualityScore < 0.4 ? `> Quality: Low — ${qualityHints.join("; ") || "verify against the official upgrade guide."}` : "",
+            qualityScore < 0.4 ? `> Quality: Low - ${qualityHints.join("; ") || "verify against the official upgrade guide."}` : "",
             "",
             "---",
             "",

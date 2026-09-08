@@ -49,7 +49,7 @@ export function sliceVersionBand(
   if (fromMajor === undefined && toMajor === undefined) return content;
 
   // toVersion-only keeps the lower bound OPEN (mirror of migration.ts's
-  // filterReleasesByVersion) — `?? toMajor` collapsed the band to one major.
+  // filterReleasesByVersion) - `?? toMajor` collapsed the band to one major.
   const lowBound = fromMajor ?? -Infinity;
   const highBound = toMajor ?? Infinity;
 
@@ -89,7 +89,7 @@ export function sliceVersionBand(
     if (include) kept.push(seg.lines.join("\n"));
   }
 
-  // No versioned section matched — return the original so we never blank out
+  // No versioned section matched - return the original so we never blank out
   // content for docs that use a non-version heading structure.
   if (!anyVersionedInclude) return content;
   return kept.join("\n").trim();

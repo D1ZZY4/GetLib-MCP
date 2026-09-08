@@ -33,7 +33,7 @@ function summarize(evidence: EvidenceCheck, topic: string, escalated: boolean): 
   };
 }
 
-/** Explicit "no topic-specific evidence" response — never a substituted generic page. */
+/** Explicit "no topic-specific evidence" response - never a substituted generic page. */
 function renderMiss(input: ReportInput): ToolResponse {
   const { displayName, topic, text, sourcesTried } = input;
   const missText = buildHonestMiss({
@@ -69,17 +69,17 @@ export function renderBestPractices(input: ReportInput): ToolResponse {
 
   if (topic && evidence.matchRatio === 0) return renderMiss(input);
 
-  // Real fetch-path sourceType — a hardcoded "jina" inflated the source tier
+  // Real fetch-path sourceType - a hardcoded "jina" inflated the source tier
   // and let the "Quality: Low" warning silently miss fallback content.
   const { score: qualityScore, hints: qualityHints } = computeQualityScore(text, topic, sourceType);
 
   const header = [
-    `# ${displayName} — Best Practices`,
+    `# ${displayName} - Best Practices`,
     topic ? `> Topic: ${topic}` : "",
     `> Source: ${sourceUrl}`,
     truncated ? "> Note: Response truncated. Use a more specific topic or increase tokens." : "",
-    topic && !evidence.ok ? `> Evidence: Weak — topic terms appear only sparsely (${evidence.occurrences} occurrence${evidence.occurrences === 1 ? "" : "s"}). Verify against the source before relying on this.` : "",
-    qualityScore < 0.4 ? `> Quality: Low — ${qualityHints.join("; ") || "try a more specific topic."}` : "",
+    topic && !evidence.ok ? `> Evidence: Weak - topic terms appear only sparsely (${evidence.occurrences} occurrence${evidence.occurrences === 1 ? "" : "s"}). Verify against the source before relying on this.` : "",
+    qualityScore < 0.4 ? `> Quality: Low - ${qualityHints.join("; ") || "try a more specific topic."}` : "",
     "",
     "---",
     "",

@@ -9,7 +9,7 @@ import { tryFetch } from "./http/try-fetch";
 export function isIndexContent(content: string): boolean {
   const lines = content.split("\n").filter((l) => l.trim().length > 0);
   if (lines.length < 5) return false;
-  // Root-relative links count too — many llms.txt indexes (zustand, vitepress
+  // Root-relative links count too - many llms.txt indexes (zustand, vitepress
   // sites) link their pages as [title](/path) rather than absolute URLs.
   const linkLines = lines.filter((l) => /^\s*-?\s*\[.+\]\((?:https?:\/\/|\/)[^)]+\)/.test(l));
   return linkLines.length / lines.length > 0.5;
@@ -60,7 +60,7 @@ export function rankIndexLinks(content: string, topic: string, baseUrl?: string)
 /** Try llms.txt, then llms-full.txt, then Jina, then direct HTML */
 /**
  * Pointer-style llms.txt files (e.g. nextjs.org/llms.txt) hold no index
- * themselves — they link to the real index one level down
+ * themselves - they link to the real index one level down
  * (nextjs.org/docs/llms.txt). Follow same-host llms.txt links exactly one hop,
  * preferring the non-full variant (llms-full.txt can be megabytes). Without
  * this, index-link ranking sees two useless links and every downstream

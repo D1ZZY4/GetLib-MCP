@@ -4,7 +4,7 @@ import { assertPublicUrl } from "../../utils/guard";
 
 /**
  * Normalize a homepage URL for safe path concatenation.
- * Strips URL fragment (#readme) + query (?utm) + trailing slashes — these break
+ * Strips URL fragment (#readme) + query (?utm) + trailing slashes - these break
  * `${homepage}/llms.txt` style concat by producing URLs like
  * `https://github.com/x/y#readme/llms.txt` (invalid).
  */

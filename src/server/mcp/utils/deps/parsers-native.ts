@@ -24,7 +24,7 @@ export function parseGoMod(content: string): string[] {
       if (match?.[1] && match[1] !== "//") deps.push(lastSegment(match[1]));
     }
   }
-  // Single-line form: `require github.com/pkg/errors v0.9.1` — emitted by
+  // Single-line form: `require github.com/pkg/errors v0.9.1` - emitted by
   // `go mod tidy` for indirect deps, outside the require(...) block. The
   // `[^\s(]` first-char guard skips the `require (` block opener.
   for (const m of content.matchAll(/^require\s+([^\s(]\S*)\s+\S+/gm)) {

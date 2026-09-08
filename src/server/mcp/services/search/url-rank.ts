@@ -112,12 +112,12 @@ export function isAuthoritativeUrl(url: string): boolean {
   }
 }
 
-/** Score URLs for documentation relevance — higher score = more likely to be useful docs */
+/** Score URLs for documentation relevance - higher score = more likely to be useful docs */
 export function scoreDocUrl(url: string, query: string): number {
   const lower = url.toLowerCase();
   let score = 0;
 
-  // Official docs and standards bodies outrank everything else — a dev.to
+  // Official docs and standards bodies outrank everything else - a dev.to
   // post with a keyword-stuffed slug must never beat postgresql.org.
   if (isAuthoritativeUrl(url)) score += 20;
 
@@ -138,7 +138,7 @@ export function scoreDocUrl(url: string, query: string): number {
   if (/youtube\.com/i.test(lower)) score -= 10;
   if (/(dev\.to|hashnode\.(dev|com)|dzone\.com|tutorialspoint\.com|geeksforgeeks\.org|javatpoint\.com|blog\.logrocket\.com)/i.test(lower)) score -= 12;
 
-  // Bonus if URL contains query terms — capped so slug keyword-stuffing
+  // Bonus if URL contains query terms - capped so slug keyword-stuffing
   // cannot outweigh the authority signal.
   const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
   let termBonus = 0;

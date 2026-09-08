@@ -1,7 +1,7 @@
 import { INJECTION_PATTERNS } from "../constants";
 import { decodeHtmlEntities, decodeCloudflareEmails, stripCloudflareEmailMarkdown } from "./decode-entities";
 
-// Navigation/footer patterns from Jina Reader output — strip these to save 15-25% tokens
+// Navigation/footer patterns from Jina Reader output - strip these to save 15-25% tokens
 import { NAV_FOOTER_PATTERNS } from "../sources/nav-patterns";
 
 /**
@@ -22,7 +22,7 @@ const MAX_SANITIZE_LENGTH = 512_000; // 500KB cap before regex processing
  * homoglyph variants of "ignore", "system", etc. still match.
  *
  * The output of this function is ONLY used for injection-pattern scanning,
- * not as the returned content — preserves the user-visible formatting.
+ * not as the returned content - preserves the user-visible formatting.
  */
 function normalizeForInjectionScan(text: string): string {
   // 1. Strip zero-width / invisible chars
@@ -32,7 +32,7 @@ function normalizeForInjectionScan(text: string): string {
   // 3. Explicit small-caps homoglyph map (IPA extensions + modifier letters
   //    that NFKD does NOT cover). Coverage: enough to neutralize the
   //    common "ɪɢɴᴏʀᴇ ᴘʀᴇᴠɪᴏᴜs" / "sʏsᴛᴇᴍ" injection variants.
-  // Small-caps + lookalike map. Keep this terse — only the chars that show
+  // Small-caps + lookalike map. Keep this terse - only the chars that show
   // up in common injection variants. Duplicates are removed since IPA-extensions
   // and Latin small-cap blocks overlap on a few code points.
   const homoglyphMap: Record<string, string> = {
@@ -63,10 +63,10 @@ export function sanitizeContent(content: string): string {
   // Normalise line endings FIRST. Windows-authored doc sources (OWASP cheatsheets,
   // webaim.org, some GitHub-raw files) arrive as CRLF; the carriage returns split
   // the \n runs so neither the /\n{4,}/ collapse nor the line-anchored
-  // NAV_FOOTER_PATTERNS below would fire — leaving visible blank-line spam.
+  // NAV_FOOTER_PATTERNS below would fire - leaving visible blank-line spam.
   sanitized = sanitized.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-  // First strip zero-width / RTL-override chars from the actual content too —
+  // First strip zero-width / RTL-override chars from the actual content too -
   // these have no legitimate use in technical docs and only enable bypass.
   sanitized = sanitized.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\u00AD\u180B-\u180E\uFE00-\uFE0E]|[\u{E0000}-\u{E007F}]/gu, "");
 
@@ -111,7 +111,7 @@ export function sanitizeContent(content: string): string {
     if (last && r.start <= last.end) last.end = Math.max(last.end, r.end);
     else merged.push({ ...r });
   }
-  // Single reverse pass — earlier offsets stay valid because the string is
+  // Single reverse pass - earlier offsets stay valid because the string is
   // only mutated after every offset has been resolved.
   for (let i = merged.length - 1; i >= 0; i--) {
     const { start, end } = merged[i]!;
@@ -141,14 +141,14 @@ export function sanitizeContent(content: string): string {
   // <meta>, <link>, <base> are self-closing structural tags
   sanitized = sanitized.replace(/<(?:meta|link|base)\b[^>]*\/?>/gi, "");
 
-  // Decode HTML entities LAST — after the surgical tag strips above. This order is
+  // Decode HTML entities LAST - after the surgical tag strips above. This order is
   // mandatory: a doc that wrote `&lt;div&gt;` to SHOW a tag keeps `<div>` as faithful
   // text (sanitize only strips script/style/structural tags, never generic ones),
   // while any real `<script>`/`<head>` revealed by decoding was already removed.
   // Jina Reader, llms.txt and GitHub-raw markdown bypass html-to-md, so this is the
   // only place their `&para;`/`&rarr;`/`&copy;` entities get decoded.
   sanitized = decodeHtmlEntities(sanitized);
-  // Numeric NBSP (&#160; / &#xA0;) decodes to U+00A0 — fold to a normal space so the
+  // Numeric NBSP (&#160; / &#xA0;) decodes to U+00A0 - fold to a normal space so the
   // whitespace collapse below behaves and downstream tokenisation isn't polluted.
   sanitized = sanitized.replace(/\u00A0/g, " ");
 

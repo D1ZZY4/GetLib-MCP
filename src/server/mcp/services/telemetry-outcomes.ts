@@ -21,7 +21,7 @@ export function pushOutcome(o: InvocationOutcome): void {
   }
 }
 
-/** Read-only access to the last 200 invocation outcomes — for /health endpoint */
+/** Read-only access to the last 200 invocation outcomes - for /health endpoint */
 export function getRecentOutcomes(): readonly InvocationOutcome[] {
   return recentOutcomes;
 }
@@ -79,7 +79,7 @@ export function getInvocationSummary(): {
   };
 }
 
-/** Reset the in-memory outcome window — used by tests */
+/** Reset the in-memory outcome window - used by tests */
 export function resetTelemetry(): void {
   recentOutcomes.length = 0;
 }

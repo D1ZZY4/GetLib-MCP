@@ -30,7 +30,7 @@ const InputSchema = z.object({
     .describe("Max tokens for content"),
 });
 
-/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+/** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = {
   content: [{ type: "text" as const, text: "Changelog fetch timed out. Retry, or open the library's GitHub releases page directly." }],
@@ -42,7 +42,7 @@ export function registerChangelogTools(): void {
       title: "Fetch Library Changelog",
       description: `Fetch recent release notes and changelog for a library. Reads GitHub Releases API first, then CHANGELOG.md, then the docs site. Use before upgrading.
 
-Use this for "what changed in version X" questions. For "how do I upgrade my code from vA to vB" — use gl_migration instead (it targets MIGRATION.md, UPGRADING.md, and upgrade guides with step-by-step instructions).`,
+Use this for "what changed in version X" questions. For "how do I upgrade my code from vA to vB" - use gl_migration instead (it targets MIGRATION.md, UPGRADING.md, and upgrade guides with step-by-step instructions).`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,
@@ -80,7 +80,7 @@ Use this for "what changed in version X" questions. For "how do I upgrade my cod
                 };
               }
             } catch {
-              // Pre-envelope cache entry — fall through and refetch.
+              // Pre-envelope cache entry - fall through and refetch.
             }
           }
 
@@ -125,8 +125,8 @@ Use this for "what changed in version X" questions. For "how do I upgrade my cod
             `# ${displayName} Changelog`,
             version ? `Filtered to: **${version}**` : "",
             `Source: ${sourceUrl}`,
-            truncated ? "\n> Content truncated — use a specific version to narrow results." : "",
-            version && qualityScore < 0.4 ? `\n> Quality: Low — ${qualityHints.join("; ") || "the fetched changelog may not cover this version."}` : "",
+            truncated ? "\n> Content truncated - use a specific version to narrow results." : "",
+            version && qualityScore < 0.4 ? `\n> Quality: Low - ${qualityHints.join("; ") || "the fetched changelog may not cover this version."}` : "",
             "",
           ]
             .filter(Boolean)

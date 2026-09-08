@@ -1,5 +1,5 @@
 /**
- * Build a human-readable routing table — embedded into server.instructions
+ * Build a human-readable routing table - embedded into server.instructions
  * so the LLM client can see the deterministic routing rules and pick the
  * right tool without relying on the dispatch tool.
  */
@@ -18,9 +18,9 @@ export function renderRoutingTable(): string {
     "| `browser support for Z` / `compatibility of Z` | `gl_compat({feature:'Z'})` | MDN + caniuse merged compat |",
     "| `show me examples of X with Y` | `gl_examples({library:'X', pattern:'Y'})` | Real-world GitHub examples |",
     "| `docs for X about Y` / `how to use X for Y` | `gl_get_docs({libraryId:'X', topic:'Y'})` | Filtered library docs |",
-    "| `what is X` / `OWASP SQLi guidance` / topic-only | `gl_search({query:'…'})` | Freeform — any topic, no library required |",
+    "| `what is X` / `OWASP SQLi guidance` / topic-only | `gl_search({query:'…'})` | Freeform - any topic, no library required |",
     "| `code snippets for X` / `X snippets` | `gl_snippets({libraryId:'X', topic?})` | Pre-indexed ranked code snippets |",
-    "| Pasting a docs URL | `gl_get_docs({libraryId:'<url>'})` | URL works as the libraryId — direct fetch |",
+    "| Pasting a docs URL | `gl_get_docs({libraryId:'<url>'})` | URL works as the libraryId - direct fetch |",
     "",
     "When ambiguous, prefer the smallest-scope tool: a single library → `gl_best_practices`, the whole project → `gl_auto_scan`, no library at all → `gl_search`.",
   ].join("\n");

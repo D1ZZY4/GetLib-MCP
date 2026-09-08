@@ -3,7 +3,7 @@ import type { GlToolName, IntentMatch } from "./types";
 import { extractMigrationVersions } from "./detect";
 
 export interface VerbContext {
-  /** Original, un-normalised query — version ranges and casing survive here. */
+  /** Original, un-normalised query - version ranges and casing survive here. */
   raw: string;
   /** Noise-stripped, lowercased query used for token matching. */
   text: string;
@@ -15,7 +15,7 @@ export interface VerbContext {
 /**
  * Map the highest-precision verb hit to a concrete tool call. Every branch whose
  * target tool has a REQUIRED identifier falls back to gl_search when that
- * identifier could not be parsed — recommending a call that fails the target's
+ * identifier could not be parsed - recommending a call that fails the target's
  * own Zod schema is worse than a soft route.
  */
 export function routeVerb(
@@ -28,7 +28,7 @@ export function routeVerb(
   const searchFallback = (verb: string): IntentMatch => ({
     tool: "gl_search",
     args: { query: raw },
-    reason: `${verb} verb detected ("${top.word}") but required arguments not parseable — fallback to search`,
+    reason: `${verb} verb detected ("${top.word}") but required arguments not parseable - fallback to search`,
     confidence: 0.5,
   });
 
@@ -145,7 +145,7 @@ switch (top.tool) {
   }
   case "gl_batch_resolve": {
     // text still contains verb tokens ("batch","lookup") but lookupByAlias
-    // filters them out since they are not registry aliases — batchTokens
+    // filters them out since they are not registry aliases - batchTokens
     // ends up holding only genuine library names.
     const batchTokens = text
       .split(/[\s,]+/)
@@ -160,20 +160,20 @@ switch (top.tool) {
         confidence: 0.82,
       };
     }
-    // No parseable library names — gl_batch_resolve requires a non-empty
+    // No parseable library names - gl_batch_resolve requires a non-empty
     // libraryNames array (Zod .min(1)), so fall back to freeform search
     // instead of emitting args that would fail validation.
     return {
       tool: "gl_search",
       args: { query: raw },
-      reason: `batch-resolve verb detected but no library names parseable — fallback to search`,
+      reason: `batch-resolve verb detected but no library names parseable - fallback to search`,
       confidence: 0.5,
     };
   }
   case "gl_search":
   case "gl_snippets":
   default: {
-    // gl_snippets requires libraryId — without one the recommendation
+    // gl_snippets requires libraryId - without one the recommendation
     // would fail the target schema.
     if (top.tool === "gl_snippets" && !library) return searchFallback("snippets");
     if (top.tool === "gl_search") args["query"] = topic ?? text;

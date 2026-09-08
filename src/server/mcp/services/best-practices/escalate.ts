@@ -28,7 +28,7 @@ export interface EscalationResult {
 /**
  * Verify the extracted output actually covers the topic, and force one
  * topic-targeted deep fetch when it does not. Escalation also fires when the
- * "content" is still a link index — a directory page can pass token checks via
+ * "content" is still a link index - a directory page can pass token checks via
  * link text while answering nothing. The deeper result is only adopted when it
  * is measurably better, so a failed escalation never degrades the answer.
  */

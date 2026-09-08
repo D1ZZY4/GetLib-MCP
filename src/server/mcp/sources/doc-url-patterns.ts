@@ -2,7 +2,7 @@
  * Topic-URL path patterns probed when guessing a documentation page location,
  * grouped by the doc generator that popularised each shape.
  *
- * Data table, not logic — exempt from the 200-line source convention.
+ * Data table, not logic - exempt from the 200-line source convention.
  */
 export const DEFAULT_URL_PATTERNS = [
     "/docs/{slug}",

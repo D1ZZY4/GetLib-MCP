@@ -1,5 +1,5 @@
 /**
- * Result guarantee — every gl_* tool invocation MUST return useful text to
+ * Result guarantee - every gl_* tool invocation MUST return useful text to
  * the LLM client. This module formats the "we couldn't fetch X, here's what
  * to try next" fallback so the LLM is never stuck with an empty result.
  *
@@ -17,7 +17,7 @@ export interface FallbackContext {
 }
 
 /**
- * Build a structured "couldn't fetch — try next" response. The text format
+ * Build a structured "couldn't fetch - try next" response. The text format
  * is deliberately friendly to LLM parsing: clear sections, bullet lists,
  * and a single action verb per suggestion.
  */
@@ -44,7 +44,7 @@ export function buildFallbackResponse(ctx: FallbackContext): string {
     lines.push(`- ${s}`);
   }
   lines.push("");
-  lines.push("This response is never empty — even when the primary sources fail, the next step is always actionable.");
+  lines.push("This response is never empty - even when the primary sources fail, the next step is always actionable.");
 
   return withNotice(lines.join("\n"));
 }

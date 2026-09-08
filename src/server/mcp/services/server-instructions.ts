@@ -5,8 +5,8 @@
  * of truth in constants.ts (TOOL_COUNT).
  *
  * BUDGET: Claude Code truncates server instructions around 2 KB. The previous
- * version was 5.3 KB, so the routing table — the part that actually changes
- * tool selection — was cut off before the model ever saw it. Everything here
+ * version was 5.3 KB, so the routing table - the part that actually changes
+ * tool selection - was cut off before the model ever saw it. Everything here
  * earns its bytes: the routing table first, prose only where it prevents a
  * wrong call. Keep the output under INSTRUCTIONS_BYTE_BUDGET; the unit test
  * enforces it.
@@ -16,9 +16,9 @@ export const INSTRUCTIONS_BYTE_BUDGET = 2000;
 export function buildServerInstructions(toolCount: number): string {
   return `GetLib: live docs + best practices, fetched from official sources at request time, never from training data.
 
-Evidence: topic-targeted answers carry an "## Evidence" footer (sources, date, coverage). "No topic-specific evidence found" is a TRUE NEGATIVE — follow its next steps, do not re-call the same tool.
+Evidence: topic-targeted answers carry an "## Evidence" footer (sources, date, coverage). "No topic-specific evidence found" is a TRUE NEGATIVE - follow its next steps, do not re-call the same tool.
 
-# Tools (${toolCount}) — routing
+# Tools (${toolCount}) - routing
 
 | User says | Call |
 |---|---|
@@ -41,7 +41,7 @@ Evidence: topic-targeted answers carry an "## Evidence" footer (sources, date, c
 # Rules
 
 - The message names a library: resolve it, never ask which one.
-- gl_search is the catch-all, not the default — prefer gl_best_practices for a named library.
-- Give topic a real subject ("row level security", not "best practices") — it drives retrieval.
+- gl_search is the catch-all, not the default - prefer gl_best_practices for a named library.
+- Give topic a real subject ("row level security", not "best practices") - it drives retrieval.
 - Registry is Elastic-2.0: look up specific libraries, never enumerate or dump it.`;
 }

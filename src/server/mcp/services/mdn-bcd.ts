@@ -6,7 +6,7 @@ import { log } from "../utils/logger";
  *
  * Every MDN doc page serves `{url}/index.json` containing the page summary,
  * Baseline status, and the exact BCD query paths for its compat tables. The
- * BCD API then returns per-browser `version_added` as JSON — including
+ * BCD API then returns per-browser `version_added` as JSON - including
  * Node.js, Deno, and Bun. This replaces scraping rendered MDN pages, which
  * lose or mangle the compat tables in markdown conversion.
  */
@@ -173,7 +173,7 @@ export async function renderBcdTable(
     if (status?.["standard_track"] === false) flags.push("non-standard");
 
     return [
-      `### Support: \`${bcdPath}\`${flags.length > 0 ? ` — ${flags.join(", ")}` : ""}`,
+      `### Support: \`${bcdPath}\`${flags.length > 0 ? ` - ${flags.join(", ")}` : ""}`,
       "",
       "| Environment | Version added |",
       "| --- | --- |",

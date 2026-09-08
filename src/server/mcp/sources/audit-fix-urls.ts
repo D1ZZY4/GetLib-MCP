@@ -2,7 +2,7 @@
  * Curated remediation URLs per audit-finding class.
  *
  * Each group is tried in order: the first `targets` entry whose regex matches the
- * finding wins, otherwise `fallback` is used. Deep links are deliberate — index
+ * finding wins, otherwise `fallback` is used. Deep links are deliberate - index
  * and search-result pages carry no remediation content and fail the evidence gate.
  */
 export interface FixTargetGroup {
@@ -48,7 +48,7 @@ export const FIX_TARGET_GROUPS: FixTargetGroup[] = [
       [/\blang\b/i, `${MDN}/Web/HTML/Reference/Global_attributes/lang`],
       [/wcag|a11y|accessib/i, `${MDN}/Web/Accessibility`],
     ],
-    // MDN search is a link list — last resort only, and still evidence-gated.
+    // MDN search is a link list - last resort only, and still evidence-gated.
     fallback: "https://developer.mozilla.org/en-US/search?q={q}",
   },
   {

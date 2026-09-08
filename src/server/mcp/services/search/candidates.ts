@@ -1,5 +1,5 @@
 /**
- * Universal direct URL construction — the global fallback that makes ANY topic findable.
+ * Universal direct URL construction - the global fallback that makes ANY topic findable.
  * For any query, we construct URLs on well-known documentation sites using the query as a slug.
  * This ensures we never return "no results" for a topic that has documentation somewhere.
  */

@@ -11,14 +11,14 @@ interface DiskCacheFile {
 }
 
 /**
- * Persistent disk cache — survives across npx invocations.
+ * Persistent disk cache - survives across npx invocations.
  * Keys are SHA-256 hashed; entries are JSON files with TTL metadata.
  * Falls back silently to no-op on any I/O error.
  */
 export class DiskCache {
   private dir: string;
   private initialized = false;
-  /** Per-key write lock — serializes concurrent writes to the same key */
+  /** Per-key write lock - serializes concurrent writes to the same key */
   private readonly writeLocks = new Map<string, Promise<void>>();
 
   constructor(dir = DISK_CACHE_DIR) {
@@ -47,7 +47,7 @@ export class DiskCache {
     try {
       const content = await readFile(filePath, "utf-8");
       const entry = JSON.parse(content) as DiskCacheFile;
-      // Validate the deserialized shape — a truncated/corrupt file can parse to
+      // Validate the deserialized shape - a truncated/corrupt file can parse to
       // a non-conforming object; don't serve it as if it were a valid entry.
       if (typeof entry !== "object" || entry === null || typeof entry.data !== "string" || typeof entry.expiresAt !== "number") {
         unlink(filePath).catch(() => void 0);
@@ -69,7 +69,7 @@ export class DiskCache {
 
   async set(key: string, data: string, ttlMs = CACHE_TTL_MS): Promise<void> {
     if (!(await this.ensureDir())) return;
-    // Serialize concurrent writes to the same key — prevents interleaved
+    // Serialize concurrent writes to the same key - prevents interleaved
     // bytes from two simultaneous set() calls corrupting the file.
     const previous = this.writeLocks.get(key) ?? Promise.resolve();
     const next = previous.then(() => this.atomicWrite(key, data, ttlMs)).catch(() => {});
@@ -91,7 +91,7 @@ export class DiskCache {
       await writeFile(tmpPath, JSON.stringify(entry), "utf-8");
       await rename(tmpPath, filePath);
     } catch (err) {
-      // Surface the write failure (disk full, EACCES, mount loss) — every disk
+      // Surface the write failure (disk full, EACCES, mount loss) - every disk
       // write funnels through here, so this is the single observability point
       // for the otherwise fire-and-forget cache writes.
       log({ level: "warn", msg: "DiskCache.atomicWrite.failed", error: err instanceof Error ? err.message : String(err) });
@@ -128,7 +128,7 @@ export class DiskCache {
         try {
           const content = await readFile(filePath, "utf-8");
           const entry = JSON.parse(content) as DiskCacheFile;
-          // Corrupt-but-parseable file (e.g. {}) has no numeric expiresAt — the
+          // Corrupt-but-parseable file (e.g. {}) has no numeric expiresAt - the
           // stale check below would compare against NaN and never prune it. Delete
           // it, mirroring the shape guards already in get()/has().
           if (typeof entry !== "object" || entry === null || typeof entry.expiresAt !== "number") {
@@ -149,7 +149,7 @@ export class DiskCache {
       }
 
       // Re-read the directory so the eviction guard reflects what is actually on
-      // disk — `removed` can be inflated by fail-silent unlinks above, deflating
+      // disk - `removed` can be inflated by fail-silent unlinks above, deflating
       // the count and skipping LRU eviction while the cache is still over cap.
       const currentFiles = await readdir(this.dir);
       const remainingJson = currentFiles.filter((f) => f.endsWith(".json"));
@@ -169,7 +169,7 @@ export class DiskCache {
           removed++;
         }
       }
-    } catch { /* readdir failed — cache dir may not exist */ }
+    } catch { /* readdir failed - cache dir may not exist */ }
     return removed;
   }
 }

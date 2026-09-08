@@ -19,7 +19,7 @@ export function extractRelevantContent(
 ): { text: string; truncated: boolean } {
   const charLimit = Math.floor(tokenLimit * CHARS_PER_TOKEN);
 
-  // Markdown images are pure token waste for an LLM consumer — Jina output is
+  // Markdown images are pure token waste for an LLM consumer - Jina output is
   // full of nav logos/badges ("![Image 1: Vercel](...svg)"). Drop them (and the
   // link wrappers left empty by the removal) before any budgeting or scoring.
   content = content
@@ -33,7 +33,7 @@ export function extractRelevantContent(
 
   const queryTokens = tokenize(topic);
 
-  // No topic provided — return the first charLimit chars (summary/overview)
+  // No topic provided - return the first charLimit chars (summary/overview)
   if (queryTokens.length === 0) {
     return { text: content.slice(0, charLimit), truncated: true };
   }
@@ -41,7 +41,7 @@ export function extractRelevantContent(
   const sections = parseSections(content);
 
   // Tokenize every section exactly once and reuse across avgDocLen, buildIDF and
-  // bm25Score — collapses O(N*Q) re-tokenization to O(N) with identical results.
+  // bm25Score - collapses O(N*Q) re-tokenization to O(N) with identical results.
   const tokenCache = buildTokenCache(sections);
 
   // Compute average document length for BM25 length normalisation
@@ -74,7 +74,7 @@ export function extractRelevantContent(
 
     if (used + sectionText.length > charLimit) {
       if (picked.length === 0) {
-        // Must include at least one section — the top-scoring one, truncated
+        // Must include at least one section - the top-scoring one, truncated
         // downstream by the charLimit slice.
         picked.push(section);
         used += sectionText.length;
@@ -100,7 +100,7 @@ export function extractRelevantContent(
     .join("\n---\n");
 
   let finalText = resultText.slice(0, charLimit);
-  // Truncation can land mid-code-block — close the fence rather than shipping
+  // Truncation can land mid-code-block - close the fence rather than shipping
   // a half-open block that swallows everything after it in the client's render.
   for (const fence of ["```", "~~~"]) {
     if ((finalText.split(fence).length - 1) % 2 === 1) finalText += `\n${fence}`;

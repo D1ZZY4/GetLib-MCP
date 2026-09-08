@@ -1,7 +1,7 @@
-/** Skip generated, test, and declaration files — patterns don't apply there */
+/** Skip generated, test, and declaration files - patterns don't apply there */
 export const SKIP_FILE_RE = /(?:\.test\.[jt]sx?|\.spec\.[jt]sx?|\.d\.ts|__tests__[/\\]|\.stories\.[jt]sx?)$/;
 
-/** Range-based comment map — O(n) build, O(log n) lookup, O(ranges) memory */
+/** Range-based comment map - O(n) build, O(log n) lookup, O(ranges) memory */
 class CommentMap {
   private readonly ranges: [number, number][];
   constructor(ranges: [number, number][]) { this.ranges = ranges; }

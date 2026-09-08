@@ -67,11 +67,11 @@ export function registerAuditTools(): void {
       title: "Audit Project Code",
       description: `Scan source files for code issues across 18 categories, then fetch live best-practice fixes from official docs. Returns file:line locations. Unlike gl_auto_scan (best practices for your dependencies), this audits YOUR OWN source code.
 
-Categories: layout, performance, accessibility, security, react, nextjs, typescript, node, python, vue, svelte, angular, testing, mobile, api, css, seo, i18n — or "all" (default).
+Categories: layout, performance, accessibility, security, react, nextjs, typescript, node, python, vue, svelte, angular, testing, mobile, api, css, seo, i18n - or "all" (default).
 
 For broad questions like "what can be improved" or "find all issues", use categories: ["all"]. For mobile apps (React Native/Expo), use ["mobile", "react", "typescript", "accessibility", "performance", "security"]. For web apps, use ["react", "nextjs", "typescript", "security", "accessibility", "performance", "layout", "css", "seo"].
 
-If doc fetches fail with empty results, the user likely needs to set GETLIB_GITHUB_TOKEN for higher GitHub API rate limits. The audit patterns themselves always run locally — only the fix guidance fetch requires network.`,
+If doc fetches fail with empty results, the user likely needs to set GETLIB_GITHUB_TOKEN for higher GitHub API rate limits. The audit patterns themselves always run locally - only the fix guidance fetch requires network.`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,

@@ -23,7 +23,7 @@ export interface DocsResponse {
     content: Array<{ type: "text"; text: string }>;
     structuredContent: Record<string, unknown>;
   };
-  /** Whether the call produced usable content — feeds the resolveRate telemetry. */
+  /** Whether the call produced usable content - feeds the resolveRate telemetry. */
   resolved: boolean;
 }
 
@@ -41,7 +41,7 @@ function summarize(input: DocsReportInput): Record<string, unknown> {
 }
 
 /**
- * Hard miss: the topic never appears in anything fetched — or appears once in
+ * Hard miss: the topic never appears in anything fetched - or appears once in
  * passing, with no heading and no code, after escalation already ran. Both are
  * the "generic answer" failure mode: the model cannot tell a real answer from a
  * page that merely name-drops the term.
@@ -70,7 +70,7 @@ function renderMiss(input: DocsReportInput, barelyMentioned: boolean): DocsRespo
       evidence: summarize(input),
       sourcesTried: sourcesTried.map((s) => s.url),
       content: missText,
-      // The one passing mention is still available to a client that wants it —
+      // The one passing mention is still available to a client that wants it -
       // the TEXT response stays an honest miss so a model reading only that
       // cannot mistake a name-drop for an answer.
         ...(barelyMentioned ? { weakContent: text } : {}),
@@ -99,12 +99,12 @@ export function renderDocs(input: DocsReportInput): DocsResponse {
 
   const header = [
     `# ${displayName} Documentation`,
-    `> Source: ${fetchResult.sourceType} — ${fetchResult.url}`,
+    `> Source: ${fetchResult.sourceType} - ${fetchResult.url}`,
     topic ? `> Topic: ${topic}` : "",
-    topic && isIndexContent(text) ? "> Note: This is a documentation INDEX (link list), not the answer itself — fetch the linked pages that match your topic." : "",
+    topic && isIndexContent(text) ? "> Note: This is a documentation INDEX (link list), not the answer itself - fetch the linked pages that match your topic." : "",
     truncated ? "> Note: Response truncated. Use a more specific topic or increase tokens." : "",
-    topic && !evidence.ok ? `> Evidence: Weak — topic terms appear only sparsely (${evidence.occurrences} occurrence${evidence.occurrences === 1 ? "" : "s"}). Verify against the source before relying on this.` : "",
-    qualityScore < 0.4 ? `> Quality: Low — ${qualityHints.join("; ") || "try a more specific topic or different library ID."}` : "",
+    topic && !evidence.ok ? `> Evidence: Weak - topic terms appear only sparsely (${evidence.occurrences} occurrence${evidence.occurrences === 1 ? "" : "s"}). Verify against the source before relying on this.` : "",
+    qualityScore < 0.4 ? `> Quality: Low - ${qualityHints.join("; ") || "try a more specific topic or different library ID."}` : "",
     "",
     "---",
     "",

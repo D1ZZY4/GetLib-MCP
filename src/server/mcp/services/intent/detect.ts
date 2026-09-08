@@ -77,7 +77,7 @@ export function extractMigrationVersions(text: string): { from?: string; to?: st
 
 /** Extract a topic phrase after "about", "for", "on" */
 export function extractTopic(text: string): string | undefined {
-  // Prefer the more specific "about ..." marker — it scopes the topic
+  // Prefer the more specific "about ..." marker - it scopes the topic
   // tightly. Fall back to "regarding", then quoted strings, then "for/on".
   const tries = [
     /\babout\s+([\w./@-]+(?:\s+[\w./@-]+){0,4})/i,

@@ -2,14 +2,14 @@
  * Boilerplate blocks stripped from fetched documentation: nav chrome, footers,
  * cookie banners, and other non-content furniture.
  *
- * Data table, not logic — exempt from the 200-line source convention.
+ * Data table, not logic - exempt from the 200-line source convention.
  */
 export const NAV_FOOTER_PATTERNS: RegExp[] = [
   // Skip-links and accessibility nav shortcuts
   /\[Skip to (main )?content\]\([^)]*\)/gi,
   /\[Skip navigation\]\([^)]*\)/gi,
 
-  // Breadcrumb lines — "Home > Docs > Guide" or markdown link chains
+  // Breadcrumb lines - "Home > Docs > Guide" or markdown link chains
   /^.*?\]\s*\/\s*\[.*?\]\s*\/\s*\[.*?$/gm,
   /^(Home|Docs?|Guide|Reference|API)\s*[>\/]\s*.+$/gm,
 
@@ -67,7 +67,7 @@ export const NAV_FOOTER_PATTERNS: RegExp[] = [
   // CTA buttons in nav/header
   /\[(Get started|Sign up|Log in|Download|Try for free|Contact us)[^\]]*\]\([^)]*\)/gi,
 
-  // Long nav link dumps — 5+ consecutive short markdown links on their own lines
+  // Long nav link dumps - 5+ consecutive short markdown links on their own lines
   /(\[[\w\s/-]{1,40}\]\([^)]{0,100}\)\s*\n){5,}/g,
 
   // Sidebar-like sections: heading followed by only links

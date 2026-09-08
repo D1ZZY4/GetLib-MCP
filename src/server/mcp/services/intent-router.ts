@@ -1,5 +1,5 @@
 /**
- * Intent router — maps a plain-text user query like "use getlib mcp" or
+ * Intent router - maps a plain-text user query like "use getlib mcp" or
  * "check the docs for next.js routing" to the most appropriate gl_* tool
  * with a high-confidence argument set.
  *
@@ -8,9 +8,9 @@
  * the contract that promises "user says X → tool Y(args)".
  *
  * Used in two places:
- * 1. `gl_dispatch` tool — the smart entry point that LLM clients can call
+ * 1. `gl_dispatch` tool - the smart entry point that LLM clients can call
  *    when they want getlib-mcp to figure out the right action.
- * 2. Server instructions — the routing table is rendered into the MCP
+ * 2. Server instructions - the routing table is rendered into the MCP
  *    server.instructions string so the LLM picks the right tool directly.
  */
 import { VERB_HINTS, URL_RE } from "../sources/intent-hints";
@@ -22,26 +22,26 @@ export type { GlToolName, IntentInput, IntentMatch } from "./intent/types";
 export { renderRoutingTable } from "./intent/routing-table";
 
 /**
- * Pure routing function — given a plain-text query, return the best
+ * Pure routing function - given a plain-text query, return the best
  * gl_* tool + arguments. Multiple tools may match; returns the highest
- * confidence one. Always returns *something* — falls back to gl_search.
+ * confidence one. Always returns *something* - falls back to gl_search.
  */
 export function detectIntent({ query, projectPath }: IntentInput): IntentMatch {
   const raw = query.trim();
   const text = stripNoise(raw);
 
-  // 1. URL detection — direct gl_get_docs with the URL as libraryId
+  // 1. URL detection - direct gl_get_docs with the URL as libraryId
   const urlMatch = raw.match(URL_RE);
   if (urlMatch) {
     return {
       tool: "gl_get_docs",
       args: { libraryId: urlMatch[0] },
-      reason: "direct URL detected — fetch docs from it",
+      reason: "direct URL detected - fetch docs from it",
       confidence: 0.95,
     };
   }
 
-  // 2. Verb hints — scan ordered list, longest-first match wins
+  // 2. Verb hints - scan ordered list, longest-first match wins
   const verbHits: Array<{ tool: GlToolName; word: string }> = [];
   for (const { tool, words } of VERB_HINTS) {
     for (const w of words) {
@@ -58,7 +58,7 @@ export function detectIntent({ query, projectPath }: IntentInput): IntentMatch {
     return routeVerb(verbHits[0], { raw, text, library, topic, projectPath });
   }
 
-  // 4. No verb hit — but library mentioned → best practices is the safest default
+  // 4. No verb hit - but library mentioned → best practices is the safest default
   if (library) {
     return {
       tool: "gl_best_practices",
@@ -82,7 +82,7 @@ export function detectIntent({ query, projectPath }: IntentInput): IntentMatch {
   return {
     tool: "gl_search",
     args: { query: raw },
-    reason: "no specific tool matched — defaulting to freeform search",
+    reason: "no specific tool matched - defaulting to freeform search",
     confidence: 0.55,
   };
 }

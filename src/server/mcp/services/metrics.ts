@@ -78,7 +78,7 @@ export function formatPrometheus(): string {
   lines.push("# HELP gl_tool_errors_total Total errors per tool");
   lines.push("# TYPE gl_tool_errors_total counter");
   for (const tool of Object.keys(summary)) {
-    // Emit the raw integer error count — reconstructing it from the rounded
+    // Emit the raw integer error count - reconstructing it from the rounded
     // errorRate introduced off-by-one drift at realistic invocation counts.
     lines.push(`gl_tool_errors_total{tool="${tool}"} ${metricsStore.get(tool)?.errors ?? 0}`);
   }

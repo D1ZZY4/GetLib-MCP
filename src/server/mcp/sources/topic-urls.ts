@@ -134,7 +134,7 @@ export const TOPIC_URL_MAP: TopicUrlEntry[] = [
     ],
     name: "Image Optimization",
   },
-  // Speculation Rules — see expanded entry below in Chrome Platform section
+  // Speculation Rules - see expanded entry below in Chrome Platform section
   // MDN Web APIs
   {
     patterns: ["fetch api", "fetch()", "fetchapi", "http request javascript"],

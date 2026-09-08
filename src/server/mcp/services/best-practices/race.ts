@@ -1,7 +1,7 @@
 import { fetchAsMarkdownRace } from "../fetcher";
 import { tokenize, expandTopicTokens } from "../../utils/extract";
 
-/** Fetch multiple URLs in parallel — return the one with the best quality content.
+/** Fetch multiple URLs in parallel - return the one with the best quality content.
  *  Uses fetchAsMarkdownRace (direct HTML extraction + Jina) for each URL,
  *  so we're not solely dependent on Jina Reader.
  */
@@ -31,7 +31,7 @@ export async function raceUrls(
 
   // Merge the top pages: topic relevance dominates, content quality (headings,
   // code blocks, length) breaks ties. Quality alone let the vitest SNAPSHOT
-  // guide outrank the MOCKING guide for a "mocking" query — a longer page is
+  // guide outrank the MOCKING guide for a "mocking" query - a longer page is
   // not a more on-topic page. Downstream BM25 extraction trims the merged
   // corpus back to the token budget.
   const topicTokens = expandTopicTokens(tokenize(topic));
@@ -52,13 +52,13 @@ export async function raceUrls(
       scoreContentQuality(b.content) - scoreContentQuality(a.content),
   );
   const top = ranked.slice(0, 3);
-  // Cap each source before merging — three unbounded pages would make the
+  // Cap each source before merging - three unbounded pages would make the
   // downstream sanitize + BM25 pass scan megabytes for a few-KB output.
   const MAX_CHARS_PER_SOURCE = 80_000;
   const merged = top
     .map((h) => {
       let body = h.content.slice(0, MAX_CHARS_PER_SOURCE);
-      // Balance fences per source — one truncated page must not leave the
+      // Balance fences per source - one truncated page must not leave the
       // section parser "inside a fence" for every source merged after it.
       for (const fence of ["```", "~~~"]) {
         if ((body.split(fence).length - 1) % 2 === 1) body += `\n${fence}`;

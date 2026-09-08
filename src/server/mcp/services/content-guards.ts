@@ -1,12 +1,12 @@
 /**
  * Content quality gates. Upstreams answer 200 with error shells, bot challenges,
- * login walls and unrendered SPA markup — these detect that so garbage is never
+ * login walls and unrendered SPA markup - these detect that so garbage is never
  * cached or served as documentation.
  */
 
 /**
  * Detect if extracted content is actually an unprocessed HTML blob.
- * JS-rendered sites return HTML shells with no real content — these should be rejected.
+ * JS-rendered sites return HTML shells with no real content - these should be rejected.
  */
 export function isHtmlBlob(content: string): boolean {
   if (content.length < 200) return false;
@@ -30,12 +30,12 @@ export function isHtmlBlob(content: string): boolean {
 }
 /** Detect 404/error pages returned as content (common with Jina on non-existent pages) */
 export function isErrorPage(content: string): boolean {
-  // Strong signals — length-independent. Framework 404 shells ship kilobytes of
+  // Strong signals - length-independent. Framework 404 shells ship kilobytes of
   // nav/footer markup, so a length cap can never be a precondition here.
   // Jina Reader responds 200 but prepends this warning when the TARGET errored.
   if (/^Warning:\s*Target URL returned error\s*\d+/im.test(content.slice(0, 2000))) return true;
   // Bare "404"-style heading anywhere plus canonical not-found body text.
-  // Real 404 shells never contain code fences — documentation ABOUT not-found
+  // Real 404 shells never contain code fences - documentation ABOUT not-found
   // handling always does, so a code block clears the page.
   if (
     /^#{1,3}\s*(?:404|page not found|not found)\s*\.?\s*$/im.test(content) &&
@@ -44,7 +44,7 @@ export function isErrorPage(content: string): boolean {
   ) {
     return true;
   }
-  // Weak signals — only trusted on thin pages so docs ABOUT 404 handling stay clean.
+  // Weak signals - only trusted on thin pages so docs ABOUT 404 handling stay clean.
   const sample = content.slice(0, 1500).toLowerCase();
   return (
     (/page\s*not\s*found|404\s*not\s*found|oops!.*doesn.t\s*exist/i.test(sample) && content.length < 3000) ||
@@ -52,7 +52,7 @@ export function isErrorPage(content: string): boolean {
   );
 }
 
-/** Detect login/auth walls — content requiring the user to sign in before reading */
+/** Detect login/auth walls - content requiring the user to sign in before reading */
 export function isLoginWall(content: string): boolean {
   const sample = content.slice(0, 5000).toLowerCase();
   const signals = [

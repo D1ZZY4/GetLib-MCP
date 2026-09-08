@@ -51,7 +51,7 @@ async function fetchDocsUncached(
   }
 
   // Cache hits must report the ORIGINAL fetch origin, not a hardcoded
-  // "llms-txt" — quality scoring downstream weights source types differently.
+  // "llms-txt" - quality scoring downstream weights source types differently.
   // Companion entry absent (pre-fix cache files) falls back to llms-txt.
   function asSourceType(raw: string | null | undefined): FetchResult["sourceType"] {
     return raw && VALID_SOURCE_TYPES.has(raw) ? (raw as FetchResult["sourceType"]) : "llms-txt";
@@ -117,7 +117,7 @@ async function fetchDocsUncached(
     }
   }
 
-  // 2. Race auto-discover + direct HTML extraction + Jina — first good result wins
+  // 2. Race auto-discover + direct HTML extraction + Jina - first good result wins
   const autoDiscoverUrls: string[] = [];
   try {
     const origin = new URL(docsUrl).origin;
@@ -170,7 +170,7 @@ async function fetchDocsUncached(
     cacheDocsResult(hit.content, CACHE_TTLS.DOCS_PAGE, hit.sourceType);
     return stamp(hit);
   } catch {
-    // All candidates failed — fall through to error
+    // All candidates failed - fall through to error
   }
 
   throw new Error(`Failed to fetch documentation from ${docsUrl}`);

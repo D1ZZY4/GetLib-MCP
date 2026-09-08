@@ -24,7 +24,7 @@ export function expandTopicTokens(tokens: string[]): string[] {
   }
   return [...out];
 }
-/** Topic tokens that carry subject meaning — meta words dropped unless nothing else remains. */
+/** Topic tokens that carry subject meaning - meta words dropped unless nothing else remains. */
 export function substantiveTokens(topic: string): string[] {
   const raw = [...new Set(tokenize(topic))];
   const substantive = raw.filter((t) => !META_TOKENS.has(t));

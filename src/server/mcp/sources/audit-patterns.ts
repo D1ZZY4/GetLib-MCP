@@ -1,7 +1,7 @@
 /**
  * Audit pattern table: the 18-category rule set gl_audit runs over source files.
  *
- * Data table, not logic — exempt from the 200-line source convention for the
+ * Data table, not logic - exempt from the 200-line source convention for the
  * same reason the library registry is.
  */
 export interface Issue {
@@ -50,9 +50,9 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "layout",
     severity: "high",
-    title: "Image missing width/height — causes CLS",
+    title: "Image missing width/height - causes CLS",
     detail:
-      "Images without explicit width and height cause Cumulative Layout Shift (CLS) — a Core Web Vital that affects search ranking.",
+      "Images without explicit width and height cause Cumulative Layout Shift (CLS) - a Core Web Vital that affects search ranking.",
     fix: "Add explicit width and height props, or use fill with a sized wrapper. In Next.js always use next/image.",
     docsQuery: "image CLS cumulative layout shift width height next/image",
     test: (line) => (/<img\b/.test(line) && !/width=/.test(line) && !/height=/.test(line) ? line : null),
@@ -60,7 +60,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "layout",
     severity: "high",
-    title: "Raw <img> tag — use next/image instead",
+    title: "Raw <img> tag - use next/image instead",
     detail:
       "<img> bypasses Next.js automatic WebP/AVIF conversion, lazy loading, and layout-shift prevention.",
     fix: "Replace <img> with next/image Image component. Provide width+height or use fill inside a sized container.",
@@ -70,7 +70,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "layout",
     severity: "medium",
-    title: "100vh — use 100dvh for mobile viewport",
+    title: "100vh - use 100dvh for mobile viewport",
     detail:
       "100vh ignores the shrinking mobile browser chrome (address bar). 100dvh tracks the actual available viewport.",
     fix: "Replace `100vh` with `100dvh`. Add `min(100vh, 100dvh)` as a fallback for older browsers.",
@@ -80,7 +80,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "layout",
     severity: "medium",
-    title: "Missing font-display — causes FOIT",
+    title: "Missing font-display - causes FOIT",
     detail:
       "Without font-display on @font-face, the browser hides text while the font loads (Flash of Invisible Text).",
     fix: "Add `font-display: swap` or `font-display: optional` to every @font-face declaration.",
@@ -91,7 +91,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "layout",
     severity: "low",
-    title: "Inline @media breakpoint — use Tailwind responsive prefix",
+    title: "Inline @media breakpoint - use Tailwind responsive prefix",
     detail:
       "Hardcoded @media queries create duplicate breakpoint logic that drifts from the design system.",
     fix: "Use Tailwind responsive prefixes (sm: md: lg: xl:) instead of manual pixel-value @media queries.",
@@ -101,7 +101,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "layout",
     severity: "medium",
-    title: "CSS @import — blocks parallel stylesheet loading",
+    title: "CSS @import - blocks parallel stylesheet loading",
     detail:
       "@import inside a CSS file creates a sequential fetch chain. Each imported file must finish before the next starts, delaying First Contentful Paint.",
     fix: "Merge CSS files or use a build tool to bundle them. Use <link> tags in HTML instead of CSS @import.",
@@ -140,7 +140,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "performance",
     severity: "high",
-    title: "useEffect data fetching — use Server Components or SWR",
+    title: "useEffect data fetching - use Server Components or SWR",
     detail:
       "useEffect fires after the first render causing a visible loading waterfall. It also lacks caching, deduplication, and error handling.",
     fix: "Move data fetching to a Server Component (no hook needed) or use SWR/TanStack Query for client-cached fetching.",
@@ -156,7 +156,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "performance",
     severity: "medium",
-    title: "Barrel index file — prevents tree-shaking",
+    title: "Barrel index file - prevents tree-shaking",
     detail:
       "Barrel files (index.ts re-exporting everything) force bundlers to include entire modules even when a single export is used.",
     fix: "Import directly from source files: `import Button from './Button'` not `import { Button } from '../ui'`.",
@@ -178,7 +178,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "performance",
     severity: "high",
-    title: "document.querySelector in React component — use useRef",
+    title: "document.querySelector in React component - use useRef",
     detail:
       "Calling document.querySelector in React bypasses the virtual DOM. It breaks in SSR and returns stale references after re-renders.",
     fix: "Use the useRef hook to get a stable DOM reference: `const ref = useRef<HTMLElement>(null)` then `ref.current`.",
@@ -188,7 +188,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "performance",
     severity: "medium",
-    title: "Object/array created inline in JSX — causes unnecessary re-renders",
+    title: "Object/array created inline in JSX - causes unnecessary re-renders",
     detail:
       "Inline object/array literals in JSX props create new references on every render, breaking React.memo and causing child re-renders.",
     fix: "Hoist static values outside the component or memoize them: `const styles = useMemo(() => ({ ... }), [deps])`.",
@@ -220,7 +220,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "critical",
-    title: "Image missing alt — WCAG 1.1.1 failure",
+    title: "Image missing alt - WCAG 1.1.1 failure",
     detail:
       "Every image requires an alt attribute. Missing alt makes visual content completely inaccessible to screen reader users.",
     fix: "Add descriptive alt='...' text. Use alt='' for decorative images. Never omit the attribute entirely.",
@@ -234,7 +234,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "critical",
-    title: "onClick on non-interactive element — WCAG 2.1.1",
+    title: "onClick on non-interactive element - WCAG 2.1.1",
     detail:
       "onClick on div/span/p creates mouse-only interactivity. Keyboard and assistive technology users cannot activate these elements.",
     fix: "Replace with <button> for actions or <a href> for navigation. Never put onClick on div, span, or p.",
@@ -260,7 +260,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "high",
-    title: "Input without label — WCAG 1.3.1",
+    title: "Input without label - WCAG 1.3.1",
     detail: "Form inputs without visible labels are unusable for screen reader users and fail WCAG 1.3.1.",
     fix: "Add <label htmlFor='inputId'> paired with the input id, or use aria-label directly on the input.",
     docsQuery: "form input label accessibility htmlFor aria-label WCAG 1.3.1",
@@ -270,7 +270,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "medium",
-    title: "outline: none — removes visible focus indicator",
+    title: "outline: none - removes visible focus indicator",
     detail:
       "Removing CSS outline makes keyboard focus invisible, failing WCAG 2.4.7 (Focus Visible) and harming keyboard users.",
     fix: "Use `:focus-visible` to style keyboard focus while hiding it for mouse. Never remove outline globally.",
@@ -280,7 +280,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "medium",
-    title: "Positive tabIndex — breaks natural tab order",
+    title: "Positive tabIndex - breaks natural tab order",
     detail:
       "tabIndex values greater than 0 override the natural DOM order and create a disorienting keyboard navigation experience.",
     fix: "Use only tabIndex='0' (include in order) or tabIndex='-1' (programmatic focus). Never use positive values.",
@@ -290,7 +290,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "high",
-    title: "role='button' on non-button element — use <button>",
+    title: "role='button' on non-button element - use <button>",
     detail:
       "ARIA role='button' does not add keyboard events. The element still won't respond to Enter/Space, failing WCAG 2.1.1.",
     fix: "Replace the div/span with a real <button> element which has built-in keyboard support and semantics.",
@@ -301,7 +301,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "accessibility",
     severity: "medium",
-    title: "href='#' or href='javascript:' — inaccessible link",
+    title: "href='#' or href='javascript:' - inaccessible link",
     detail:
       "Placeholder hrefs produce links that look interactive but go nowhere or execute scripts. Screen readers announce them as links with no destination.",
     fix: "Use <button> for click-only actions. For real links, provide a meaningful href. Never use href='javascript:'.",
@@ -339,7 +339,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "critical",
-    title: "Unsafe HTML injection without sanitization — XSS risk",
+    title: "Unsafe HTML injection without sanitization - XSS risk",
     detail:
       "Injecting raw HTML strings enables Cross-Site Scripting (XSS). Any user-controlled value can execute arbitrary scripts.",
     fix: "Always sanitize with DOMPurify before injecting HTML. Import DOMPurify and call sanitize() on the value.",
@@ -350,7 +350,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "critical",
-    title: "Dynamic code execution — RCE risk",
+    title: "Dynamic code execution - RCE risk",
     detail:
       "The dynamic code execution function runs arbitrary strings as code. User input reaching it is Remote Code Execution.",
     fix: "Remove all dynamic code execution. Use JSON.parse() for data parsing. Redesign to avoid runtime code evaluation.",
@@ -390,7 +390,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "medium",
-    title: "CORS wildcard — potential authentication bypass",
+    title: "CORS wildcard - potential authentication bypass",
     detail:
       "Access-Control-Allow-Origin: '*' combined with credentials allows any origin to make authenticated cross-site requests.",
     fix: "Specify exact allowed origins. Never combine wildcard with credentials: true or include.",
@@ -401,7 +401,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "critical",
-    title: "SQL built via template literal — SQL injection risk",
+    title: "SQL built via template literal - SQL injection risk",
     detail:
       "Building SQL queries with template literals allows attackers to inject arbitrary SQL when user input reaches the string.",
     fix: "Use parameterized queries: db.query('SELECT * FROM users WHERE id = $1', [userId]). Never interpolate user input into SQL strings.",
@@ -414,7 +414,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "critical",
-    title: "Command injection — shell exec with dynamic input",
+    title: "Command injection - shell exec with dynamic input",
     detail:
       "Passing user-controlled data to shell execution functions enables attackers to run arbitrary OS commands (Remote Code Execution).",
     fix: "Never pass user input to shell execution. Use child_process.execFile with an argument array. Validate and allowlist all inputs.",
@@ -424,7 +424,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "high",
-    title: "SSRF — outbound fetch with request-derived URL",
+    title: "SSRF - outbound fetch with request-derived URL",
     detail:
       "Making HTTP requests to URLs derived from user input enables Server-Side Request Forgery. Attackers can reach internal services and cloud metadata endpoints.",
     fix: "Validate and allowlist outbound URLs server-side. Block private IP ranges. Never pass req.body or query params directly into fetch URLs.",
@@ -439,7 +439,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "high",
-    title: "Path traversal — file system access with user input",
+    title: "Path traversal - file system access with user input",
     detail:
       "Passing user-controlled values to file system functions enables path traversal. Attackers can read or overwrite any file on the server.",
     fix: "Resolve paths with path.resolve() and verify they stay within the allowed base directory. Never pass request parameters to fs functions.",
@@ -454,7 +454,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "high",
-    title: "NEXT_PUBLIC_ secret — exposed in client bundle",
+    title: "NEXT_PUBLIC_ secret - exposed in client bundle",
     detail:
       "Variables prefixed with NEXT_PUBLIC_ are inlined into the client bundle and visible to every browser user. Never use this prefix for secrets.",
     fix: "Remove the NEXT_PUBLIC_ prefix. Access the variable only in Server Components, Route Handlers, or Server Actions.",
@@ -465,7 +465,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "security",
     severity: "medium",
-    title: "Implied eval — setTimeout/setInterval with string argument",
+    title: "Implied eval - setTimeout/setInterval with string argument",
     detail:
       "Passing a string to setTimeout or setInterval is functionally equivalent to calling the dynamic code execution function with arbitrary input.",
     fix: "Always pass a function reference or arrow function: setTimeout(() => doWork(), 1000).",
@@ -478,7 +478,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "react",
     severity: "high",
-    title: "forwardRef — deprecated in React 19",
+    title: "forwardRef - deprecated in React 19",
     detail: "React 19 passes ref as a regular prop. forwardRef is no longer needed and is scheduled for removal.",
     fix: "Remove forwardRef. Accept ref directly as a prop: `function Input({ ref, ...props }: Props & { ref?: React.Ref<HTMLInputElement> })`",
     docsQuery: "React 19 forwardRef ref as prop deprecated migration",
@@ -487,7 +487,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "react",
     severity: "high",
-    title: "useFormState — renamed to useActionState in React 19",
+    title: "useFormState - renamed to useActionState in React 19",
     detail: "useFormState was renamed to useActionState. The old name is deprecated and will be removed.",
     fix: "Replace import and call site: `import { useActionState } from 'react'`",
     docsQuery: "useActionState React 19 forms Server Actions migration",
@@ -496,7 +496,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "react",
     severity: "medium",
-    title: "Array index as key — breaks list reconciliation",
+    title: "Array index as key - breaks list reconciliation",
     detail:
       "Using array index as a React key breaks reconciliation when items are reordered or removed, causing stale UI state.",
     fix: "Use stable unique IDs: `key={item.id}` not `key={index}`. Generate IDs with crypto.randomUUID() if none exist.",
@@ -523,7 +523,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "react",
     severity: "high",
-    title: "Hook called conditionally — violates Rules of Hooks",
+    title: "Hook called conditionally - violates Rules of Hooks",
     detail:
       "React hooks must be called at the top level unconditionally. Hooks inside if/else, loops, or early returns cause inconsistent hook call order between renders.",
     fix: "Move the hook call to the top of the component, outside any conditional. Use a condition inside the hook body if needed.",
@@ -539,7 +539,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "react",
     severity: "high",
-    title: "Component called as function — must be used as JSX",
+    title: "Component called as function - must be used as JSX",
     detail:
       "Calling a React component as a plain function bypasses React's reconciliation and breaks hooks inside the component.",
     fix: "Use JSX syntax: <MyComponent /> instead of {MyComponent()}.",
@@ -550,7 +550,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "react",
     severity: "medium",
-    title: "Side effect at module/render scope — use useEffect",
+    title: "Side effect at module/render scope - use useEffect",
     detail:
       "Code at the top level of a component body (outside hooks) runs on every render and in React 19 Strict Mode double-invocations, producing duplicate side effects.",
     fix: "Wrap side effects in useEffect. For one-time setup, use useEffect with an empty dependency array.",
@@ -567,7 +567,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "nextjs",
     severity: "critical",
-    title: "Sync cookies()/headers() — must await in Next.js 16",
+    title: "Sync cookies()/headers() - must await in Next.js 16",
     detail:
       "cookies(), headers(), and draftMode() are async in Next.js 16. Calling them without await throws a runtime error.",
     fix: "Add await before every call: `const cookieStore = await cookies()`, `const headers = await headers()`",
@@ -582,7 +582,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "nextjs",
     severity: "critical",
-    title: "Sync params access — must await in Next.js 16",
+    title: "Sync params access - must await in Next.js 16",
     detail:
       "params and searchParams are Promises in Next.js 16. Direct property access without await causes runtime errors.",
     fix: "Destructure after await: `const { slug } = await params`. Or type as `Promise<{ slug: string }>`.",
@@ -597,7 +597,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "nextjs",
     severity: "high",
-    title: "'use client' on layout — forces entire subtree to client bundle",
+    title: "'use client' on layout - forces entire subtree to client bundle",
     detail:
       "A Client Component layout forces all children into the client bundle, eliminating Server Component benefits for the entire route.",
     fix: "Remove 'use client' from layouts. Push it down to only the individual component that needs interactivity.",
@@ -610,7 +610,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "nextjs",
     severity: "high",
-    title: "@tailwind directive — Tailwind v4 uses @import",
+    title: "@tailwind directive - Tailwind v4 uses @import",
     detail:
       "@tailwind base/components/utilities are Tailwind v3 directives and do not work in v4 projects.",
     fix: "Replace all @tailwind directives with a single line: `@import 'tailwindcss';`",
@@ -636,7 +636,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "nextjs",
     severity: "high",
-    title: "middleware.ts — rename to proxy.ts in Next.js 16",
+    title: "middleware.ts - rename to proxy.ts in Next.js 16",
     detail:
       "Next.js 16 renamed middleware.ts to proxy.ts with a Node.js-only runtime. The old filename causes silent fallback to legacy behavior.",
     fix: "Rename middleware.ts to proxy.ts. Export a function named proxy instead of middleware.",
@@ -650,7 +650,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "nextjs",
     severity: "medium",
-    title: "Page without metadata export — missing SEO",
+    title: "Page without metadata export - missing SEO",
     detail:
       "Pages without an exported metadata object or generateMetadata function have no title or description, harming SEO and social sharing.",
     fix: "Add `export const metadata: Metadata = { title: '...', description: '...' }` to every page.tsx.",
@@ -667,7 +667,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "typescript",
     severity: "high",
-    title: "any type — disables type checking",
+    title: "any type - disables type checking",
     detail:
       "The any type bypasses the TypeScript type system entirely. Errors caught at compile time become runtime crashes.",
     fix: "Replace with `unknown` for external data. Use type guards or zod.parse() to narrow before use.",
@@ -682,7 +682,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "typescript",
     severity: "medium",
-    title: "Non-null assertion (!) — potential runtime TypeError",
+    title: "Non-null assertion (!) - potential runtime TypeError",
     detail:
       "The ! operator asserts a value is never null/undefined. When that assumption is wrong, you get an unhandled TypeError at runtime.",
     fix: "Use optional chaining `?.` for safe access, or add an explicit null check (`if (value) { ... }`).",
@@ -718,7 +718,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "typescript",
     severity: "high",
-    title: "Unhandled Promise — missing await or .catch()",
+    title: "Unhandled Promise - missing await or .catch()",
     detail:
       "Floating Promises (async calls without await or .catch) silently swallow errors. Rejections are lost and the program continues in an inconsistent state.",
     fix: "Add await before async calls inside async functions. Add .catch(handleError) for fire-and-forget patterns.",
@@ -733,7 +733,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "typescript",
     severity: "medium",
-    title: "require() in TypeScript — use import",
+    title: "require() in TypeScript - use import",
     detail:
       "require() bypasses TypeScript module resolution and static analysis. It disables tree-shaking and breaks ES module interop.",
     fix: "Replace require() with ES module import statements: `import { thing } from 'package'`.",
@@ -772,7 +772,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "node",
     severity: "high",
-    title: "Synchronous file system operation — blocks event loop",
+    title: "Synchronous file system operation - blocks event loop",
     detail:
       "Synchronous fs operations (readFileSync, writeFileSync) block the Node.js event loop for their entire duration. Under load this halts all concurrent requests.",
     fix: "Use the async equivalents: await readFile(), await writeFile(). In serverless contexts, prefer streaming.",
@@ -787,7 +787,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "node",
     severity: "high",
-    title: "Unhandled callback error — swallowed failure",
+    title: "Unhandled callback error - swallowed failure",
     detail:
       "Node.js callbacks follow the (err, data) convention. Ignoring the err argument means errors are silently swallowed, leaving the application in an unknown state.",
     fix: "Check err first: `if (err) { logger.error(err); return; }`. Or migrate to async/await which surfaces errors automatically.",
@@ -801,7 +801,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "node",
     severity: "medium",
-    title: "process.exit() — abrupt shutdown without cleanup",
+    title: "process.exit() - abrupt shutdown without cleanup",
     detail:
       "process.exit() terminates immediately without draining in-flight requests, flushing logs, or releasing database connections.",
     fix: "Let the process exit naturally or use graceful shutdown: close server connections, flush logs, then let the event loop drain.",
@@ -812,7 +812,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "node",
     severity: "medium",
-    title: "HTTP fetch in production — use HTTPS",
+    title: "HTTP fetch in production - use HTTPS",
     detail:
       "Plain HTTP requests transmit data in cleartext. This enables man-in-the-middle attacks, credential interception, and violates HSTS policies.",
     fix: "Use HTTPS for all outbound requests. Never hardcode http:// URLs for production APIs or services.",
@@ -864,7 +864,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "python",
     severity: "critical",
-    title: "os.system() call — command injection risk",
+    title: "os.system() call - command injection risk",
     detail:
       "`os.system()` passes commands to the shell. User-controlled input in the command string enables arbitrary command execution.",
     fix: "Replace with `subprocess.run([...], check=True)` using a list of arguments. This avoids shell interpretation and command injection.",
@@ -908,7 +908,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "python",
     severity: "high",
-    title: "requests with verify=False — TLS validation disabled",
+    title: "requests with verify=False - TLS validation disabled",
     detail:
       "Setting `verify=False` disables TLS certificate verification, making the connection vulnerable to man-in-the-middle attacks. An attacker can intercept and modify traffic.",
     fix: "Remove `verify=False`. If using a self-signed certificate, pass the CA bundle path: `verify='/path/to/ca-bundle.crt'`.",
@@ -939,7 +939,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
   {
     category: "python",
     severity: "medium",
-    title: "open() with user-controlled path — path traversal risk",
+    title: "open() with user-controlled path - path traversal risk",
     detail:
       "Passing unsanitized user input to `open()` allows path traversal attacks (`../../etc/passwd`). An attacker can read or overwrite arbitrary files.",
     fix: "Resolve and validate the path before opening: `safe = Path(base_dir).resolve() / user_input; safe.resolve().relative_to(base_dir)`. Raise an error if the path escapes the allowed directory.",
@@ -968,7 +968,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "vue",
     severity: "high",
     title: "Mutating props directly",
-    detail: "Props must not be mutated — use emits or a local ref copy instead",
+    detail: "Props must not be mutated - use emits or a local ref copy instead",
     fix: "Replace prop mutation with $emit or const localVal = ref(props.value)",
     docsQuery: "Vue 3 props emit pattern",
     test: (line) => {
@@ -992,7 +992,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "svelte",
     severity: "medium",
     title: "Svelte 4 reactive declaration in Svelte 5 project",
-    detail: "$: reactive declarations are deprecated in Svelte 5 — use $derived() rune",
+    detail: "$: reactive declarations are deprecated in Svelte 5 - use $derived() rune",
     fix: "Replace $: value = expr with const value = $derived(expr)",
     docsQuery: "Svelte 5 derived rune migration from reactive declarations",
     test: (line, _content, _offset, _lines, _i) => {
@@ -1003,7 +1003,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "svelte",
     severity: "low",
     title: "Svelte 4 event directive in Svelte 5 project",
-    detail: "on:click directives are deprecated in Svelte 5 — use onclick attribute",
+    detail: "on:click directives are deprecated in Svelte 5 - use onclick attribute",
     fix: "Replace on:click={handler} with onclick={handler}",
     docsQuery: "Svelte 5 event handler migration onclick",
     test: (line) => {
@@ -1014,7 +1014,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "svelte",
     severity: "low",
     title: "Svelte 4 createEventDispatcher in Svelte 5 project",
-    detail: "createEventDispatcher is deprecated in Svelte 5 — use callback props instead",
+    detail: "createEventDispatcher is deprecated in Svelte 5 - use callback props instead",
     fix: "Replace dispatch('event', data) with a callback prop defined via $props()",
     docsQuery: "Svelte 5 events callback props migration createEventDispatcher",
     test: (line) => {
@@ -1027,7 +1027,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "angular",
     severity: "high",
     title: "Manual subscription without cleanup in ngOnInit",
-    detail: "Manual subscriptions in ngOnInit leak unless unsubscribed — use takeUntilDestroyed",
+    detail: "Manual subscriptions in ngOnInit leak unless unsubscribed - use takeUntilDestroyed",
     fix: "Add .pipe(takeUntilDestroyed()) or store subscription in ngOnDestroy",
     docsQuery: "Angular takeUntilDestroyed subscription cleanup",
     test: (line, content) => {
@@ -1075,7 +1075,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "testing",
     severity: "high",
     title: "waitForTimeout / sleep in test",
-    detail: "Hardcoded timeouts cause flaky tests — use deterministic waits instead",
+    detail: "Hardcoded timeouts cause flaky tests - use deterministic waits instead",
     fix: "Replace await page.waitForTimeout(1000) with await expect(locator).toBeVisible()",
     docsQuery: "Playwright avoid waitForTimeout deterministic assertions",
     test: (line) => {
@@ -1087,7 +1087,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     severity: "medium",
     title: "console.log inside test body",
     detail: "console.log in tests obscures failures and pollutes CI output",
-    fix: "Remove console.log — use expect() assertions to verify state instead",
+    fix: "Remove console.log - use expect() assertions to verify state instead",
     docsQuery: "Vitest no console.log in tests best practices",
     test: (line) => {
       return /^\s*console\.log\s*\(/.test(line) ? line : null;
@@ -1125,7 +1125,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "mobile",
     severity: "low",
     title: "Inline style object on View or Text",
-    detail: "Inline style objects are recreated on every render — define styles in StyleSheet.create",
+    detail: "Inline style objects are recreated on every render - define styles in StyleSheet.create",
     fix: "Move inline styles to const styles = StyleSheet.create({ container: { flex: 1 } })",
     docsQuery: "React Native StyleSheet performance inline styles",
     test: (line) => {
@@ -1176,7 +1176,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "css",
     severity: "medium",
     title: "Pixel font sizes instead of rem",
-    detail: "px font sizes ignore user browser font-size preferences — use rem instead",
+    detail: "px font sizes ignore user browser font-size preferences - use rem instead",
     fix: "Replace font-size: 16px with font-size: 1rem (1rem = user's base font size)",
     docsQuery: "CSS rem vs px accessibility font size WCAG",
     test: (line) => {
@@ -1187,7 +1187,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "css",
     severity: "low",
     title: "z-index: 9999 magic number",
-    detail: "Arbitrary high z-index values cause stacking context chaos — use design tokens",
+    detail: "Arbitrary high z-index values cause stacking context chaos - use design tokens",
     fix: "Define a z-index scale: --z-modal: 100; --z-dropdown: 50; --z-overlay: 200",
     docsQuery: "CSS z-index scale design tokens best practices",
     test: (line) => {
@@ -1211,7 +1211,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     severity: "low",
     title: "!important overuse",
     detail: "Excessive !important creates specificity wars and maintenance problems",
-    fix: "Refactor selectors for proper specificity — use CSS Layers (@layer) instead",
+    fix: "Refactor selectors for proper specificity - use CSS Layers (@layer) instead",
     docsQuery: "CSS specificity layers best practices avoid !important",
     test: (line, content) => {
       const count = (content.match(/!important/g) ?? []).length;
@@ -1242,7 +1242,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     test: (line, content, _offset, _lines, _i, filePath) => {
       if (!line.includes("export default")) return null;
       // Page-level metadata only applies to App Router page files. When the
-      // file path is known, anything that is not page.* is skipped — flagging
+      // file path is known, anything that is not page.* is skipped - flagging
       // components/layouts/configs here was a false-positive factory.
       if (filePath !== undefined && !/(^|\/)page\.(tsx|jsx|ts|js)$/.test(filePath)) return null;
       return !content.includes("generateMetadata") && !content.includes("metadata =") ? line : null;
@@ -1265,7 +1265,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
     category: "i18n",
     severity: "medium",
     title: "Hardcoded currency symbol",
-    detail: "Hardcoded $ or € signs break for other locales — use Intl.NumberFormat",
+    detail: "Hardcoded $ or € signs break for other locales - use Intl.NumberFormat",
     fix: "Replace '$' + price with new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)",
     docsQuery: "Intl.NumberFormat currency formatting JavaScript",
     test: (line) => {
@@ -1323,7 +1323,7 @@ export const AUDIT_PATTERNS: AuditPattern[] = [
       if (!/StyleSheet\.create/.test(line)) return null;
       const idx = charOffset;
       const before = content.slice(Math.max(0, idx - 2000), idx);
-      // Disjoint skip modes ([^=()] vs parenthesized groups) — the previous
+      // Disjoint skip modes ([^=()] vs parenthesized groups) - the previous
       // overlapping alternation was catastrophically backtracking (ReDoS) on
       // benign builder chains like Yup.object().shape({...}).shape({...}).
       const hasComponentAbove = /(?:function\s+\w+|const\s+\w+\s*=\s*(?:[^=()]*\([^)]*\))*[^=()]*=>|class\s+\w+)/.test(before);

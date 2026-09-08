@@ -33,7 +33,7 @@ function scoreSnippet(snippet: Snippet, queryTokens: string[], idf: Map<string, 
     if (descTokens.includes(qt)) score += 4 * w;
     if (codeTokens.includes(qt)) score += 3 * w;
   }
-  // Quality bonuses only apply when the query actually matched something — otherwise
+  // Quality bonuses only apply when the query actually matched something - otherwise
   // every snippet would tie with score=2 and pass the "score > 0" filter.
   if (score > 0) {
     if (snippet.language && snippet.language !== "text") score += 1;

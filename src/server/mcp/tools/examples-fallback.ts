@@ -10,7 +10,7 @@ export interface ExamplesResponse {
 }
 
 /**
- * GitHub code search is auth-only — without GETLIB_GITHUB_TOKEN it always returns
+ * GitHub code search is auth-only - without GETLIB_GITHUB_TOKEN it always returns
  * 401. Instead of dead-ending, serve ranked code examples from the library's
  * official documentation and say so.
  */
@@ -36,7 +36,7 @@ async function docsExamples(
   if (ranked.length === 0) return null;
   const text = withNotice(
     [
-      `# Code Examples: ${library}${pattern ? ` — ${pattern}` : ""}`,
+      `# Code Examples: ${library}${pattern ? ` - ${pattern}` : ""}`,
       `> ${reason} Showing examples from the official documentation instead.`,
       `> Source: ${index.sourceUrl}`,
       "",
@@ -77,7 +77,7 @@ export async function docsFallbackResponse(params: {
     content: [{
       type: "text",
       text: emptyText
-        ?? `${reason} No documentation-based examples found either — try gl_snippets with a registry libraryId, or set GETLIB_GITHUB_TOKEN.`,
+        ?? `${reason} No documentation-based examples found either - try gl_snippets with a registry libraryId, or set GETLIB_GITHUB_TOKEN.`,
     }],
   };
 }

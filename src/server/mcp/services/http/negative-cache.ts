@@ -1,11 +1,11 @@
 /**
- * Retry policy and the 404 negative cache — both decide whether a URL is worth
+ * Retry policy and the 404 negative cache - both decide whether a URL is worth
  * another network round trip.
  */
 
 /**
  * Statuses worth a retry: rate limiting, and the gateway errors a CDN emits
- * mid-redeploy. 4xx is a definitive answer — retrying it wastes a slot.
+ * mid-redeploy. 4xx is a definitive answer - retrying it wastes a slot.
  */
 export const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
@@ -46,7 +46,7 @@ export function rememberMissing(url: string): void {
   negativeCache.set(url, Date.now() + NEGATIVE_TTL_MS);
 }
 
-/** Test seam — clears the 404 negative cache between cases. */
+/** Test seam - clears the 404 negative cache between cases. */
 export function clearNegativeCache(): void {
   negativeCache.clear();
 }

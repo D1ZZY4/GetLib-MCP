@@ -1,6 +1,6 @@
 /**
  * Vocabulary tables used by tokenization, relevance scoring and the evidence gate.
- * Data, not logic — exempt from the 200-line source convention.
+ * Data, not logic - exempt from the 200-line source convention.
  */
 
 // Common English stop words that add no signal to section relevance scoring
@@ -16,11 +16,11 @@ export const STOP_WORDS = new Set([
 ]);
 
 // Version tokens (15, v16, 3.0) are short but high-signal for migration /
-// changelog queries — they must survive tokenization to match version headings.
+// changelog queries - they must survive tokenization to match version headings.
 export const VERSION_TOKEN = /^v?\d+(?:\.\d+)*$/;
 // Documentation sites rarely use the same word the caller does: an upgrade
 // guide answers a "migration" query, an "optimization" page answers
-// "performance". Expansion is used for LINK/URL DISCOVERY only — evidence
+// "performance". Expansion is used for LINK/URL DISCOVERY only - evidence
 // verification stays literal so verdicts never inflate.
 export const TOPIC_SYNONYMS: Record<string, readonly string[]> = {
   migration: ["upgrade", "upgrading", "migrate", "migrating"],
@@ -67,7 +67,7 @@ export const TOPIC_SYNONYMS: Record<string, readonly string[]> = {
   sso: ["single sign-on", "single sign on"],
   rbac: ["role-based access control"],
 };
-// Query-meta words describe the KIND of answer wanted, not its subject — they
+// Query-meta words describe the KIND of answer wanted, not its subject - they
 // appear on virtually every docs page, so counting them as topic coverage lets
 // entirely off-topic content pass ("Postgres RLS best practices" matching a
 // web-perf page on "best practices"). Filtered from evidence/quality scoring;

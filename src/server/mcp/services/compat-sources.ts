@@ -22,7 +22,7 @@ export async function resolveMdnCandidates(feature: string): Promise<string[]> {
     .flatMap((t) => t.urls)
     .filter((u) => u.includes("mozilla.org"));
   // Always append MDN search hits: topic-map entries are often GUIDE pages
-  // that carry no BCD paths — the reference page (with the compat table)
+  // that carry no BCD paths - the reference page (with the compat table)
   // only surfaces via search.
   for (const hit of (await searchMDN(feature)).slice(0, 5)) {
     if (!candidates.includes(hit.url)) candidates.push(hit.url);
@@ -37,7 +37,7 @@ export async function resolveMdnCandidates(feature: string): Promise<string[]> {
  * version_added (incl. Node/Deno/Bun). Rendered-page scraping loses these tables.
  *
  * Metadata for every candidate is fetched in ONE round, then evaluated in
- * priority order. Sequentially awaiting six 10s-timeout fetches could reach 60s —
+ * priority order. Sequentially awaiting six 10s-timeout fetches could reach 60s -
  * past this tool's own 55s ceiling, so a slow MDN made the whole call time out.
  */
 export async function fetchBcdSection(
@@ -61,7 +61,7 @@ export async function fetchBcdSection(
 
     const baselineLine = formatBaseline(meta.baseline);
     const text = [
-      `## MDN Web Docs — ${meta.title || feature}`,
+      `## MDN Web Docs - ${meta.title || feature}`,
       "",
       meta.summary,
       baselineLine ? `\n**${baselineLine}**` : "",
@@ -107,13 +107,13 @@ export async function fetchRenderedMdn(
   return null;
 }
 
-/** caniuse.com — especially useful for CSS and browser-specific APIs. */
+/** caniuse.com - especially useful for CSS and browser-specific APIs. */
 export function fetchCaniuse(feature: string, tokens: number): Promise<CompatSection | null> {
   const url = `https://caniuse.com/?search=${encodeURIComponent(feature)}`;
   return fetchGatedSection(url, feature, `${feature} browser support`, tokens, "## Can I Use", "caniuse");
 }
 
-/** Last resort: the MDN search results page — a link list, not a compat table. */
+/** Last resort: the MDN search results page - a link list, not a compat table. */
 export function fetchMdnSearchPage(feature: string, topic: string, tokens: number): Promise<CompatSection | null> {
   const url = `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(feature)}+browser+compatibility`;
   return fetchGatedSection(
@@ -121,7 +121,7 @@ export function fetchMdnSearchPage(feature: string, topic: string, tokens: numbe
     feature,
     topic,
     tokens,
-    "## MDN search results (weak evidence — follow the links for compat tables)",
+    "## MDN search results (weak evidence - follow the links for compat tables)",
     "mdn-search",
   );
 }

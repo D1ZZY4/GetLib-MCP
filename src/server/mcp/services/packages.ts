@@ -14,7 +14,7 @@ export async function fetchNpmPackage(packageName: string): Promise<unknown> {
   if (memCached) {
     try {
       return JSON.parse(memCached) as unknown;
-    } catch { /* corrupt cache entry — fall through to disk/network */ }
+    } catch { /* corrupt cache entry - fall through to disk/network */ }
   }
 
   const diskCached = await diskDocCache.get(cacheKey);
@@ -23,7 +23,7 @@ export async function fetchNpmPackage(packageName: string): Promise<unknown> {
       const parsed = JSON.parse(diskCached) as unknown;
       docCache.set(cacheKey, diskCached);
       return parsed;
-    } catch { /* corrupt cache entry — fall through to network */ }
+    } catch { /* corrupt cache entry - fall through to network */ }
   }
 
   const content = await tryFetch(url);
@@ -51,7 +51,7 @@ const DEVDOCS_SLUGS: Record<string, string> = {
   tailwindcss: "tailwindcss", rails: "ruby_on_rails~7.1", laravel: "laravel~11",
 };
 
-/** Fetch documentation from devdocs.io — pre-parsed, offline-capable docs for 200+ technologies */
+/** Fetch documentation from devdocs.io - pre-parsed, offline-capable docs for 200+ technologies */
 export async function fetchDevDocs(slug: string, topic?: string): Promise<string | null> {
   const resolvedSlug = DEVDOCS_SLUGS[slug.toLowerCase()] ?? slug.toLowerCase();
   const slugEncoded = encodeURIComponent(resolvedSlug);
@@ -93,7 +93,7 @@ export async function fetchPypiPackage(packageName: string): Promise<unknown> {
   if (memCached) {
     try {
       return JSON.parse(memCached) as unknown;
-    } catch { /* corrupt cache entry — fall through to disk/network */ }
+    } catch { /* corrupt cache entry - fall through to disk/network */ }
   }
 
   const diskCached = await diskDocCache.get(cacheKey);
@@ -102,7 +102,7 @@ export async function fetchPypiPackage(packageName: string): Promise<unknown> {
       const parsed = JSON.parse(diskCached) as unknown;
       docCache.set(cacheKey, diskCached);
       return parsed;
-    } catch { /* corrupt cache entry — fall through to network */ }
+    } catch { /* corrupt cache entry - fall through to network */ }
   }
 
   const content = await tryFetch(url);

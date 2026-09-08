@@ -1,12 +1,12 @@
 /**
- * Lexical tables the intent router matches against. Data, not logic — exempt
+ * Lexical tables the intent router matches against. Data, not logic - exempt
  * from the 200-line source convention.
  */
 import type { GlToolName } from "../services/intent/types";
 
 /** Words/phrases that always strip from the query before further matching */
 export const NOISE_PHRASES = [
-  // "use" is noise ("use getlib for react") EXCEPT in "can i use X" — that is the
+  // "use" is noise ("use getlib for react") EXCEPT in "can i use X" - that is the
   // caniuse compat idiom and must survive to hint matching.
   /(?<!\bcan\s+i\s)\buse\b/gi,
   /\b(?:using|run|invoke|call|please|can\s+you|could\s+you|let'?s|i\s+want\s+to|i\s+need|just|simply|quickly)\b/gi,
@@ -40,7 +40,7 @@ export const URL_RE = /\bhttps?:\/\/\S+/i;
  * so a bare "how to build a rest api" would otherwise fuzzy-match a library
  * and route to gl_best_practices instead of gl_search.
  *
- * Only the FUZZY fallback consults this list — an exact alias hit
+ * Only the FUZZY fallback consults this list - an exact alias hit
  * ("expo-camera", "next.js") still resolves normally one step earlier.
  */
 export const FUZZY_STOP_WORDS = new Set([

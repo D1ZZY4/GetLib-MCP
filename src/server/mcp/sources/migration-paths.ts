@@ -1,7 +1,7 @@
 /**
  * Conventional locations of migration and upgrade documentation.
  *
- * NOTE: CHANGELOG.md is intentionally excluded — it is a monolithic all-history
+ * NOTE: CHANGELOG.md is intentionally excluded - it is a monolithic all-history
  * release log that floods extraction with version-irrelevant entries. Use
  * gl_changelog for release notes instead.
  */

@@ -55,7 +55,7 @@ export async function tryFetch(url: string, retries = 1, extraHeaders?: Record<s
         recordSuccess(domain);
         return text;
       }
-      // Served fine, just had nothing in it — the domain is healthy, so this
+      // Served fine, just had nothing in it - the domain is healthy, so this
       // must resolve the circuit rather than count against it.
       recordSuccess(domain);
       log({ level: "debug", msg: "tryFetch.too_short", url, length: text.length });
@@ -64,7 +64,7 @@ export async function tryFetch(url: string, retries = 1, extraHeaders?: Record<s
       recordFailure(domain);
       lastError = err instanceof Error ? err.message : String(err);
       log({ level: "debug", msg: "tryFetch.exception", url, error: lastError, attempt });
-      // A timeout (AbortError) means the deadline already passed — retrying just
+      // A timeout (AbortError) means the deadline already passed - retrying just
       // burns another semaphore slot and timeout window for no gain.
       if (err instanceof Error && err.name === "AbortError") break;
       if (attempt < retries) {

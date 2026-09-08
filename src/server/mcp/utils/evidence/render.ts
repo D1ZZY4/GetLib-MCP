@@ -26,7 +26,7 @@ export function buildEvidenceBlock(opts: {
   }).slice(0, 8);
 
   const lines: string[] = ["", "---", "", "## Evidence"];
-  lines.push(`- Fetched live ${new Date().toISOString().slice(0, 10)} from official sources — not from model training data`);
+  lines.push(`- Fetched live ${new Date().toISOString().slice(0, 10)} from official sources - not from model training data`);
   for (const s of uniqueSources) {
     const meta: string[] = [];
     if (s.sourceType) meta.push(s.sourceType);
@@ -51,7 +51,7 @@ export function buildEvidenceBlock(opts: {
   return lines.join("\n");
 }
 
-/** Pull the first markdown headings out of content — used to show what a source DOES cover. */
+/** Pull the first markdown headings out of content - used to show what a source DOES cover. */
 export function extractHeadingOutline(content: string, max = 8): string[] {
   const headings = content.match(/^#{1,4}\s+.+$/gm) ?? [];
   return headings
@@ -62,7 +62,7 @@ export function extractHeadingOutline(content: string, max = 8): string[] {
 
 /**
  * Explicit "no evidence" response. Replaces the old behavior of silently
- * returning a doc's intro sections when the topic never appears — the model
+ * returning a doc's intro sections when the topic never appears - the model
  * receives a truthful miss with what WAS checked and what to do next,
  * instead of plausible-looking but off-topic content.
  */
@@ -82,7 +82,7 @@ export function buildHonestMiss(opts: {
   }).slice(0, 10);
 
   const lines: string[] = [
-    `# ${subject} — no topic-specific evidence found`,
+    `# ${subject} - no topic-specific evidence found`,
     "",
     `The fetched documentation does not cover "${topic}" with verifiable depth. Rather than return generic content, here is exactly what was checked:`,
     "",

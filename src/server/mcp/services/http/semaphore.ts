@@ -2,7 +2,7 @@ import { MAX_CONCURRENT_FETCHES } from "../../constants";
 import { log } from "../../utils/logger";
 
 /**
- * Global fetch semaphore — caps total concurrent outbound HTTP requests.
+ * Global fetch semaphore - caps total concurrent outbound HTTP requests.
  * Prevents request storms from tools like gl_auto_scan (20 libs x 6 fetches each)
  * that cause upstream 429s and MCP client 529 overloaded errors.
  */
@@ -29,7 +29,7 @@ class FetchSemaphore {
   }
 
   release(): void {
-    // Fail-safe: a spurious/double release must not drive active negative —
+    // Fail-safe: a spurious/double release must not drive active negative -
     // that would let acquire() skip the queue and exceed MAX_CONCURRENT_FETCHES.
     if (this.active <= 0) {
       log({ level: "warn", msg: "FetchSemaphore.release_underflow", active: this.active });

@@ -5,7 +5,7 @@ export const ROUTING_RATIONALE: Partial<Record<GlToolName, string>> = {
   gl_auto_scan:
     "Your message looks like a project-wide invocation (no specific library named). `gl_auto_scan` walks the dependency manifests in the given project path and fetches the latest best practices for every detected library in one round-trip.",
   gl_best_practices:
-    "You named a specific library, so `gl_best_practices` is the lowest-friction tool — it returns current production patterns, performance, security, and testing guidance for that one library.",
+    "You named a specific library, so `gl_best_practices` is the lowest-friction tool - it returns current production patterns, performance, security, and testing guidance for that one library.",
   gl_get_docs:
     "You provided either a URL or asked for direct docs. `gl_get_docs` fetches the raw library documentation, optionally filtered by topic. It chains after `gl_resolve_library` if needed.",
   gl_audit:
@@ -23,11 +23,11 @@ export const ROUTING_RATIONALE: Partial<Record<GlToolName, string>> = {
   gl_search:
     "No specific library or scope detected. `gl_search` is the catch-all: any topic, any web standard, any best-practice page.",
   gl_resolve_library:
-    "Resolution-only intent detected. `gl_resolve_library` confirms the library exists and returns the canonical ID + docs URL — call `gl_best_practices` or `gl_get_docs` next.",
+    "Resolution-only intent detected. `gl_resolve_library` confirms the library exists and returns the canonical ID + docs URL - call `gl_best_practices` or `gl_get_docs` next.",
   gl_snippets:
     "You asked for ranked code snippets. `gl_snippets` builds a Context7-compatible snippet index per library + version with disk caching.",
   gl_batch_resolve:
     "Multi-library lookup detected. `gl_batch_resolve` resolves up to 20 names in a single call.",
 };
 
-export const ROUTING_FALLBACK = "Routing fallback — call the recommended tool above.";
+export const ROUTING_FALLBACK = "Routing fallback - call the recommended tool above.";

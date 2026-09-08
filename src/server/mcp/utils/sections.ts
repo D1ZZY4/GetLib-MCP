@@ -28,7 +28,7 @@ export function parseSections(content: string): Section[] {
   let inFence = false;
 
   for (const line of lines) {
-    // '#' lines inside code fences are comments, not headings — splitting there
+    // '#' lines inside code fences are comments, not headings - splitting there
     // fragments code blocks and ships unbalanced fences to the client.
     if (/^\s*(?:```|~~~)/.test(line)) inFence = !inFence;
     const headingMatch = inFence ? null : /^(#{1,4})\s+(.+)/.exec(line);
@@ -43,7 +43,7 @@ export function parseSections(content: string): Section[] {
     } else if (current) {
       current.content += line + "\n";
     } else {
-      // Content before first heading — treat as preamble
+      // Content before first heading - treat as preamble
       current = { heading: "(overview)", content: line + "\n", level: 0, score: 0 };
     }
   }

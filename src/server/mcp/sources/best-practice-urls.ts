@@ -2,7 +2,7 @@
  * Curated best-practice page URLs per registry library, plus the generic
  * best-practice path suffixes probed when a library has no curated entry.
  *
- * Data table, not logic — exempt from the 200-line source convention for the
+ * Data table, not logic - exempt from the 200-line source convention for the
  * same reason the library registry is.
  */
 export const BEST_PRACTICES_URLS: Record<string, string[]> = {
@@ -1118,7 +1118,7 @@ export const GENERIC_BP_SUFFIXES = [
   "/best-practices",
 ];
 
-/** Fetch multiple URLs in parallel — return the one with the best quality content.
+/** Fetch multiple URLs in parallel - return the one with the best quality content.
  *  Uses fetchAsMarkdownRace (direct HTML extraction + Jina) for each URL,
  *  so we're not solely dependent on Jina Reader.
  */

@@ -3,7 +3,7 @@
  * Converts raw HTML documentation pages into readable markdown
  * without external dependencies (no cheerio, no jsdom).
  *
- * This is the critical Jina Reader fallback — when Jina is rate-limited,
+ * This is the critical Jina Reader fallback - when Jina is rate-limited,
  * slow, or down, this extracts useful content from raw HTML.
  */
 
@@ -24,12 +24,12 @@ function htmlToMarkdown(html: string): string {
   md = md.replace(/<h5[^>]*>([\s\S]*?)<\/h5>/gi, (_, c: string) => `\n##### ${stripTags(c).trim()}\n`);
   md = md.replace(/<h6[^>]*>([\s\S]*?)<\/h6>/gi, (_, c: string) => `\n###### ${stripTags(c).trim()}\n`);
 
-  // Code blocks (pre > code) — extract language from class="language-xxx"
+  // Code blocks (pre > code) - extract language from class="language-xxx"
   md = md.replace(/<pre[^>]*>\s*<code([^>]*)>([\s\S]*?)<\/code>\s*<\/pre>/gi,
     (_, attrs: string, code: string) => {
       const langMatch = /class="[^"]*language-(\w+)/.exec(attrs);
       const lang = langMatch?.[1] ?? "";
-      // No per-element entity decode — the single global pass at the end of
+      // No per-element entity decode - the single global pass at the end of
       // htmlToMarkdown handles it; decoding here AND there turned doubly-
       // escaped example text (&amp;lt;div&amp;gt;) into live tags.
       return `\n\`\`\`${lang}\n${code.trim()}\n\`\`\`\n`;
@@ -47,7 +47,7 @@ function htmlToMarkdown(html: string): string {
     return text.includes("\n") ? text : `\`${text}\``;
   });
 
-  // Links — allowlist scheme to block javascript:, data:, vbscript:, etc.
+  // Links - allowlist scheme to block javascript:, data:, vbscript:, etc.
   md = md.replace(/<a[^>]+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, rawHref: string, text: string) => {
     const linkText = stripTags(text).trim();
     if (!linkText) return "";
@@ -127,7 +127,7 @@ export function convertHtmlToMarkdown(html: string): string {
   if (markdown.length < 100) return "";
 
   // Final guard: if structural HTML tags survived (eg. <html>/<body> from
-  // unmatched body extraction), reject — sanitize.ts will also strip these
+  // unmatched body extraction), reject - sanitize.ts will also strip these
   // but rejecting here lets fetchDocs fall through to Jina Reader instead.
   const residualHtmlRatio = (markdown.match(/<(?:html|body|meta|link)\b/gi) ?? []).length;
   if (residualHtmlRatio > 0 && markdown.length < 500) return "";

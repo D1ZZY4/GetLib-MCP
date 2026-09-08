@@ -47,7 +47,7 @@ export function renderNoTopicMatch(params: {
     content: [{
       type: "text",
       text: [
-        `# ${displayName} — no snippets match "${topic}"${language ? ` in ${language}` : ""}`,
+        `# ${displayName} - no snippets match "${topic}"${language ? ` in ${language}` : ""}`,
         "",
         `The snippet index for ${displayName} (${index.snippets.length} snippets from ${index.sourceUrl}) contains no code matching that topic. Closest available snippets:`,
         "",

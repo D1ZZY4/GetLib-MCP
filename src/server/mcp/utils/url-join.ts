@@ -40,7 +40,7 @@ export function docsBaseSegment(docsUrl: string): string {
 /**
  * Expand one registry path into the candidate absolute URLs worth trying.
  * Absolute inputs pass through unchanged. Paths that already carry the docs
- * base segment yield a single URL — no duplicate work for the common case.
+ * base segment yield a single URL - no duplicate work for the common case.
  */
 export function joinDocPath(docsUrl: string, path: string): string[] {
   if (path.startsWith("http://") || path.startsWith("https://")) return [path];

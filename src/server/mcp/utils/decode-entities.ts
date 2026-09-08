@@ -6,7 +6,7 @@
  * (the universal post-fetch chokepoint). Jina Reader, llms.txt and GitHub-raw
  * content bypass html-to-md entirely and arrive as markdown that still carries
  * named/numeric HTML entities (e.g. `&para;`, `&rarr;`, `&copy;`) and Cloudflare
- * email-protection placeholders — sanitize.ts is the only place those get cleaned,
+ * email-protection placeholders - sanitize.ts is the only place those get cleaned,
  * so the decoder must live in one shared module both can import.
  *
  * Ordering contract (important):
@@ -18,13 +18,13 @@
  */
 
 // Named HTML entities common in scraped technical documentation. Maps to the real
-// Unicode glyph (faithful content) — `&nbsp;` maps to a normal space on purpose so
+// Unicode glyph (faithful content) - `&nbsp;` maps to a normal space on purpose so
 // downstream whitespace collapse and trim work without a U+00A0 special case.
 const NAMED_ENTITIES: Record<string, string> = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
   nbsp: " ", ensp: " ", emsp: " ", thinsp: " ", zwnj: "", zwj: "", shy: "",
   copy: "©", reg: "®", trade: "™",
-  mdash: "—", ndash: "–", minus: "−",
+  mdash: "-", ndash: "–", minus: "−",
   hellip: "…", bull: "•", middot: "·", sdot: "⋅",
   rarr: "→", larr: "←", uarr: "↑", darr: "↓", harr: "↔",
   rArr: "⇒", lArr: "⇐", hArr: "⇔",
@@ -62,7 +62,7 @@ export function decodeHtmlEntities(text: string): string {
       const isHex = body.charCodeAt(1) === 120 || body.charCodeAt(1) === 88;
       const cp = isHex ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
       if (!Number.isFinite(cp) || cp < 0 || cp > 0x10ffff) return match;
-      // Drop C0/C1 control chars (except tab/newline) — they are noise, not content.
+      // Drop C0/C1 control chars (except tab/newline) - they are noise, not content.
       if ((cp >= 0 && cp <= 8) || (cp >= 11 && cp <= 31) || (cp >= 127 && cp <= 159)) {
         return cp === 127 ? "" : " ";
       }
@@ -138,7 +138,7 @@ export function stripCloudflareEmailMarkdown(md: string): string {
     return md;
   }
   let out = md;
-  // Replace the parenthetical cdn-cgi URL — decode when a #HEX fragment is present.
+  // Replace the parenthetical cdn-cgi URL - decode when a #HEX fragment is present.
   out = out.replace(/\((?:https?:\/\/[^)\s]*)?\/cdn-cgi\/l\/email-protection(?:#([0-9a-fA-F]+))?\)/gi,
     (_m, hex: string | undefined) => (hex ? ` ${decodeCfEmail(hex)} ` : ""));
   // Remove the now-dangling protected-email link text (handles single/double brackets).

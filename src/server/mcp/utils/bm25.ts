@@ -24,7 +24,7 @@ export function bm25Score(
   const k1 = 1.5; // term saturation constant
   const b = 0.75; // length normalisation constant
 
-  // Reuse the per-section tokens computed once in extractRelevantContent —
+  // Reuse the per-section tokens computed once in extractRelevantContent -
   // avoids O(N*Q) re-tokenization. Arrays are identical to inline tokenize()
   // output, so BM25 scores are bit-for-bit unchanged.
   const cached = tokenCache.get(section)!;
@@ -38,14 +38,14 @@ export function bm25Score(
   for (const qt of queryTokens) {
     const termIdf = idf.get(qt) ?? 1;
 
-    // Heading match — high-value signal (weight x5)
+    // Heading match - high-value signal (weight x5)
     const headingHits = headingTokens.filter((t) => t === qt || t.startsWith(qt)).length;
     if (headingHits > 0) {
       const tf = (headingHits * (k1 + 1)) / (headingHits + k1 * lenNorm);
       score += termIdf * tf * 5;
     }
 
-    // Body match — BM25 TF with length normalisation
+    // Body match - BM25 TF with length normalisation
     const exactHits = contentTokens.filter((t) => t === qt).length;
     const subHits = contentTokens.filter((t) => t !== qt && t.includes(qt)).length;
     const totalHits = exactHits + subHits * 0.5;
@@ -56,7 +56,7 @@ export function bm25Score(
     }
   }
 
-  // Code block bonus — only if the code contains a query token (higher bar).
+  // Code block bonus - only if the code contains a query token (higher bar).
   // Cap block count + per-block size so a section with dozens of large blocks
   // cannot blow up tokenization cost; scoring is unchanged for the common case
   // (the loop already breaks on the first query match).
@@ -97,7 +97,7 @@ export function buildIDF(
     for (const section of sections) {
       const cached = tokenCache.get(section)!;
       // tokenize(h + " " + c) === [...tokenize(h), ...tokenize(c)] because the
-      // explicit space forces a split boundary — combined list is identical.
+      // explicit space forces a split boundary - combined list is identical.
       const tokens = [...cached.headingTokens, ...cached.contentTokens];
       if (tokens.some((t) => t === qt || t.includes(qt))) count++;
     }

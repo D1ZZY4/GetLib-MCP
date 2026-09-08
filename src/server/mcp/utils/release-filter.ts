@@ -10,7 +10,7 @@ export function filterReleasesByVersion(raw: string, fromVersion?: string, toVer
   const fromMajor = parseMajor(fromVersion);
   const toMajor = parseMajor(toVersion);
   if (fromMajor === undefined && toMajor === undefined) return raw;
-  // Open the lower bound when only toVersion is supplied — otherwise low===high
+  // Open the lower bound when only toVersion is supplied - otherwise low===high
   // and only the single exact-major release survives the band filter.
   const low = fromMajor ?? -Infinity;
   const high = toMajor ?? Infinity;
@@ -18,7 +18,7 @@ export function filterReleasesByVersion(raw: string, fromVersion?: string, toVer
   const header = parts.length > 0 && !parts[0]!.startsWith("###") ? parts.shift()! : "";
   // Headerless fragments (release-please style "### Features"/"### Bug Fixes"
   // sub-headers under a versioned release) inherit the preceding versioned
-  // fragment's decision instead of being dropped — dropping them stripped the
+  // fragment's decision instead of being dropped - dropping them stripped the
   // actual changelog content out of every release body.
   let lastInclude = false;
   const kept = parts.filter((entry) => {
