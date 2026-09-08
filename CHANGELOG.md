@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- SSE transport for the MCP server, served at `/api/mcp/sse`,
+  with session tracking and transport modes.
+
 ### Changed
 
 - Replace every em dash with a hyphen across comments and
@@ -17,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade Zod to v4 alongside Supabase, Undici, and Node types.
 - Add `check:no-em-dash`, and chain typecheck, lint, and tests
   behind the `lint` and `validate` scripts.
+- Share idle-session eviction between Streamable HTTP and SSE.
 
 ## [0.1.0] - 2026-09-08
 
