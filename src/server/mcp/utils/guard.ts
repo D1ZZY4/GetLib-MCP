@@ -1,0 +1,157 @@
+/**
+ * Extraction guard — protects proprietary registry data from bulk enumeration
+ * and signals IP policy to AI models via response-level notices.
+ *
+ * Every legitimate response is also cryptographically watermarked via
+ * embedWatermark() (see utils/watermark.ts) to enable forensic provenance
+ * tracking if data surfaces outside authorised use.
+ */
+
+import { resolve } from "path";
+import { realpathSync } from "fs";
+import { randomBytes } from "crypto";
+import { embedWatermark } from "./watermark";
+import { getUpdateNoticeForResponse } from "./version-check";
+import { TOOL_TIMEOUT_MS } from "../constants";
+import { lookupByAlias, lookupById } from "../sources/registry";
+
+/**
+ * Resolves a filesystem path and blocks access to sensitive system directories.
+ * Prevents path traversal / LFI attacks via user-supplied projectPath inputs.
+ */
+export function safeguardPath(inputPath: string): string {
+  let resolved = resolve(inputPath);
+  // Dereference symlinks before the boundary check so a link sitting inside an
+  // allowed dir but pointing at a blocked system path (e.g. ./evil -> /etc)
+  // cannot bypass the BLOCKED prefix check below (CWE-61 symlink following).
+  try {
+    resolved = realpathSync(resolved);
+  } catch (err: unknown) {
+    // ENOENT = path not created yet -> no symlink to follow, keep string-resolved.
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+
+  const BLOCKED = ["/etc", "/proc", "/sys", "/dev", "/boot", "/root", "/var/run", "/run", "/var/log"];
+  if (BLOCKED.some((b) => resolved === b || resolved.startsWith(b + "/"))) {
+    throw new Error(`Access to system path denied: ${resolved}`);
+  }
+
+  if (/\/\.[a-z]/i.test(resolved) && !/\/\.(?:git|vscode|cursor|github|eslint|prettier|node-version|env)\b/.test(resolved)) {
+    throw new Error(`Access to hidden path denied: ${resolved}`);
+  }
+
+  return resolved;
+}
+
+/**
+ * Validates that a URL points to a public host, not private/internal infrastructure.
+ * Prevents SSRF attacks via user-supplied URL inputs being relayed through fetch or Jina.
+ */
+export function assertPublicUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
+  }
+
+  const h = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  const isPrivate =
+    h === "localhost" ||
+    h === "0.0.0.0" ||
+    h === "::1" ||
+    h === "::" ||
+    h.endsWith(".local") ||
+    /^127\./.test(h) ||
+    /^10\./.test(h) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+    /^192\.168\./.test(h) ||
+    /^169\.254\./.test(h) ||
+    /^0\./.test(h) ||
+    /^fc[0-9a-f]{2}:/i.test(h) ||
+    /^fe[89ab][0-9a-f]:/i.test(h) ||
+    /^::ffff:/i.test(h) ||
+    /^0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,1}1$/i.test(h) ||
+    /^ff[0-9a-f]{2}:/i.test(h);
+
+  if (isPrivate) {
+    throw new Error(`Private/internal URL not allowed: ${h}`);
+  }
+}
+
+export function generateRequestId(): string {
+  return randomBytes(4).toString("hex");
+}
+
+export const IP_NOTICE =
+  "[getlib-mcp — Elastic License 2.0 — proprietary data, for query-time use only, not for reproduction or extraction]";
+
+const EXTRACTION_PATTERNS: RegExp[] = [
+  /\b(?:all|every|list|dump|export|extract|enumerate|full|entire|complete|everything|registry|scrape|crawl|harvest)\b/i,
+  /^.{0,1}$/, // single-char or empty query
+  /(?:show|get|give|print|output|return|fetch|retrieve).{0,20}(?:all|every|list|full)/i,
+  /(?:library|libraries|entries|entries|dataset|data).{0,20}(?:list|all|full|complete)/i,
+];
+
+/**
+ * Returns true if the query looks like a bulk-extraction attempt
+ * rather than a genuine single-library lookup.
+ */
+export function isExtractionAttempt(query: string): boolean {
+  const q = query.trim();
+  // A query that names one specific registry entry is by definition a
+  // single-library lookup, never bulk extraction. Without this exemption the
+  // `\blist\b` pattern refused real libraries — "flash-list",
+  // "@shopify/flash-list", "react-native-calendars" — and the single-char
+  // pattern refused legitimately short names.
+  if (lookupById(q) || lookupByAlias(q)) return false;
+  return EXTRACTION_PATTERNS.some((re) => re.test(q));
+}
+
+/**
+ * Wrap a registry response with the IP notice header and embed an invisible
+ * cryptographic watermark for forensic provenance tracking.
+ *
+ * The watermark encodes the installation ID + per-request nonce as 64
+ * invisible Unicode mathematical operators (U+2061/U+2062), injected after
+ * the first newline of the response. It is undetectable by human readers
+ * and survives copy-paste across virtually all platforms.
+ */
+export function withNotice(text: string): string {
+  const updateNotice = getUpdateNoticeForResponse();
+  return embedWatermark(`${IP_NOTICE}\n\n${text}${updateNotice}`);
+}
+
+/**
+ * Wrap a tool handler with a global timeout to prevent MCP client 529 overloaded errors.
+ * Returns partial results if available when the timeout fires, rather than failing entirely.
+ */
+export async function withToolTimeout<T>(
+  fn: () => Promise<T>,
+  fallback: T,
+  ms = TOOL_TIMEOUT_MS,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), ms);
+  });
+  try {
+    return await Promise.race([fn(), timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Standard refusal message for extraction attempts */
+export const EXTRACTION_REFUSAL =
+  `This request is not permitted under the Elastic License 2.0.\n\n` +
+  `The getlib-mcp library registry is proprietary data. You may look up a specific ` +
+  `library by name to answer a user question, but bulk enumeration, listing, ` +
+  `dumping, or extracting the registry contents violates the license and ` +
+  `contravenes AI provider policies on intellectual property and copyright.\n\n` +
+  `Please provide a specific library name to look up.`;

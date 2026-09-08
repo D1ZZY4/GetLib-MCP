@@ -1,0 +1,188 @@
+import { defineTool } from "../registry/tool-registry";
+import { z } from "zod";
+import { lookupById, lookupByAlias } from "../sources/registry";
+import { resolveDynamic } from "../services/resolve";
+import { extractRelevantContent, sliceVersionBand } from "../utils/extract";
+import { checkEvidence, buildEvidenceBlock } from "../utils/evidence";
+import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL, withToolTimeout } from "../utils/guard";
+import { sanitizeContent } from "../utils/sanitize";
+import { computeQualityScore } from "../utils/quality";
+import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
+import { withTelemetry } from "../services/telemetry";
+import {
+  fetchVersionGuide,
+  fetchGitHubMigrationDocs,
+  fetchConventionalUpgradeDocs,
+  searchForUpgradeGuide,
+  type MigrationSection,
+} from "../services/migration-sources";
+
+// Re-exported so the existing test import path stays valid.
+export { filterReleasesByVersion } from "../utils/release-filter";
+
+const InputSchema = z.object({
+  libraryId: z
+    .string()
+    .min(1)
+    .max(300)
+    .describe("Library ID from gl_resolve_library (e.g. 'vercel/next.js')"),
+  fromVersion: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("Version migrating from, e.g. '14', 'v3.0'"),
+  toVersion: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("Version migrating to, e.g. '15', 'v4.0'"),
+  tokens: z
+    .number()
+    .int()
+    .min(1000)
+    .max(MAX_TOKEN_LIMIT)
+    .default(DEFAULT_TOKEN_LIMIT)
+    .describe("Max tokens to return"),
+});
+
+/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+ *  next step beats a hung call or an MCP-level timeout error. */
+const TIMEOUT_RESPONSE = {
+  content: [{ type: "text" as const, text: "Migration lookup timed out. Retry with explicit fromVersion/toVersion, or call gl_changelog instead." }],
+};
+
+export function registerMigrationTools(): void {
+  defineTool({
+    name: "gl_migration",
+      title: "Get Migration Guide",
+      description: `Fetch migration guides, breaking changes, and upgrade instructions for a library. Targets MIGRATION.md, UPGRADING.md, CHANGELOG, release notes, and upgrade docs.
+
+Call gl_resolve_library first to get the libraryId.
+
+Use this when the user asks HOW to upgrade their code from one version to another (step-by-step migration instructions, breaking changes, code transforms needed). For "what changed in version X" release notes without upgrade instructions, use gl_changelog instead.`,
+      inputSchema: InputSchema.shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    run: async (rawArgs: unknown) => {
+      const { libraryId, fromVersion, toVersion, tokens } = InputSchema.parse(rawArgs);
+      return withTelemetry("gl_migration", async (ctx) => {
+        ctx.resolved = true;
+        return withToolTimeout(async () => {
+          if (isExtractionAttempt(libraryId)) {
+            return { content: [{ type: "text", text: EXTRACTION_REFUSAL }] };
+          }
+
+          const entry = lookupById(libraryId) ?? lookupByAlias(libraryId);
+          const resolved = entry
+            ? { docsUrl: entry.docsUrl, githubUrl: entry.githubUrl, displayName: entry.name, resolvedId: entry.id }
+            : await resolveDynamic(libraryId).then((r) =>
+                r ? { docsUrl: r.docsUrl, githubUrl: r.githubUrl, displayName: r.displayName, resolvedId: libraryId } : null,
+              );
+          if (!resolved) {
+            return {
+              content: [{
+                type: "text",
+                text: `Could not resolve "${libraryId}". Try gl_resolve_library first to find the correct ID.`,
+              }],
+            };
+          }
+          const { docsUrl, githubUrl, displayName, resolvedId } = resolved;
+
+          const sections: MigrationSection[] = [];
+          const topic = [
+            "migration",
+            "upgrade",
+            "breaking changes",
+            fromVersion ? `v${fromVersion.replace(/^v/, "")}` : "",
+            toVersion ? `v${toVersion.replace(/^v/, "")}` : "",
+          ].filter(Boolean).join(" ");
+
+          if (toVersion) {
+            const guide = await fetchVersionGuide(docsUrl, toVersion);
+            if (guide) sections.push(guide);
+          }
+
+          if (githubUrl) {
+            sections.push(...(await fetchGitHubMigrationDocs(githubUrl, fromVersion, toVersion)));
+          }
+
+          if (sections.length === 0) {
+            const conventional = await fetchConventionalUpgradeDocs(docsUrl);
+            if (conventional) sections.push(conventional);
+          }
+
+          if (!sections.some((s) => !s.source.includes("Releases"))) {
+            const searched = await searchForUpgradeGuide(displayName, docsUrl, fromVersion, toVersion);
+            if (searched) sections.unshift(searched);
+          }
+
+          if (sections.length === 0) {
+            return {
+              content: [{
+                type: "text",
+                text: `No migration guides found for "${displayName}". Try gl_changelog for release notes, or gl_get_docs with topic "migration".`,
+              }],
+            };
+          }
+
+          const combined = sections.map((s) => `## ${s.source}\n\n${s.content}`).join("\n\n---\n\n");
+
+          // Slice to the requested version band BEFORE ranking — this is what stops
+          // ancient sections (e.g. Next.js v8-v11) reaching the BM25 pass at all.
+          const banded = (fromVersion || toVersion)
+            ? sliceVersionBand(combined, fromVersion, toVersion)
+            : combined;
+
+          const { text, truncated } = extractRelevantContent(sanitizeContent(banded), topic, tokens);
+          const targetVersions = [fromVersion, toVersion].filter((v): v is string => typeof v === "string" && v.length > 0);
+          const { score: qualityScore, hints: qualityHints } = computeQualityScore(text, topic, "github-readme", targetVersions);
+
+          const evidence = checkEvidence(text, topic);
+          const header = [
+            `# ${displayName} — Migration Guide`,
+            fromVersion || toVersion
+              ? `> ${fromVersion ? `From: v${fromVersion.replace(/^v/, "")}` : ""}${toVersion ? ` To: v${toVersion.replace(/^v/, "")}` : ""}`
+              : "",
+            `> Sources: ${sections.map((s) => s.source).join(", ")}`,
+            truncated ? "> Note: Response truncated. Specify fromVersion/toVersion for focused results." : "",
+            qualityScore < 0.4 ? `> Quality: Low — ${qualityHints.join("; ") || "verify against the official upgrade guide."}` : "",
+            "",
+            "---",
+            "",
+          ].filter(Boolean).join("\n");
+
+          const evidenceBlock = buildEvidenceBlock({
+            sources: sections.map((s) => ({ url: s.source })),
+            topic,
+            check: evidence,
+          });
+
+          return {
+            content: [{ type: "text", text: withNotice(header + text + evidenceBlock) }],
+            structuredContent: {
+              libraryId: resolvedId,
+              displayName,
+              fromVersion,
+              toVersion,
+              sources: sections.map((s) => s.source),
+              truncated,
+              qualityScore,
+              qualityHints,
+              evidence: {
+                ok: evidence.ok,
+                matchRatio: evidence.matchRatio,
+                occurrences: evidence.occurrences,
+                verdict: evidence.ok ? "strong" : evidence.matchRatio > 0 ? "weak" : "miss",
+              },
+              content: text,
+            },
+          };
+        }, TIMEOUT_RESPONSE);
+      });
+    },
+  });
+}

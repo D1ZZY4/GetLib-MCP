@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "context7-expert": {
+      "source": "D1ZZY4/agent-skills",
+      "sourceType": "github",
+      "skillPath": "context7-expert/SKILL.md",
+      "computedHash": "156b1d95da1e8baf7d593827e837b73c38344653f8a7217e27ac34f4415fbac0"
+    },
+    "copywriting-expert": {
+      "source": "D1ZZY4/agent-skills",
+      "sourceType": "github",
+      "skillPath": "copywriting-expert/SKILL.md",
+      "computedHash": "c1a13dcaa89e21e6732197815ab67b92797427710e2dd3fbe07b5f62a8d6b146"
+    },
+    "create-readme-expert": {
+      "source": "D1ZZY4/agent-skills",
+      "sourceType": "github",
+      "skillPath": "create-readme-expert/SKILL.md",
+      "computedHash": "adc8dfaff54e1c57d46a5ad46ac19dbd0ab9e9afa6b607347a0289bbf2afe6c9"
+    },
+    "dizzy-commit": {
+      "source": "D1ZZY4/agent-skills",
+      "sourceType": "github",
+      "skillPath": "dizzy-commit/SKILL.md",
+      "computedHash": "0d771b6675dbd110a04402ce8d08b0ef625b545fff6aa4909573ed0529e3cd8f"
+    },
+    "mermaid-diagrams-expert": {
+      "source": "D1ZZY4/agent-skills",
+      "sourceType": "github",
+      "skillPath": "mermaid-diagrams-expert/SKILL.md",
+      "computedHash": "326e520b38094552a4815538bd2745b9e7d959c65ac2f6dc76d293fec53337ff"
+    },
+    "redis-expert": {
+      "source": "D1ZZY4/agent-skills",
+      "sourceType": "github",
+      "skillPath": "redis-expert/SKILL.md",
+      "computedHash": "f8757d488ad2498a030d556c11a35ae367a44113f0786881a3d9c143ba622167"
+    }
+  }
+}
