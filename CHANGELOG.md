@@ -44,7 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool execution hardening: per-tool timeouts with actionable
   responses, extraction refusal guards, filesystem and network
   boundary checks, and lockfile-based version detection.
+- Supabase, allowed-hosts, and mode settings in the centralized
+  config boundary, with blank-tolerant parsing and removal of
+  the unused HTTP port setting.
 - Placeholder-only `.env.example` for local setup.
+- Centralized runtime environment detection with database-mode
+  policy, fail-fast production validation, and snapshots.
 
 ### Changed
 

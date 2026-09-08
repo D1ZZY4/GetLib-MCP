@@ -13,7 +13,6 @@ export interface GetLibConfig {
   circuitBreakerResetMs: number;
   logFormat: "json" | "text";
   logLevel: "debug" | "info" | "warn" | "error";
-  httpPort: string | undefined;
   githubToken: string | undefined;
   cacheDir: string;
   concurrency: number;
@@ -21,10 +20,22 @@ export interface GetLibConfig {
   authEnabled: boolean;
   defaultAccount: string | undefined;
   defaultPass: string | undefined;
+  supabaseUrl: string | undefined;
+  supabaseAnonKey: string | undefined;
+  supabaseServiceKey: string | undefined;
+  databaseModeOverride: string | undefined;
+  libMode: string | undefined;
+  vercelUrl: string | undefined;
+  allowedHosts: string[];
+}
+
+function emptyToUndefined(raw: string | undefined): string | undefined {
+  if (raw === undefined || raw.trim().length === 0) return undefined;
+  return raw;
 }
 
 function intEnv(name: string, fallback: number, min = 0): number {
-  const raw = process.env[name];
+  const raw = emptyToUndefined(process.env[name]);
   if (raw === undefined) return fallback;
   const parsed = parseInt(raw, 10);
   if (!Number.isFinite(parsed) || parsed < min) {
@@ -34,7 +45,7 @@ function intEnv(name: string, fallback: number, min = 0): number {
 }
 
 function floatEnv(name: string, fallback: number, min: number, max: number): number {
-  const raw = process.env[name];
+  const raw = emptyToUndefined(process.env[name]);
   if (raw === undefined) return fallback;
   const parsed = Number.parseFloat(raw);
   if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
@@ -44,7 +55,7 @@ function floatEnv(name: string, fallback: number, min: number, max: number): num
 }
 
 function enumEnv<T extends string>(name: string, fallback: T, allowed: readonly T[]): T {
-  const raw = process.env[name];
+  const raw = emptyToUndefined(process.env[name]);
   if (raw === undefined) return fallback;
   if (!allowed.includes(raw as T)) {
     throw new Error(`Invalid ${name}: "${raw}" -- must be one of: ${allowed.join(", ")}`);
@@ -59,7 +70,7 @@ function stringEnv(name: string): string | undefined {
 }
 
 function boolEnv(name: string, fallback: boolean): boolean {
-  const raw = process.env[name];
+  const raw = emptyToUndefined(process.env[name]);
   if (raw === undefined) return fallback;
   if (raw === "true" || raw === "1") return true;
   if (raw === "false" || raw === "0") return false;
@@ -72,6 +83,23 @@ function cacheDirEnv(): string {
   const home = stringEnv("HOME");
   if (home !== undefined) return `${home}/.getlib-mcp-cache`;
   return "/tmp/.getlib-mcp-cache";
+}
+
+function firstEnv(...names: string[]): string | undefined {
+  for (const name of names) {
+    const value = stringEnv(name);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+function allowedHostsEnv(): string[] {
+  const raw = stringEnv("GETLIB_ALLOWED_HOSTS");
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
 }
 
 export const config: Readonly<GetLibConfig> = Object.freeze({
@@ -89,7 +117,6 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
   circuitBreakerResetMs: intEnv("GETLIB_CIRCUIT_BREAKER_RESET_MS", 60_000, 1),
   logFormat: enumEnv("GETLIB_LOG_FORMAT", "text", ["json", "text"] as const),
   logLevel: enumEnv("GETLIB_LOG_LEVEL", "info", ["debug", "info", "warn", "error"] as const),
-  httpPort: process.env.GETLIB_HTTP_PORT,
   githubToken: stringEnv("GETLIB_GITHUB_TOKEN"),
   cacheDir: cacheDirEnv(),
   concurrency: intEnv("GETLIB_CONCURRENCY", 8, 1),
@@ -97,4 +124,17 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
   authEnabled: boolEnv("GETLIB_AUTHENTICATION_ENABLE", false),
   defaultAccount: stringEnv("GETLIB_DEFAULT_ACCOUNT"),
   defaultPass: stringEnv("GETLIB_DEFAULT_PASS"),
+  supabaseUrl: firstEnv("GETLIB_SUPABASE_URL", "SUPABASE_URL"),
+  supabaseAnonKey: firstEnv(
+    "GETLIB_SUPABASE_ANON_KEY",
+    "GETLIB_SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  ),
+  supabaseServiceKey: firstEnv("GETLIB_SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY"),
+  databaseModeOverride: firstEnv("GETLIB_DATABASE_MODE"),
+  libMode: stringEnv("GET_LIB_MODE"),
+  vercelUrl: firstEnv("VERCEL_URL"),
+  allowedHosts: allowedHostsEnv(),
 });
