@@ -1,15 +1,15 @@
 import { Card } from "@heroui/react";
-import type { LibraryFetch } from "../services/statistics.service";
+import { rankLibraryFetches, type LibraryFetch } from "../services/statistics.service";
 
 export function FetchRanking({ fetches }: { fetches: LibraryFetch[] }) {
-  const ranked = [...fetches].sort((a, b) => b.fetches - a.fetches);
+  const ranked = rankLibraryFetches(fetches);
   const top = ranked[0]?.fetches ?? 1;
 
   return (
     <Card className="h-full">
       <Card.Header>
         <Card.Title>Most fetched</Card.Title>
-        <Card.Description>Mock doc fetch ranking per library</Card.Description>
+          <Card.Description>Doc fetch ranking per library</Card.Description>
       </Card.Header>
       <Card.Content>
         <ol className="flex flex-col gap-3" aria-label="Most fetched libraries">

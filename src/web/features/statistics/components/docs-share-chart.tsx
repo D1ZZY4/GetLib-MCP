@@ -3,7 +3,7 @@
 import { Card } from "@heroui/react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { LibraryStatRow } from "../services/statistics.service";
-import { chartTooltipLabelStyle, chartTooltipStyle } from "./chart-theme";
+import { ChartTooltipCard } from "./chart-tooltip";
 
 const SLICE_FILLS = [
   "var(--accent)",
@@ -18,16 +18,12 @@ export function DocsShareChart({ rows }: { rows: LibraryStatRow[] }) {
     <Card className="h-full">
       <Card.Header>
         <Card.Title>Docs pages share</Card.Title>
-        <Card.Description>Mock indexed pages per library</Card.Description>
+          <Card.Description>Indexed pages per library</Card.Description>
       </Card.Header>
       <Card.Content>
         <ResponsiveContainer width="100%" height={240}>
           <PieChart accessibilityLayer>
-            <Tooltip
-              contentStyle={{ ...chartTooltipStyle }}
-              labelStyle={{ ...chartTooltipLabelStyle }}
-              itemStyle={{ ...chartTooltipLabelStyle }}
-            />
+            <Tooltip content={<ChartTooltipCard />} />
             <Pie
               data={rows}
               dataKey="docsPages"

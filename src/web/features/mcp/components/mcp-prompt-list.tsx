@@ -5,7 +5,7 @@ import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
 export function McpPromptList() {
-  const { catalog, loading, error } = useMcpCatalog();
+  const { catalog, loading, error, retry } = useMcpCatalog();
 
   return (
     <PageContainer>
@@ -23,9 +23,22 @@ export function McpPromptList() {
           ))}
         </div>
       ) : error !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
+      ) : catalog.prompts.length === 0 ? (
+        <Card>
+          <Card.Content>
+            <p className="text-sm text-muted">
+              No prompts registered. Restart the server to load the registry.
+            </p>
+          </Card.Content>
+        </Card>
       ) : (
         <Card>
           <Card.Content>
@@ -34,6 +47,23 @@ export function McpPromptList() {
                 <li key={prompt.name} className="py-3 first:pt-0 last:pb-0">
                   <p className="font-mono text-sm">{prompt.name}</p>
                   <p className="mt-0.5 text-xs text-muted">{prompt.description}</p>
+                  {prompt.args !== undefined && prompt.args.length > 0 ? (
+                    <ul
+                      className="mt-1.5 flex flex-wrap gap-1.5"
+                      aria-label={`Arguments for ${prompt.name}`}
+                    >
+                      {prompt.args.map((arg) => (
+                        <li
+                          key={arg.name}
+                          title={arg.description}
+                          className="rounded-full bg-surface-tertiary px-2 py-0.5 font-mono text-[11px] text-muted"
+                        >
+                          {arg.name}
+                          {arg.required ? " *" : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </li>
               ))}
             </ul>

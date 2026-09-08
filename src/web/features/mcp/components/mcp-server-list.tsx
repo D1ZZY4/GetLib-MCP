@@ -1,31 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
-import { fetchServers, type McpServerEntry } from "../services/mcp.service";
+import { useApiData } from "@/web/hooks/use-api-data";
+import { fetchServers } from "../services/mcp.service";
+
+const LOAD_ERROR = "We couldn't load servers. Try again in a moment.";
 
 export function McpServerList() {
-  const [servers, setServers] = useState<McpServerEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchServers()
-      .then((data) => {
-        if (!cancelled) setServers(data.servers);
-      })
-      .catch(() => {
-        if (!cancelled) setError("We couldn't load servers. Try again in a moment.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, loading, error, retry } = useApiData(fetchServers, LOAD_ERROR);
+  const servers = data?.servers ?? [];
 
   return (
     <PageContainer>
@@ -41,9 +25,22 @@ export function McpServerList() {
           <Skeleton className="h-20 rounded-xl" />
         </div>
       ) : error !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
+      ) : servers.length === 0 ? (
+        <Card>
+          <Card.Content>
+            <p className="text-sm text-muted">
+              No MCP servers registered. The local server registers on startup.
+            </p>
+          </Card.Content>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {servers.map((server) => (

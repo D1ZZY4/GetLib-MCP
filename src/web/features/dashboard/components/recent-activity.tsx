@@ -18,7 +18,7 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
     <Card className="h-full">
       <Card.Header>
         <Card.Title>Recent activity</Card.Title>
-        <Card.Description>Latest mock MCP operations</Card.Description>
+          <Card.Description>Latest MCP operations</Card.Description>
       </Card.Header>
       <Card.Content>
         {activities.length === 0 ? (

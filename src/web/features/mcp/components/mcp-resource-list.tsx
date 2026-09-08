@@ -5,7 +5,7 @@ import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
 export function McpResourceList() {
-  const { catalog, loading, error } = useMcpCatalog();
+  const { catalog, loading, error, retry } = useMcpCatalog();
 
   return (
     <PageContainer>
@@ -23,9 +23,22 @@ export function McpResourceList() {
           ))}
         </div>
       ) : error !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
+      ) : catalog.resources.length === 0 ? (
+        <Card>
+          <Card.Content>
+            <p className="text-sm text-muted">
+              No resources registered. Restart the server to load the registry.
+            </p>
+          </Card.Content>
+        </Card>
       ) : (
         <Card>
           <Card.Content>

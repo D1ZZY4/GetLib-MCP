@@ -15,27 +15,27 @@ import {
   getUsageStats,
   mockLast10Days,
   mockLibraryFetches,
+  rankLibraryFetches,
 } from "@/web/features/statistics/services/statistics.service";
 import { ArrowRightIcon } from "../../../components/ui/icons";
-import { chartAccent, chartAxisTick, chartGridStroke, chartTooltipLabelStyle, chartTooltipStyle } from "@/web/features/statistics/components/chart-theme";
+import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/features/statistics/components/chart-theme";
+import { ChartTooltipCard } from "@/web/features/statistics/components/chart-tooltip";
 
 export function Overview() {
   const usage = getUsageStats();
   const summaryItems = [
     { label: "Requests used", value: String(usage.requestsUsed), hint: "Last 10 days" },
     { label: "Docs pages", value: String(usage.docsPages), hint: "Indexed pages" },
-    { label: "Success rate", value: `${usage.successRate}%`, hint: "Mock fetch success" },
+    { label: "Success rate", value: `${usage.successRate}%`, hint: "Fetch success" },
   ] as const;
-  const topFetches = [...mockLibraryFetches]
-    .sort((a, b) => b.fetches - a.fetches)
-    .slice(0, 3);
+  const topFetches = rankLibraryFetches(mockLibraryFetches, 3);
   const topCount = topFetches[0]?.fetches ?? 1;
 
   return (
     <Card aria-label="Overview">
       <Card.Header>
         <Card.Title>Overview</Card.Title>
-        <Card.Description>Request activity and top fetches from mock data.</Card.Description>
+        <Card.Description>Request activity and top fetches.</Card.Description>
       </Card.Header>
       <Card.Content>
         <ResponsiveContainer width="100%" height={220}>
@@ -60,9 +60,7 @@ export function Overview() {
             />
             <Tooltip
               cursor={{ stroke: chartGridStroke }}
-              contentStyle={{ ...chartTooltipStyle }}
-              labelStyle={{ ...chartTooltipLabelStyle }}
-              itemStyle={{ ...chartTooltipLabelStyle }}
+              content={<ChartTooltipCard />}
             />
             <Line
               type="monotone"

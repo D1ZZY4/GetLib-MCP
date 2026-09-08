@@ -78,3 +78,13 @@ export function getLibraryStatRows(): LibraryStatRow[] {
     docsPages: MOCK_DOCS_PAGES[lib.id] ?? 0,
   }));
 }
+
+/**
+ * Single ranking implementation for library fetch counts. Both the
+ * dashboard overview and the statistics ranking view use this so the
+ * sort order cannot drift between surfaces.
+ */
+export function rankLibraryFetches(fetches: LibraryFetch[], limit?: number): LibraryFetch[] {
+  const ranked = [...fetches].sort((a, b) => b.fetches - a.fetches);
+  return limit === undefined ? ranked : ranked.slice(0, limit);
+}

@@ -8,7 +8,7 @@ const QUICK_ACTIONS = [
   {
     id: "search",
     title: "Search libraries",
-    description: "Resolve a package and browse its docs with mock results.",
+    description: "Resolve a package and browse its docs.",
     buttonLabel: "Search libraries",
     href: "/discover",
     icon: SearchIcon,
@@ -16,16 +16,16 @@ const QUICK_ACTIONS = [
   {
     id: "analyze",
     title: "Analyze project",
-    description: "Scan imports and detect outdated packages with mock results.",
+    description: "Scan imports and detect outdated packages.",
     buttonLabel: "Analyze project",
     href: "/statistics",
     icon: ActivityIcon,
   },
   {
     id: "automate",
-    title: "Automate checks",
-    description: "Schedule recurring audits with mock status.",
-    buttonLabel: "Automate checks",
+    title: "Connect AI agent",
+    description: "Install GetLib into your AI agent.",
+    buttonLabel: "Install now",
     href: "/install",
     icon: BoltIcon,
   },
@@ -38,7 +38,7 @@ export function QuickActionsPanel() {
     <section aria-label="Quick actions" className="flex flex-col gap-4">
       <div>
         <h2 className="text-base font-semibold tracking-tight">Quick actions</h2>
-        <p className="mt-0.5 text-sm text-muted">Search, analyze, and automate with mock results.</p>
+        <p className="mt-0.5 text-sm text-muted">Search, analyze, and connect.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         {QUICK_ACTIONS.map((action) => (

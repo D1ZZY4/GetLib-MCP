@@ -18,7 +18,7 @@ export function StatisticsPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Statistics</h1>
         <p className="mt-1 max-w-xl text-sm text-muted">
-          Plan usage and request analytics from mock data.
+          Plan usage and request analytics. Showing sample data.
         </p>
       </header>
 

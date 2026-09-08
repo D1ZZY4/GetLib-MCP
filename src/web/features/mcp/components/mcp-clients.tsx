@@ -1,40 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
-import type { ClientsSnapshot } from "@/application/clients/clients.service";
-import { fetchClients } from "../services/clients.service";
+import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
+import { fetchClients } from "../services/clients.service";
+
+const LOAD_ERROR = "We couldn't load connected clients. Try again in a moment.";
 
 export function McpClients() {
-  const [snapshot, setSnapshot] = useState<ClientsSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchClients()
-      .then((data) => {
-        if (!cancelled) setSnapshot(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError("We couldn't load connected clients. Try again in a moment.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: snapshot, loading, error, retry } = useApiData(fetchClients, LOAD_ERROR);
 
   return (
     <PageContainer>
       <header>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Clients</h1>
         <p className="mt-1 max-w-xl text-sm text-muted">
-          AI clients connected to this server over Streamable HTTP.
+          AI agents connected to this server over Streamable HTTP. Only sessions in this
+          process are visible. Agents using stdio run their own server process.
         </p>
       </header>
 
@@ -44,14 +27,19 @@ export function McpClients() {
           <Skeleton className="h-12 rounded-xl" />
         </div>
       ) : error !== null || snapshot === null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error ?? "We couldn't load connected clients. Try again in a moment."}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error ?? LOAD_ERROR}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
       ) : snapshot.total === 0 ? (
         <Card>
           <Card.Content>
             <p className="text-sm text-muted">
-              No clients connected right now. Connect an assistant over Streamable HTTP and it
+              No agents connected right now. Connect an AI agent over Streamable HTTP and it
               will appear here.
             </p>
           </Card.Content>
@@ -67,6 +55,9 @@ export function McpClients() {
                     <p className="text-xs text-muted">
                       {client.transport} · last seen {formatLogTime(client.lastSeenAt)}
                     </p>
+                    {client.userAgent !== undefined ? (
+                      <p className="truncate text-xs text-muted">via {client.userAgent}</p>
+                    ) : null}
                   </div>
                   <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
                     Connected

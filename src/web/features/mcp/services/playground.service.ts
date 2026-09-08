@@ -1,3 +1,5 @@
+import { postJson } from "@/web/lib/api-client";
+
 export interface PlaygroundResult {
   output: string;
   durationMs: number;
@@ -33,15 +35,7 @@ export async function runToolWithArgs(name: string, argsText: string): Promise<P
     throw new Error("Arguments must be valid JSON.");
   }
   const started = Date.now();
-  const response = await fetch(`/api/mcp/${name}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(args ?? {}),
-  });
+  const data: unknown = await postJson(`/api/mcp/${name}`, args ?? {});
   const durationMs = Date.now() - started;
-  if (!response.ok) {
-    throw new Error(`Run failed with HTTP ${response.status}.`);
-  }
-  const data: unknown = await response.json();
   return { output: JSON.stringify(data, null, 2), durationMs, ok: true };
 }

@@ -1,32 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
+import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
-import { fetchLogs, type McpLogEntry } from "../services/mcp.service";
+import { fetchLogs } from "../services/mcp.service";
+
+const LOAD_ERROR = "We couldn't load recent logs. Check your connection and try again.";
 
 export function McpLogViewer() {
-  const [logs, setLogs] = useState<McpLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchLogs()
-      .then((data) => {
-        if (!cancelled) setLogs(data.logs);
-      })
-      .catch(() => {
-        if (!cancelled) setError("We couldn't load recent logs. Check your connection and try again.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, loading, error, retry } = useApiData(fetchLogs, LOAD_ERROR);
+  const logs = data?.logs ?? [];
 
   return (
     <PageContainer>
@@ -44,9 +28,14 @@ export function McpLogViewer() {
           ))}
         </div>
       ) : error !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
       ) : logs.length === 0 ? (
         <Card>
           <Card.Content>

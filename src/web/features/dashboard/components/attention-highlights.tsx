@@ -31,7 +31,7 @@ export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProp
         <Card.Description>
           {items.length === 0
             ? "No warnings. Everything looks healthy."
-            : `${items.length} ${items.length === 1 ? "warning" : "warnings"} from mock audit`}
+            : `${items.length} ${items.length === 1 ? "warning" : "warnings"} from the last audit`}
         </Card.Description>
       </Card.Header>
       <Card.Content>
@@ -64,7 +64,7 @@ export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProp
       </Card.Content>
       <Card.Footer>
         <Button variant="ghost" size="sm" onPress={() => router.push("/statistics")}>
-          Open audit report
+          View statistics
           <ArrowRightIcon className="size-3.5" />
         </Button>
       </Card.Footer>

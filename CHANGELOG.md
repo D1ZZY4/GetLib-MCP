@@ -31,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and per-source detail pages.
 - Install assistant with per-agent transport badges, local and
   remote config snippets, and an accessible copy workflow.
+- Shared web fetch client with size limits and error envelopes,
+  a shared async-data hook with retry, design tokens, and
+  web-owned MCP contracts.
+- Drill-down sidebar navigation with an MCP submenu, a redesigned
+  404 page, and dark mode as the default theme.
 
 ### Changed
 
@@ -43,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `check:no-em-dash`, and chain typecheck, lint, and tests
   behind the `lint` and `validate` scripts.
 - Share idle-session eviction between Streamable HTTP and SSE.
+- Align dashboard, statistics, and MCP catalog UI with the new
+  web client and contracts, with shared tooltips, ranking
+  helpers, and honest sample-data copy.
 
 ## [0.1.0] - 2026-09-08
 

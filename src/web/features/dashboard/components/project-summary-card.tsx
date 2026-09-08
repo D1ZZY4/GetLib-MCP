@@ -27,7 +27,7 @@ export function ProjectSummaryCard({ libraries }: ProjectSummaryCardProps) {
     <Card className="h-full">
       <Card.Header>
         <Card.Title>Project summary</Card.Title>
-        <Card.Description>Installed libraries with mock versions</Card.Description>
+          <Card.Description>Installed libraries with versions</Card.Description>
       </Card.Header>
       <Card.Content>
         {libraries.length === 0 ? (
@@ -62,7 +62,7 @@ export function ProjectSummaryCard({ libraries }: ProjectSummaryCardProps) {
       </Card.Content>
       <Card.Footer>
         <Button variant="ghost" size="sm" onPress={() => router.push("/discover")}>
-          View all libraries
+          Discover libraries
           <ArrowRightIcon className="size-3.5" />
         </Button>
       </Card.Footer>

@@ -1,20 +1,9 @@
 /**
  * Shared chart chrome for recharts surfaces. Every chart uses the product
  * CSS variables so light/dark themes stay consistent without per-chart
- * style objects drifting apart.
+ * style objects drifting apart. Tooltip rendering lives in
+ * chart-tooltip.tsx (custom card content); this file keeps scalar tokens.
  */
-export const chartTooltipStyle = {
-  backgroundColor: "var(--surface)",
-  border: "1px solid var(--border)",
-  borderRadius: "12px",
-  fontSize: "12px",
-  color: "var(--foreground)",
-} as const;
-
-export const chartTooltipLabelStyle = {
-  color: "var(--foreground)",
-} as const;
-
 export const chartAxisTick = {
   fill: "var(--muted)",
   fontSize: 11,

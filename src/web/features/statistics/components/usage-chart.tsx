@@ -11,7 +11,9 @@ import {
   YAxis,
 } from "recharts";
 import type { UsageDay } from "../services/statistics.service";
-import { chartAccent, chartAxisTick, chartGridStroke, chartTooltipLabelStyle, chartTooltipStyle } from "./chart-theme";
+import { chartAccent, chartAxisTick, chartGridStroke } from "./chart-theme";
+import { ChartTooltipCard } from "./chart-tooltip";
+import { totalRequests } from "./chart-summary";
 
 interface UsageChartProps {
   days: UsageDay[];
@@ -35,12 +37,7 @@ function UsageChart({ days }: UsageChartProps) {
           allowDecimals={false}
           tick={{ ...chartAxisTick }}
         />
-        <Tooltip
-          cursor={{ fill: "var(--accent-soft)" }}
-          contentStyle={{ ...chartTooltipStyle }}
-          labelStyle={{ ...chartTooltipLabelStyle }}
-          itemStyle={{ ...chartTooltipLabelStyle }}
-        />
+        <Tooltip cursor={{ fill: "var(--accent-soft)" }} content={<ChartTooltipCard />} />
         <Bar dataKey="requests" fill={chartAccent} radius={[6, 6, 0, 0]} maxBarSize={36} />
       </BarChart>
     </ResponsiveContainer>
@@ -57,6 +54,11 @@ export function UsageCard({ days }: UsageChartProps) {
       <Card.Content>
         <UsageChart days={days} />
       </Card.Content>
+      <Card.Footer>
+        <p className="text-sm font-medium tabular-nums">
+          {totalRequests(days)} requests in the last 10 days
+        </p>
+      </Card.Footer>
     </Card>
   );
 }

@@ -11,14 +11,16 @@ import {
   YAxis,
 } from "recharts";
 import type { UsageDay } from "../services/statistics.service";
-import { chartAccent, chartAxisTick, chartGridStroke, chartTooltipLabelStyle, chartTooltipStyle } from "./chart-theme";
+import { chartAccent, chartAxisTick, chartGridStroke } from "./chart-theme";
+import { trendSummary } from "./chart-summary";
+import { ChartTooltipCard } from "./chart-tooltip";
 
 export function TrendChart({ days }: { days: UsageDay[] }) {
   return (
     <Card className="h-full">
       <Card.Header>
         <Card.Title>Request trend</Card.Title>
-        <Card.Description>Mock requests per day, last 10 days</Card.Description>
+          <Card.Description>Requests per day, last 10 days</Card.Description>
       </Card.Header>
       <Card.Content>
         <ResponsiveContainer width="100%" height={240}>
@@ -37,23 +39,21 @@ export function TrendChart({ days }: { days: UsageDay[] }) {
               allowDecimals={false}
               tick={{ ...chartAxisTick }}
             />
-            <Tooltip
-              cursor={{ stroke: chartGridStroke }}
-              contentStyle={{ ...chartTooltipStyle }}
-              labelStyle={{ ...chartTooltipLabelStyle }}
-              itemStyle={{ ...chartTooltipLabelStyle }}
-            />
-            <Line
-              type="monotone"
-              dataKey="requests"
-              stroke={chartAccent}
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <Tooltip cursor={{ stroke: chartGridStroke }} content={<ChartTooltipCard />} />
+        <Line
+          type="monotone"
+          dataKey="requests"
+          stroke={chartAccent}
+          strokeWidth={2.5}
+          dot={false}
+          activeDot={{ r: 4 }}
+        />
+      </LineChart>
+      </ResponsiveContainer>
       </Card.Content>
+      <Card.Footer>
+        <p className="text-sm font-medium">{trendSummary(days)}</p>
+      </Card.Footer>
     </Card>
   );
 }

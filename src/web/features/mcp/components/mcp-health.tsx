@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
-import type { HealthSnapshot } from "@/application/health/health.service";
+import { useApiData } from "@/web/hooks/use-api-data";
+import type { HealthStatus } from "@/web/types/mcp";
 import { fetchHealth } from "../services/health.service";
 
-function StatusPill({ status }: { status: HealthSnapshot["status"] }) {
+const LOAD_ERROR = "We couldn't load health status. Try again in a moment.";
+
+function StatusPill({ status }: { status: HealthStatus }) {
   const healthy = status === "healthy";
   return (
     <span
@@ -20,26 +22,7 @@ function StatusPill({ status }: { status: HealthSnapshot["status"] }) {
 }
 
 export function McpHealth() {
-  const [health, setHealth] = useState<HealthSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchHealth()
-      .then((data) => {
-        if (!cancelled) setHealth(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError("We couldn't load health status. Try again in a moment.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: health, loading, error, retry } = useApiData(fetchHealth, LOAD_ERROR);
 
   return (
     <PageContainer>
@@ -60,9 +43,14 @@ export function McpHealth() {
           <Skeleton className="h-24 rounded-xl" />
         </div>
       ) : error !== null || health === null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error ?? "We couldn't load health status. Try again in a moment."}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error ?? LOAD_ERROR}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

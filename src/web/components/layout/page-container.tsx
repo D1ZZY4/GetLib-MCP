@@ -8,7 +8,7 @@ interface PageContainerProps {
 const VARIANT_CLASSES: Record<NonNullable<PageContainerProps["variant"]>, string> = {
   default: "gap-6 px-4 py-8 sm:px-6 lg:px-10",
   narrow: "mx-auto max-w-sm justify-center px-4 py-12 sm:px-6",
-  center: "items-center px-4 py-20 text-center sm:px-6 lg:px-10",
+  center: "min-h-[80vh] items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-10",
 };
 
 /**

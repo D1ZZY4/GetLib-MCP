@@ -10,7 +10,7 @@ export function LibraryTable({ rows }: LibraryTableProps) {
     <Card>
       <Card.Header>
         <Card.Title>Libraries</Card.Title>
-        <Card.Description>Installed versions and mock docs coverage</Card.Description>
+          <Card.Description>Installed versions and docs coverage</Card.Description>
       </Card.Header>
       <Card.Content>
         <div className="overflow-x-auto">

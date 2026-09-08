@@ -1,3 +1,5 @@
+import { fetchJson, postJson } from "@/web/lib/api-client";
+
 export interface McpToolEntry {
   name: string;
   description: string;
@@ -9,9 +11,16 @@ export interface McpResourceEntry {
   description: string;
 }
 
+export interface McpPromptArg {
+  name: string;
+  description: string;
+  required: boolean;
+}
+
 export interface McpPromptEntry {
   name: string;
   description: string;
+  args?: McpPromptArg[];
 }
 
 export interface McpCatalog {
@@ -36,31 +45,27 @@ export interface McpLogEntry {
   name: string;
   durationMs: number;
   ok: boolean;
-}
-
-async function parseJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`MCP API error: HTTP ${response.status}`);
-  }
-  return (await response.json()) as T;
+  requestId?: string;
 }
 
 export function fetchCatalog(): Promise<McpCatalog> {
-  return fetch("/api/mcp").then((response) => parseJson<McpCatalog>(response));
+  return fetchJson<McpCatalog>("/api/mcp");
 }
 
 export function fetchServers(): Promise<{ servers: McpServerEntry[] }> {
-  return fetch("/api/mcp/servers").then((response) =>
-    parseJson<{ servers: McpServerEntry[] }>(response),
-  );
+  return fetchJson<{ servers: McpServerEntry[] }>("/api/mcp/servers");
 }
 
 export function fetchLogs(): Promise<{ logs: McpLogEntry[] }> {
-  return fetch("/api/mcp/logs").then((response) => parseJson<{ logs: McpLogEntry[] }>(response));
+  return fetchJson<{ logs: McpLogEntry[] }>("/api/mcp/logs?limit=100");
 }
 
-export function runTool(name: string): Promise<unknown> {
-  return fetch(`/api/mcp/${name}`, { method: "POST" }).then((response) =>
-    parseJson<unknown>(response),
-  );
+/**
+ * Single tool-execution contract for the dashboard: POST the args object as
+ * JSON. Callers with no args pass {} instead of relying on a separate
+ * bodyless overload, so the playground and the tool list hit one endpoint
+ * shape.
+ */
+export function runTool(name: string, args: Record<string, unknown> = {}): Promise<unknown> {
+  return postJson<unknown>(`/api/mcp/${name}`, args);
 }

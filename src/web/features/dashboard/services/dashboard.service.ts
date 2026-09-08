@@ -26,15 +26,15 @@ export const mockLibraries: MockLibrary[] = [
     id: "supabase-js",
     name: "@supabase/supabase-js",
     installedVersion: "2.57.4",
-    latestVersion: "2.57.4",
-    status: "up-to-date",
+    latestVersion: "2.116.0",
+    status: "outdated",
     lastCheckedAt: "2026-09-05T14:30:00Z",
   },
   {
     id: "mcp-sdk",
     name: "@modelcontextprotocol/sdk",
     installedVersion: "1.12.0",
-    latestVersion: "1.17.5",
+    latestVersion: "1.30.0",
     status: "outdated",
     lastCheckedAt: "2026-09-05T14:30:00Z",
   },
@@ -102,7 +102,7 @@ export const mockAttentions: MockAttention[] = [
     message: "New transports and tool listing improvements available.",
     severity: "low",
     installedVersion: "1.12.0",
-    latestVersion: "1.17.5",
+    latestVersion: "1.30.0",
   },
 ];
 

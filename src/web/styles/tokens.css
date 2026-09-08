@@ -1,0 +1,74 @@
+/**
+ * Centralized design tokens for the GetLib dashboard.
+ *
+ * Color roles (background, foreground, muted, accent, success, warning,
+ * danger, border, surface) are provided by the HeroUI theme imported in
+ * globals.css. This file owns everything HeroUI does not: spacing rhythm,
+ * radius, motion, layering, typography, and global accessibility defaults.
+ * Feature components must use these tokens (or HeroUI semantic utilities)
+ * instead of inventing ad-hoc values.
+ */
+
+:root {
+  /* Spacing rhythm (multiples of the 4px base grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* Radius scale */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Layering hierarchy: base < sticky < dropdown < overlay < modal < popover < toast */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-toast: 70;
+
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Content widths by page kind */
+  --content-narrow: 42rem;
+  --content-default: 72rem;
+  --content-wide: 88rem;
+}
+
+/* Global accessibility defaults (theme-agnostic, token-driven) */
+:focus-visible {
+  outline: 2px solid var(--color-accent, currentColor);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

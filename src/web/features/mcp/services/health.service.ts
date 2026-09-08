@@ -1,9 +1,6 @@
-import type { HealthSnapshot } from "@/application/health/health.service";
+import { fetchJson } from "@/web/lib/api-client";
+import type { HealthSnapshot } from "@/web/types/mcp";
 
 export async function fetchHealth(): Promise<HealthSnapshot> {
-  const response = await fetch("/api/management/health");
-  if (!response.ok) {
-    throw new Error(`Health API error: HTTP ${response.status}`);
-  }
-  return (await response.json()) as HealthSnapshot;
+  return fetchJson<HealthSnapshot>("/api/management/health");
 }

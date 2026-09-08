@@ -37,16 +37,9 @@ export interface DashboardStats {
   vulnerable: number;
 }
 
-export interface MockDiscoverLibrary {
-  id: string;
-  name: string;
-  description: string;
-  latestVersion: string;
-  weeklyDownloads: string;
-  tags: string[];
-}
-
 export type AssistantStatus = "connected" | "available";
+
+export type AssistantTransport = "stdio" | "sse" | "streamable-http";
 
 export interface MockAssistant {
   id: string;
@@ -54,8 +47,12 @@ export interface MockAssistant {
   description: string;
   configFile: string;
   snippet: string;
+  remoteConfigFile?: string;
+  remoteSnippet?: string;
+  remoteTransport?: AssistantTransport;
   steps: string[];
   status: AssistantStatus;
+  transports: AssistantTransport[];
 }
 
 export interface MockSession {

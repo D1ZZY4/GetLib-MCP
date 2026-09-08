@@ -1,9 +1,6 @@
-import type { ClientsSnapshot } from "@/application/clients/clients.service";
+import { fetchJson } from "@/web/lib/api-client";
+import type { ClientsSnapshot } from "@/web/types/mcp";
 
 export async function fetchClients(): Promise<ClientsSnapshot> {
-  const response = await fetch("/api/management/clients");
-  if (!response.ok) {
-    throw new Error(`Clients API error: HTTP ${response.status}`);
-  }
-  return (await response.json()) as ClientsSnapshot;
+  return fetchJson<ClientsSnapshot>("/api/management/clients");
 }
