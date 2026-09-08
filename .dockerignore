@@ -3,3 +3,11 @@ dist
 .git
 .env
 .env.*
+.next/
+out/
+coverage/
+.turbo
+.vercel
+.cache/
+*.tsbuildinfo
+*.log

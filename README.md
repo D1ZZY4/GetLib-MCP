@@ -15,11 +15,14 @@ with tools, resources, and prompts. A Context7-style alternative you own.
 
 ```bash
 bun install
+cp .env.example .env   # optional: only needed for GETLIB_GITHUB_TOKEN rate limits
 bun run dev      # dashboard with Turbopack
 bun run mcp      # MCP server over stdio (14 tools, 2 resources, 1 prompt)
 bun run build
-bun run start
+bun run start    # also serves Streamable HTTP at /api/mcp/http and SSE at /api/mcp/sse
 bun run typecheck
+bun run lint     # typecheck + no-em-dash repository check
+bun run validate # typecheck + no-em-dash check + tests
 bun test         # server unit tests (bun:test)
 ```
 
@@ -27,9 +30,11 @@ bun test         # server unit tests (bun:test)
 
 ```text
 src/
-  app/         # Next.js App Router: (auth), (dashboard), api/mcp, api/management
-  web/         # Dashboard UI: features, components, providers, lib
-  application/ # Use cases: health, clients (used by API routes + web)
+  app/         # Next.js App Router: (auth), (dashboard), api/mcp, api/management,
+               # api/_lib (shared route helpers: error model, body limits, request IDs)
+  web/         # Dashboard UI: features, components, hooks, lib/api-client,
+               # styles/tokens.css, types/mcp (web-owned control-plane contracts)
+  application/ # Use cases: health, clients, mcp catalog, sources (used by API routes + web)
   server/mcp   # MCP module: registry, tools, services, sources,
                # utils, resources, prompts, transport, tests
 ```
@@ -53,6 +58,12 @@ MCP tools are thin protocol adapters: validate input, run the service,
 return the result. The dashboard reads control-plane data over
 `/api/mcp/*`. Auth, DB, and rate limiting are deferred until the real
 backend lands.
+
+Repository checks: `bun run lint` also enforces the no-em-dash rule
+(all controlled content must avoid the em dash character; `AGENTS.md`
+is excluded because Next.js tooling regenerates that file). All
+`GETLIB_*` environment variables are validated in
+`src/server/mcp/config.ts`, the single configuration boundary.
 
 ## Deployment
 

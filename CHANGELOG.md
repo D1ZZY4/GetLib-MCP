@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool execution hardening: per-tool timeouts with actionable
   responses, extraction refusal guards, filesystem and network
   boundary checks, and lockfile-based version detection.
+- Placeholder-only `.env.example` for local setup.
 
 ### Changed
 
@@ -62,6 +63,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Centralize fetching behind timeout, redirect, semaphore, and
   SSRF protection, with an idempotent guard install, backoff on
   rate limits, and circuit breaking on search providers.
+- Harden the Docker runtime with a health check, a non-root
+  user, tolerance for a missing `public/` directory, and a
+  fuller `.dockerignore`; disable the `X-Powered-By` header.
+- Document the new scripts, transports, and configuration in
+  the READMEs, and expand the architecture blueprint with
+  database, environment, deployment, and auth flows.
 
 ## [0.1.0] - 2026-09-08
 
