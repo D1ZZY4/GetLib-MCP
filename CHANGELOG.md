@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lists and wildcard overrides.
 - Source management APIs and a reworked Sources UI with live
   entry counts, per-source toggles, and blocked/wildcard lists.
+- Authentication use cases that verify sign-in credentials
+  against the configured default account, with fail-closed
+  behavior and timing-safe password comparison.
+- Auth management APIs and a unified sign-up and sign-in UI
+  with a guest session while server authentication is off.
 
 ### Changed
 
