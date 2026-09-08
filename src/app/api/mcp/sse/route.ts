@@ -1,9 +1,18 @@
 import { closeSseSession, openSseSession } from "@/server/mcp/transport/sse";
-import { mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
+import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
+import { jsonError, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET(req: Request) {
   const id = requestId();
   try {
+    try {
+      assertAllowedOrigin(req);
+    } catch (error) {
+      if (error instanceof OriginRejectedError) {
+        return jsonError("forbidden", error.message, 403, id);
+      }
+      throw error;
+    }
     const { sessionId, stream } = await openSseSession();
     req.signal.addEventListener("abort", () => {
       closeSseSession(sessionId);

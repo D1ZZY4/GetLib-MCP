@@ -59,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developments and Settings pages, a profile menu, origin
   validation on MCP transports, and UI rewired from mocks to
   authoritative backend snapshots.
+- Enforce origin validation on both SSE routes, rejecting
+  forged cross-site origins with 403.
 
 ### Changed
 

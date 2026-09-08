@@ -1,3 +1,4 @@
+import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 import { UnknownSseSessionError, postSseMessage } from "@/server/mcp/transport/sse";
 import {
   jsonError,
@@ -9,6 +10,14 @@ import {
 export async function POST(req: Request) {
   const id = requestId();
   try {
+    try {
+      assertAllowedOrigin(req);
+    } catch (error) {
+      if (error instanceof OriginRejectedError) {
+        return jsonError("forbidden", error.message, 403, id);
+      }
+      throw error;
+    }
     const url = new URL(req.url);
     const sessionId = url.searchParams.get("sessionId");
     if (!sessionId) {
