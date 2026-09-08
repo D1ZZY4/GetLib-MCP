@@ -9,7 +9,7 @@
 
 export interface McpClientSession {
   id: string;
-  transport: "streamable-http";
+  transport: "streamable-http" | "sse";
   connectedAt: string;
   lastSeenAt: string;
   userAgent?: string;
@@ -40,4 +40,8 @@ export interface HealthSnapshot {
     errorRate: number;
     byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }>;
   };
+  environment: "development" | "production";
+  databaseMode: string;
+  isMock: boolean;
+  auth: { enabled: boolean; fallbackActive: boolean };
 }

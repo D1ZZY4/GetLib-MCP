@@ -1,7 +1,51 @@
-import type { MockAssistant } from "../../../types/library";
+import { TRANSPORT_MODES, type TransportMode } from "@/server/mcp/transport/modes";
+
+/**
+ * Install application service - canonical installation metadata shared by
+ * Web, API, and MCP consumers. Client-target snippets are typed
+ * configuration contracts derived from the canonical transport registry,
+ * never hardcoded per-page.
+ */
+
+export type AssistantTransport = "stdio" | "sse" | "streamable-http";
+
+export interface AssistantEntry {
+  id: string;
+  name: string;
+  description: string;
+  configFile: string;
+  snippet: string;
+  remoteConfigFile?: string;
+  remoteSnippet?: string;
+  remoteTransport?: AssistantTransport;
+  steps: string[];
+  status: "connected" | "available";
+  transports: AssistantTransport[];
+}
+
+export interface TransportModeDoc {
+  id: AssistantTransport;
+  label: string;
+  explanation: string;
+  status: "available" | "planned";
+}
+
+export interface InstallCatalog {
+  assistants: AssistantEntry[];
+  transports: TransportModeDoc[];
+}
 
 const REMOTE_HTTP_URL = "https://your-server.com/api/mcp/http";
-export const mockAssistants: MockAssistant[] = [
+
+const TRANSPORT_EXPLANATIONS: Record<AssistantTransport, string> = {
+  stdio:
+    "Runs the server as a local process. Your AI agent spawns the command above and talks to it over stdin/stdout. Use this for agents on the same machine.",
+  sse: "Legacy Server-Sent Events transport for remote agents. Open GET /api/mcp/sse for the event stream, then POST answers to /api/mcp/sse/messages. Prefer Streamable HTTP for new setups.",
+  "streamable-http":
+    "Remote transport over Streamable HTTP with session support. Use this for hosted dashboards and remote agents instead of spawning a local process.",
+};
+
+const ASSISTANTS: AssistantEntry[] = [
   {
     id: "claude-code",
     name: "Claude Code",
@@ -252,34 +296,19 @@ url = "${REMOTE_HTTP_URL}"`,
   },
 ];
 
-export interface TransportModeDoc {
-  id: "stdio" | "sse" | "streamable-http";
-  label: string;
-  explanation: string;
-  status: "available" | "planned";
+function transportDocs(): TransportModeDoc[] {
+  return (TRANSPORT_MODES as readonly TransportMode[]).map((mode) => ({
+    id: mode.id,
+    label: mode.label,
+    explanation: TRANSPORT_EXPLANATIONS[mode.id],
+    status: mode.status,
+  }));
 }
 
-// MOCK ONLY: mirrors the server transport registry until a /api docs endpoint lands.
-export const mockTransportModes: TransportModeDoc[] = [
-  {
-    id: "stdio",
-    label: "STDIO",
-    explanation:
-      "Runs the server as a local process. Your AI agent spawns the command above and talks to it over stdin/stdout. Use this for agents on the same machine.",
-    status: "available",
-  },
-  {
-    id: "sse",
-    label: "SSE",
-    explanation:
-      "Legacy Server-Sent Events transport for remote agents. Open GET /api/mcp/sse for the event stream, then POST answers to /api/mcp/sse/messages. Prefer Streamable HTTP for new setups.",
-    status: "available",
-  },
-  {
-    id: "streamable-http",
-    label: "Streamable HTTP",
-    explanation:
-      "Remote transport over Streamable HTTP with session support. Use this for hosted dashboards and remote agents instead of spawning a local process.",
-    status: "available",
-  },
-];
+/**
+ * Canonical install catalog. Transports derive from the server transport
+ * registry so docs cannot drift from runtime.
+ */
+export function getInstallCatalog(): InstallCatalog {
+  return { assistants: ASSISTANTS, transports: transportDocs() };
+}

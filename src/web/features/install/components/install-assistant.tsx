@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, Tabs } from "@heroui/react";
-import { mockAssistants, mockTransportModes } from "../services/install.service";
-import type { AssistantTransport } from "../../../types/library";
+import { Button, Card, Skeleton, Tabs } from "@heroui/react";
+import { useInstallCatalog } from "../hooks/use-install-catalog";
+import type { AssistantTransport } from "../services/install-api.service";
 import { PageContainer } from "../../../components/layout/page-container";
 
 function transportLabel(transport: AssistantTransport): string {
@@ -59,7 +59,44 @@ export function InstallAssistant() {
     }
   };
 
-  if (mockAssistants.length === 0) {
+  const { catalog, loading, error, retry } = useInstallCatalog();
+  const assistants = catalog?.assistants ?? [];
+  const transports = catalog?.transports ?? [];
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Install to your AI agents
+          </h1>
+          <p className="mt-1 max-w-xl text-sm text-muted">Loading install instructions.</p>
+        </header>
+        <div role="status" aria-label="Loading install instructions" className="flex flex-col gap-4">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (error !== null || catalog === null) {
+    return (
+      <PageContainer>
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Install to your AI agents
+          </h1>
+          <p className="mt-1 max-w-xl text-sm text-muted">{error ?? "Unavailable."}</p>
+        </header>
+        <Button variant="secondary" onPress={retry}>
+          Retry
+        </Button>
+      </PageContainer>
+    );
+  }
+
+  if (assistants.length === 0) {
     return (
       <PageContainer>
         <header>
@@ -81,8 +118,7 @@ export function InstallAssistant() {
           Install to your AI agents
         </h1>
         <p className="mt-1 max-w-xl text-sm text-muted">
-          Pick your AI agent, copy the MCP snippet, and follow the setup
-          steps. Statuses below are examples until live detection lands.
+          Pick your AI agent, copy the MCP snippet, and follow the setup steps.
         </p>
       </header>
 
@@ -102,7 +138,7 @@ export function InstallAssistant() {
           How your AI agent connects to this server. Each agent below lists the transports it supports.
         </p>
         <div className="mt-3 grid gap-4 md:grid-cols-3">
-          {mockTransportModes.map((mode) => (
+          {transports.map((mode) => (
             <Card key={mode.id}>
               <Card.Header>
                 <div className="flex items-center justify-between gap-2">
@@ -124,10 +160,10 @@ export function InstallAssistant() {
         </div>
       </section>
 
-      <Tabs defaultSelectedKey={mockAssistants[0].id} className="w-full">
+      <Tabs defaultSelectedKey={assistants[0]?.id ?? "claude-code"} className="w-full">
         <Tabs.ListContainer>
           <Tabs.List aria-label="AI agents">
-            {mockAssistants.map((assistant) => (
+            {assistants.map((assistant) => (
               <Tabs.Tab key={assistant.id} id={assistant.id}>
                 {assistant.name}
                 <Tabs.Indicator />
@@ -135,7 +171,7 @@ export function InstallAssistant() {
             ))}
           </Tabs.List>
         </Tabs.ListContainer>
-        {mockAssistants.map((assistant) => (
+        {assistants.map((assistant) => (
           <Tabs.Panel key={assistant.id} id={assistant.id} className="pt-4">
             <Card>
               <Card.Header>

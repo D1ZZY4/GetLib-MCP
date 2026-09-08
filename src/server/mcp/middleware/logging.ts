@@ -1,3 +1,5 @@
+import { getDatabase } from "../infrastructure/database";
+import { resolveDatabaseMode } from "../runtime";
 import { log } from "../utils/logger";
 
 export interface McpLogEntry {
@@ -35,6 +37,19 @@ export function appendLog(entry: Omit<McpLogEntry, "id" | "timestamp">): McpLogE
     durationMs: full.durationMs,
     ...(full.requestId !== undefined ? { requestId: full.requestId } : {}),
   });
+  // Durable sink for production only: development and tests stay on the
+  // in-memory ring (plus the mock repository when addressed directly), so
+  // the hot tool path never pays for network I/O outside production.
+  // saveLog never rejects, keeping this fire-and-forget safe.
+  if (resolveDatabaseMode() === "supabase-production") {
+    void getDatabase().saveLog({
+      ...(full.requestId !== undefined ? { requestId: full.requestId } : {}),
+      kind: full.kind,
+      name: full.name,
+      durationMs: full.durationMs,
+      ok: full.ok,
+    });
+  }
   return full;
 }
 

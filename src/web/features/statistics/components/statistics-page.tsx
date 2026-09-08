@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Skeleton } from "@heroui/react";
+import { Button, Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { DocsShareChart } from "./docs-share-chart";
 import { FetchRadial } from "./fetch-radial";
@@ -8,17 +8,18 @@ import { FetchRanking } from "./fetch-ranking";
 import { LibraryTable } from "./library-table";
 import { TrendChart } from "./trend-chart";
 import { UsageCard } from "./usage-chart";
-import { useStatistics } from "../hooks/use-statistics";
+import { useStatisticsData } from "../hooks/use-statistics-data";
 
 export function StatisticsPage() {
-  const { data: stats, loading } = useStatistics();
+  const { stats, loading, error, retry } = useStatisticsData();
 
   return (
     <PageContainer>
       <header>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Statistics</h1>
         <p className="mt-1 max-w-xl text-sm text-muted">
-          Plan usage and request analytics. Showing sample data.
+          Usage and performance analytics from authoritative server telemetry.
+          {stats?.isMock ? " Development mock data." : ""}
         </p>
       </header>
 
@@ -35,6 +36,18 @@ export function StatisticsPage() {
             <Skeleton className="h-72 rounded-xl" />
           </div>
         </div>
+      ) : error !== null || stats === null ? (
+        <Card>
+          <Card.Header>
+            <Card.Title>Statistics unavailable</Card.Title>
+            <Card.Description>{error ?? "We could not load statistics."}</Card.Description>
+          </Card.Header>
+          <Card.Footer>
+            <Button variant="secondary" onPress={retry}>
+              Retry
+            </Button>
+          </Card.Footer>
+        </Card>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

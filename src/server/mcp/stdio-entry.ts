@@ -1,6 +1,7 @@
 import { LIBRARY_REGISTRY } from "./sources/registry";
 import { renderRoutingTable } from "./services/intent-router";
 import { SERVER_NAME, SERVER_VERSION, TOOL_COUNT } from "./constants";
+import { initializeApplication } from "./init";
 import { listPrompts } from "./registry/prompt-registry";
 import { listResources } from "./registry/resource-registry";
 import { listTools } from "./registry/tool-registry";
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
     console.log(renderRoutingTable());
     return;
   }
+  await initializeApplication();
   const server = createServer();
   await connectStdio(server);
   console.error(

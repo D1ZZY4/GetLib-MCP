@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import type { LibraryStatRow } from "../services/statistics.service";
+import type { LibraryStatRow } from "../services/statistics-api.service";
 
 interface LibraryTableProps {
   rows: LibraryStatRow[];

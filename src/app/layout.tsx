@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "GetLib MCP - Library dashboard",
   description:
-    "GetLib MCP dashboard - resolve libraries, browse docs, and audit dependencies with sample data.",
+    "GetLib MCP dashboard - resolve libraries, browse docs, and audit dependencies.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

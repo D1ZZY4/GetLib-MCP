@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Drawer } from "@heroui/react";
+import { ProfileMenu } from "./profile-menu";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeControls } from "./theme-controls";
 import { MenuIcon } from "../ui/icons";
@@ -30,7 +31,8 @@ export function MobileNav() {
           </span>
           <span className="text-sm font-semibold">GetLib MCP</span>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <ProfileMenu />
           <ThemeControls />
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { Card } from "@heroui/react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import type { LibraryStatRow } from "../services/statistics.service";
+import type { LibraryStatRow } from "../services/statistics-api.service";
 import { ChartTooltipCard } from "./chart-tooltip";
 
 const SLICE_FILLS = [

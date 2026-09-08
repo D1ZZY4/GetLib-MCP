@@ -2,27 +2,26 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
-import type { DashboardStats } from "../../../types/library";
+import type { DashboardSnapshot } from "../services/dashboard-api.service";
 
 interface DashboardHeaderProps {
-  stats: DashboardStats;
+  dashboard: DashboardSnapshot;
 }
 
-export function DashboardHeader({ stats }: DashboardHeaderProps) {
+export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
   const router = useRouter();
-  const needsAttention = stats.outdated + stats.vulnerable;
+  const { stats, system } = dashboard;
+  const needsAttention = stats.outdated + stats.vulnerable + dashboard.attentions.length;
 
   return (
     <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">
-          Library dashboard
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-balance">Dashboard</h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
           {needsAttention > 0
-            ? `${needsAttention} ${needsAttention === 1 ? "library needs" : "libraries need"} your attention. Review versions, activity, and risks below.`
-            : "Everything is up to date. Review activity and risks below."}{" "}
-          All data on this page is sample data.
+            ? `${needsAttention} ${needsAttention === 1 ? "item needs" : "items need"} your attention. Review system status, activity, and risks below.`
+            : "Systems are healthy. Review activity and risks below."}{" "}
+          {system.isMock ? "Development mock data." : `${system.environment} - live data.`}
         </p>
       </div>
       <div className="flex shrink-0 gap-2">

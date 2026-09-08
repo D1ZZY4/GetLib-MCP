@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { UsageDay } from "../services/statistics.service";
+import type { UsageDay } from "../services/statistics-api.service";
 import { chartAccent, chartAxisTick, chartGridStroke } from "./chart-theme";
 import { trendSummary } from "./chart-summary";
 import { ChartTooltipCard } from "./chart-tooltip";

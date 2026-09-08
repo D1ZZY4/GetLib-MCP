@@ -49,7 +49,3 @@ export const TRANSPORT_MODES: readonly TransportMode[] = [
 export function transportModeIds(): TransportModeId[] {
   return TRANSPORT_MODES.map((mode) => mode.id);
 }
-
-export function getTransportMode(id: string): TransportMode | undefined {
-  return TRANSPORT_MODES.find((mode) => mode.id === id);
-}

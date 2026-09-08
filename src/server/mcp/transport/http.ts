@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createServer } from "../server";
+import { assertAllowedOrigin, OriginRejectedError } from "./request-guard";
 import { pruneSessionMap } from "./sessions";
 
 interface SessionEntry {
@@ -82,6 +83,14 @@ async function getTransport(req: Request): Promise<WebStandardStreamableHTTPServ
 }
 
 export async function handleHttpRequest(req: Request): Promise<Response> {
+  try {
+    assertAllowedOrigin(req);
+  } catch (error) {
+    if (error instanceof OriginRejectedError) {
+      return Response.json({ error: { code: "forbidden", message: error.message } }, { status: 403 });
+    }
+    throw error;
+  }
   const transport = await getTransport(req);
   return transport.handleRequest(req);
 }

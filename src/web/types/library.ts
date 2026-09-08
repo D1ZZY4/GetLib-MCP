@@ -37,24 +37,6 @@ export interface DashboardStats {
   vulnerable: number;
 }
 
-export type AssistantStatus = "connected" | "available";
-
-export type AssistantTransport = "stdio" | "sse" | "streamable-http";
-
-export interface MockAssistant {
-  id: string;
-  name: string;
-  description: string;
-  configFile: string;
-  snippet: string;
-  remoteConfigFile?: string;
-  remoteSnippet?: string;
-  remoteTransport?: AssistantTransport;
-  steps: string[];
-  status: AssistantStatus;
-  transports: AssistantTransport[];
-}
-
 export interface MockSession {
   name: string;
   email: string;

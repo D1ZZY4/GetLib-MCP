@@ -50,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Placeholder-only `.env.example` for local setup.
 - Centralized runtime environment detection with database-mode
   policy, fail-fast production validation, and snapshots.
+- Dashboard, development, install, runtime, and statistics
+  application services with management APIs, backed by live
+  telemetry or explicit mock payloads.
+- Domain auth policy, Supabase database boundary with mock and
+  real repositories, versioned migrations, and a startup init
+  lifecycle with production fail-fast.
+- Developments and Settings pages, a profile menu, origin
+  validation on MCP transports, and UI rewired from mocks to
+  authoritative backend snapshots.
 
 ### Changed
 
@@ -74,6 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document the new scripts, transports, and configuration in
   the READMEs, and expand the architecture blueprint with
   database, environment, deployment, and auth flows.
+- Standardize error mapping with forbidden, conflict, rate
+  limiting, and unavailable codes plus partial-result envelopes.
 
 ## [0.1.0] - 2026-09-08
 

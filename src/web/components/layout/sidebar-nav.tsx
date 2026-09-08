@@ -6,13 +6,16 @@ import { useEffect, useState } from "react";
 import {
   ChartIcon,
   ChevronsRightIcon,
-  DatabaseIcon,
+  CodeIcon,
   DownloadIcon,
+  GearIcon,
   GridIcon,
+  LayersIcon,
   LibraryIcon,
   SearchIcon,
   TerminalIcon,
 } from "../ui/icons";
+import { useEnvironment } from "@/web/features/development/hooks/use-environment";
 
 interface NavChild {
   href: string;
@@ -24,6 +27,7 @@ interface NavItem {
   label: string;
   icon: (props: { className?: string }) => React.ReactNode;
   children?: NavChild[];
+  developmentOnly?: boolean;
 }
 
 interface NavGroup {
@@ -68,7 +72,11 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   },
   {
     label: "Settings",
-    items: [{ href: "/sources", label: "Sources", icon: DatabaseIcon }],
+    items: [
+      { href: "/sources", label: "Sources", icon: LayersIcon },
+      { href: "/developments", label: "Developments", icon: CodeIcon, developmentOnly: true },
+      { href: "/settings", label: "Settings", icon: GearIcon },
+    ],
   },
 ];
 
@@ -148,6 +156,7 @@ export function SidebarNav({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const { isDevelopment } = useEnvironment();
 
   return (
     <nav aria-label="Primary" className="flex flex-col gap-5">
@@ -159,7 +168,9 @@ export function SidebarNav({
             </p>
           )}
           <ul className="flex flex-col gap-0.5">
-            {group.items.map((item) =>
+            {group.items
+              .filter((item) => !item.developmentOnly || isDevelopment)
+              .map((item) =>
               item.children !== undefined && !collapsed ? (
                 <DrillDownItem
                   key={`${group.label}-${item.href}`}

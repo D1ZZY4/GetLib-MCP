@@ -3,7 +3,7 @@ import { AuthGate } from "../auth-gate";
 
 export const metadata: Metadata = {
   title: "Sign in - GetLib MCP",
-  description: "Sign in to a demo account to open the GetLib dashboard.",
+  description: "Sign in to open the GetLib dashboard.",
 };
 
 export default function Page() {

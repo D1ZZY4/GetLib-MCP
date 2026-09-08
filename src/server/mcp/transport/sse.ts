@@ -143,3 +143,21 @@ export function closeSseSession(sessionId: string): void {
     void session.transport.close();
   }
 }
+
+export interface SseClientSession {
+  id: string;
+  transport: "sse";
+  connectedAt: string;
+  lastSeenAt: string;
+}
+
+/** Snapshot of live SSE sessions for the clients control plane. */
+export function listSseSessions(): SseClientSession[] {
+  pruneSessionMap(sessions);
+  return [...sessions.entries()].map(([id, entry]) => ({
+    id,
+    transport: "sse" as const,
+    connectedAt: new Date(entry.connectedAt).toISOString(),
+    lastSeenAt: new Date(entry.lastSeenAt).toISOString(),
+  }));
+}

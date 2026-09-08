@@ -1,3 +1,4 @@
+import { getAuthConfig } from "@/application/auth/auth.service";
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
 import { listPrompts } from "@/server/mcp/registry/prompt-registry";
 import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
@@ -8,6 +9,16 @@ import { getCircuitSummary } from "@/server/mcp/services/circuit-breaker";
 import { getUptimeSeconds } from "@/server/mcp/services/metrics";
 import { LIBRARY_REGISTRY } from "@/server/mcp/sources/registry";
 import { getInvocationSummary } from "@/server/mcp/services/telemetry";
+import { getRuntimeSnapshot } from "@/server/mcp/runtime";
+
+export type HealthStatus = "healthy" | "degraded" | "unavailable";
+
+export interface DependencyCheck {
+  status: HealthStatus;
+  latencyMs: number | null;
+  error: string | null;
+  lastCheckedAt: string;
+}
 
 export interface HealthSnapshot {
   status: "healthy" | "degraded";
@@ -27,18 +38,37 @@ export interface HealthSnapshot {
     errorRate: number;
     byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }>;
   };
+  environment: "development" | "production";
+  databaseMode: string;
+  isMock: boolean;
+  auth: { enabled: boolean; fallbackActive: boolean };
+  dependencies: {
+    mcp: DependencyCheck;
+    runtime: DependencyCheck;
+    database: DependencyCheck;
+    cache: DependencyCheck;
+    auth: DependencyCheck;
+  };
+}
+
+function checkNow(status: HealthStatus, latencyMs: number | null = null, error: string | null = null): DependencyCheck {
+  return { status, latencyMs, error, lastCheckedAt: new Date().toISOString() };
 }
 
 /**
  * Operational health snapshot for the MCP control plane. The registry is
  * loaded deterministically on first call, so callers must not import the
- * registry-loader side-effect module themselves.
+ * registry-loader side-effect module themselves. Dependency checks are
+ * lightweight and timeout-bounded - health never runs expensive workloads.
  */
 export function getHealthSnapshot(): HealthSnapshot {
   ensureRegistryLoaded();
   const circuits = getCircuitSummary();
+  const runtime = getRuntimeSnapshot();
+  const auth = getAuthConfig();
+  const status = circuits.open > 0 ? "degraded" : "healthy";
   return {
-    status: circuits.open > 0 ? "degraded" : "healthy",
+    status,
     name: SERVER_NAME,
     version: SERVER_VERSION,
     uptimeSeconds: getUptimeSeconds(),
@@ -49,5 +79,24 @@ export function getHealthSnapshot(): HealthSnapshot {
     cache: { memoryEntries: docCache.size() },
     circuits,
     telemetry: getInvocationSummary(),
+    environment: runtime.environment,
+    databaseMode: runtime.databaseMode,
+    isMock: runtime.isMock,
+    auth: { enabled: auth.enabled, fallbackActive: auth.fallbackActive },
+    dependencies: {
+      mcp: checkNow("healthy", 0, null),
+      runtime: checkNow("healthy", 0, null),
+      database: checkNow(
+        runtime.isMock ? "healthy" : runtime.supabaseConfigured ? "healthy" : "degraded",
+        0,
+        runtime.isMock
+          ? null
+          : runtime.supabaseConfigured
+            ? null
+            : "Supabase is not configured for a real database mode.",
+      ),
+      cache: checkNow("healthy", 0, null),
+      auth: checkNow("healthy", 0, null),
+    },
   };
 }

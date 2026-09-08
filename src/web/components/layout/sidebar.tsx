@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "@/web/providers/auth-provider";
+import { ProfileMenu } from "./profile-menu";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeControls } from "./theme-controls";
 import { ChevronsLeftIcon, ChevronsRightIcon } from "../ui/icons";
@@ -10,12 +11,8 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-function sessionInitial(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?";
-}
-
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
-  const { session, signOut } = useSession();
+  const { session } = useSession();
 
   return (
     <aside
@@ -49,31 +46,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       >
         {session !== null && !collapsed ? (
           <>
-            <span
-              aria-hidden="true"
-              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent"
-            >
-              {sessionInitial(session.name)}
-            </span>
+            <ProfileMenu />
             <span className="min-w-0 flex-1 truncate text-sm text-muted">{session.email}</span>
-            <button
-              type="button"
-              onClick={signOut}
-              className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
-            >
-              Sign out
-            </button>
           </>
         ) : null}
-        {session !== null && collapsed ? (
-          <span
-            aria-hidden="true"
-            title={session.email}
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent"
-          >
-            {sessionInitial(session.name)}
-          </span>
-        ) : null}
+        {session !== null && collapsed ? <ProfileMenu collapsed /> : null}
         <button
           type="button"
           onClick={onToggle}

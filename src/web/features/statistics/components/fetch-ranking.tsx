@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import { rankLibraryFetches, type LibraryFetch } from "../services/statistics.service";
+import { rankLibraryFetches, type LibraryFetch } from "../services/statistics-api.service";
 
 export function FetchRanking({ fetches }: { fetches: LibraryFetch[] }) {
   const ranked = rankLibraryFetches(fetches);
