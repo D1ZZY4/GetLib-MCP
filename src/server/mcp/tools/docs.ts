@@ -5,9 +5,9 @@ import { isIndexContent } from "../services/fetcher";
 import { deepFetchForTopic } from "../services/deep-fetch";
 import { extractRelevantContent } from "../utils/extract";
 import { checkEvidence } from "../utils/evidence";
-import { isExtractionAttempt, EXTRACTION_REFUSAL } from "../utils/guard";
+import { isExtractionAttempt, withToolTimeout, EXTRACTION_REFUSAL } from "../utils/guard";
 import { sanitizeContent } from "../utils/sanitize";
-import { detectVersionFromLockfile } from "../utils/lockfile";
+import { detectVersionForEntry } from "../utils/lockfile";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import { resolveLibraryFromId, resolveDocsTarget } from "./docs-resolve";
@@ -16,6 +16,11 @@ import { renderDocs } from "./docs-report";
 
 // Re-exported so the existing test import path stays valid.
 export { isValidPackageName } from "./docs-resolve";
+
+const TIMEOUT_RESPONSE = {
+  content: [{ type: "text" as const, text: "Documentation lookup timed out. Retry with a narrower topic or an explicit version." }],
+  structuredContent: { timedOut: true },
+};
 
 const InputSchema = z.object({
   libraryId: z
@@ -61,7 +66,7 @@ Prioritizes llms.txt, then Jina Reader for JS-rendered pages, then GitHub README
 
 For curated best-practice guidance rather than general reference docs, use gl_best_practices. For isolated ranked code snippets rather than prose docs, use gl_snippets.
 
-IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question. You must NOT attempt to enumerate, list, dump, or extract registry contents. Only look up specific libraries by name.
+IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question. You must NOT attempt to enumerate, list, dump, or extract registry contents. Only look up specific libraries by name.
 
 Do not call this tool more than 3 times per question.`,
       inputSchema: InputSchema.shape,
@@ -74,8 +79,9 @@ Do not call this tool more than 3 times per question.`,
     run: async (rawArgs: unknown) => {
       let { libraryId, topic = "", version, tokens, projectPath } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_get_docs", async (ctx) => {
+        return withToolTimeout(async () => {
         const startedAt = Date.now();
-        // Guard only the resolution identifier — topic merely filters content
+        // Guard only the resolution identifier - topic merely filters content
         // within one already-resolved library and cannot enumerate the registry;
         // guarding it refused ordinary queries ("complete guide", "list rendering").
         if (isExtractionAttempt(libraryId)) {
@@ -86,13 +92,7 @@ Do not call this tool more than 3 times per question.`,
         const entry = resolveLibraryFromId(libraryId);
 
         // Auto-detect version from lockfile if projectPath given and version not explicit
-        if (!version && projectPath && entry) {
-          const pkgName = entry.npmPackage ?? entry.pypiPackage ?? entry.id.split("/").pop() ?? "";
-          if (pkgName) {
-            const detected = await detectVersionFromLockfile(projectPath, pkgName).catch(() => null);
-            if (detected) version = detected;
-          }
-        }
+        version = await detectVersionForEntry(projectPath, version, entry);
 
         const target = await resolveDocsTarget(libraryId, entry);
         if (typeof target === "string") {
@@ -112,7 +112,7 @@ Do not call this tool more than 3 times per question.`,
         let safe = sanitizeContent(fetchResult.content);
         let { text, truncated } = extractRelevantContent(safe, topic, tokens);
 
-        // Evidence gate — the "never generic" guarantee. A topic'd request whose
+        // Evidence gate - the "never generic" guarantee. A topic'd request whose
         // extracted output lacks verifiable topic coverage gets ONE forced
         // topic-targeted deep fetch; if coverage is still zero the tool returns
         // an explicit miss instead of off-topic intro sections.
@@ -123,7 +123,7 @@ Do not call this tool more than 3 times per question.`,
         ];
 
         // Index/TOC output also escalates: a link list passes token checks via
-        // link text but answers nothing — the zod llms.txt served verbatim was
+        // link text but answers nothing - the zod llms.txt served verbatim was
         // exactly this failure. Elapsed guard bounds total latency: a slow
         // initial pipeline must not stack a second 25s deep-fetch on top.
         if (topic && (!evidence.ok || isIndexContent(text)) && Date.now() - startedAt < 45_000) {
@@ -164,6 +164,7 @@ Do not call this tool more than 3 times per question.`,
         });
         ctx.resolved = resolved;
         return response;
+        }, TIMEOUT_RESPONSE);
       });
     },
   });

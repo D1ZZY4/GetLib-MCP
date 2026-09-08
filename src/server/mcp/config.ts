@@ -14,6 +14,13 @@ export interface GetLibConfig {
   logFormat: "json" | "text";
   logLevel: "debug" | "info" | "warn" | "error";
   httpPort: string | undefined;
+  githubToken: string | undefined;
+  cacheDir: string;
+  concurrency: number;
+  watermarkDisabled: boolean;
+  authEnabled: boolean;
+  defaultAccount: string | undefined;
+  defaultPass: string | undefined;
 }
 
 function intEnv(name: string, fallback: number, min = 0): number {
@@ -45,6 +52,28 @@ function enumEnv<T extends string>(name: string, fallback: T, allowed: readonly 
   return raw as T;
 }
 
+function stringEnv(name: string): string | undefined {
+  const raw = process.env[name];
+  if (raw === undefined || raw.length === 0) return undefined;
+  return raw;
+}
+
+function boolEnv(name: string, fallback: boolean): boolean {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  if (raw === "true" || raw === "1") return true;
+  if (raw === "false" || raw === "0") return false;
+  throw new Error(`Invalid ${name}: "${raw}" -- must be true or false`);
+}
+
+function cacheDirEnv(): string {
+  const raw = stringEnv("GETLIB_CACHE_DIR");
+  if (raw !== undefined) return raw;
+  const home = stringEnv("HOME");
+  if (home !== undefined) return `${home}/.getlib-mcp-cache`;
+  return "/tmp/.getlib-mcp-cache";
+}
+
 export const config: Readonly<GetLibConfig> = Object.freeze({
   tokenLimit: intEnv("GETLIB_TOKEN_LIMIT", 8000),
   maxTokenLimit: intEnv("GETLIB_MAX_TOKEN_LIMIT", 20000),
@@ -61,4 +90,11 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
   logFormat: enumEnv("GETLIB_LOG_FORMAT", "text", ["json", "text"] as const),
   logLevel: enumEnv("GETLIB_LOG_LEVEL", "info", ["debug", "info", "warn", "error"] as const),
   httpPort: process.env.GETLIB_HTTP_PORT,
+  githubToken: stringEnv("GETLIB_GITHUB_TOKEN"),
+  cacheDir: cacheDirEnv(),
+  concurrency: intEnv("GETLIB_CONCURRENCY", 8, 1),
+  watermarkDisabled: process.env.GETLIB_NO_WATERMARK === "1",
+  authEnabled: boolEnv("GETLIB_AUTHENTICATION_ENABLE", false),
+  defaultAccount: stringEnv("GETLIB_DEFAULT_ACCOUNT"),
+  defaultPass: stringEnv("GETLIB_DEFAULT_PASS"),
 });

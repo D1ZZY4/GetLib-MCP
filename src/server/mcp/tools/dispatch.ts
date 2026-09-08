@@ -1,5 +1,5 @@
 /**
- * gl_dispatch — the smart entry point.
+ * gl_dispatch - the smart entry point.
  *
  * Most MCP clients will call individual gl_* tools directly because the
  * server.instructions block tells them exactly which tool to use for which
@@ -13,7 +13,7 @@
  *      with the current cwd, no extra args needed), so a single round-trip
  *      is enough.
  *
- * This is the "never disappoint" tool — even if the user just types
+ * This is the "never disappoint" tool - even if the user just types
  * "use getlib mcp" with no further context, the dispatch returns *something*
  * useful (typically: scanned project dependencies + best practices).
  */
@@ -21,7 +21,7 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { detectIntent, renderRoutingTable } from "../services/intent-router";
-import { withNotice, safeguardPath } from "../utils/guard";
+import { withNotice, safeguardPath, withToolTimeout } from "../utils/guard";
 import { withTelemetry } from "../services/telemetry";
 import { ROUTING_RATIONALE, ROUTING_FALLBACK } from "../sources/routing-rationale";
 
@@ -52,6 +52,11 @@ OUTPUT: a routing decision with tool name, args, reason, and a 0-to-1 confidence
 
 Use it for "use getlib mcp" in any phrasing.`;
 
+const TIMEOUT_RESPONSE = {
+  content: [{ type: "text" as const, text: "Dispatch timed out. Retry, or call gl_search directly with your query." }],
+  structuredContent: { timedOut: true, tool: "gl_search" as const, args: {}, reason: "timeout fallback", confidence: 0 },
+};
+
 export function registerDispatchTools(): void {
   defineTool({
     name: "gl_dispatch",
@@ -67,6 +72,7 @@ export function registerDispatchTools(): void {
     run: async (rawArgs: unknown) => {
       const { query, projectPath } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_dispatch", async (ctx) => {
+        return withToolTimeout(async () => {
         const intent = detectIntent({
           query,
           ...(projectPath !== undefined ? { projectPath } : {}),
@@ -84,12 +90,12 @@ export function registerDispatchTools(): void {
             resolvedPath = safeguardPath(pathArg ?? projectPath ?? process.cwd());
             intent.args["projectPath"] = resolvedPath;
           } catch {
-            // fall back to bare cwd marker — actual tool will re-validate
+            // fall back to bare cwd marker - actual tool will re-validate
           }
         }
 
         const lines: string[] = [];
-        lines.push(`# Dispatch — routed to \`${intent.tool}\``);
+        lines.push(`# Dispatch - routed to \`${intent.tool}\``);
         lines.push("");
         lines.push(`> Confidence: **${(intent.confidence * 100).toFixed(0)}%**  •  Reason: ${intent.reason}`);
         lines.push("");
@@ -113,7 +119,7 @@ export function registerDispatchTools(): void {
         lines.push("");
         lines.push("## Next step");
         lines.push(
-          `Invoke the recommended tool with the args above. The arguments are checked against the target tool's required fields. If the routing looks wrong, fall back to \`gl_search({ query: "${query.replace(/"/g, '\\"')}" })\` — it never fails to return *something* useful.`,
+          `Invoke the recommended tool with the args above. The arguments are checked against the target tool's required fields. If the routing looks wrong, fall back to \`gl_search({ query: "${query.replace(/"/g, '\\"')}" })\` - it never fails to return *something* useful.`,
         );
         lines.push("");
         lines.push("---");
@@ -130,6 +136,7 @@ export function registerDispatchTools(): void {
             confidence: intent.confidence,
           },
         };
+        }, TIMEOUT_RESPONSE);
       });
     }
   });

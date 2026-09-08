@@ -36,9 +36,10 @@ const InputSchema = z.object({
     .describe("Max tokens for content"),
 });
 
-/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+/** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = {
+  structuredContent: { timedOut: true },
   content: [{ type: "text" as const, text: "Compatibility lookup timed out. Retry with a narrower feature name, or check the MDN page directly." }],
 };
 
@@ -48,7 +49,7 @@ export function registerCompatTools(): void {
       title: "Check Browser/Runtime Compatibility",
       description: `Check browser, Node.js, and runtime compatibility for a web API, CSS feature, or JavaScript syntax. Fetches live data from MDN Web Docs and caniuse.com.
 
-Use this when the question is specifically about which browsers or runtimes support a feature (e.g. "does Safari support container queries?", "which Node.js version added Array.at()"). Takes a feature string — not a library name. For general library docs or best practices, use gl_get_docs or gl_best_practices instead.`,
+Use this when the question is specifically about which browsers or runtimes support a feature (e.g. "does Safari support container queries?", "which Node.js version added Array.at()"). Takes a feature string - not a library name. For general library docs or best practices, use gl_get_docs or gl_best_practices instead.`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,
@@ -62,7 +63,7 @@ Use this when the question is specifically about which browsers or runtimes supp
         ctx.resolved = true;
         return withToolTimeout(async () => {
           // No extraction guard: `feature` is a web-platform feature description,
-          // not a registry key — guarding it refused ordinary queries like
+          // not a registry key - guarding it refused ordinary queries like
           // "does Safari support the full :has() selector list".
           const envFilter = environments?.map((e) => e.toLowerCase()).join(", ") ?? "";
           const cacheKey = `compat:${feature}:${envFilter}:${tokens}`;
@@ -76,7 +77,7 @@ Use this when the question is specifically about which browsers or runtimes supp
                   ...(envelope.structuredContent ? { structuredContent: envelope.structuredContent } : {}),
                 };
               }
-            } catch { /* pre-envelope cache entry — plain rendered text */ }
+            } catch { /* pre-envelope cache entry - plain rendered text */ }
             return { content: [{ type: "text", text: cached }] };
           }
 
@@ -113,13 +114,13 @@ Use this when the question is specifically about which browsers or runtimes supp
           if (sections.length === 0) {
             const text = withNotice(
               [
-                `# ${feature} — no compatibility evidence found`,
+                `# ${feature} - no compatibility evidence found`,
                 "",
                 `No MDN document or caniuse entry with verifiable data for "${feature}" could be fetched. Rather than guess, check directly:`,
                 `- https://developer.mozilla.org/en-US/search?q=${featureEncoded}`,
                 `- https://caniuse.com/?search=${featureEncoded}`,
                 "",
-                "Tip: use the exact feature name (e.g. 'container queries', 'Array.prototype.at') — marketing names often miss.",
+                "Tip: use the exact feature name (e.g. 'container queries', 'Array.prototype.at') - marketing names often miss.",
               ].join("\n"),
             );
             return {
@@ -132,7 +133,7 @@ Use this when the question is specifically about which browsers or runtimes supp
           const header = [
             `# Browser Compatibility: ${feature}`,
             envFilter ? `Focused on: ${envFilter}` : "",
-            weakEvidence ? `> Evidence: Weak — only search results matched; verify in the linked pages.` : "",
+            weakEvidence ? `> Evidence: Weak - only search results matched; verify in the linked pages.` : "",
             "",
           ]
             .filter(Boolean)
@@ -150,7 +151,7 @@ Use this when the question is specifically about which browsers or runtimes supp
             sources: sections.map((s) => s.url),
             evidence: {
               // BCD data comes from the resolved MDN doc for this exact feature
-              // (relevance-gated above) — authoritative regardless of how many
+              // (relevance-gated above) - authoritative regardless of how many
               // times the feature name recurs in the table text.
               ok: !!bcd || (evidenceCheck.ok && !weakEvidence),
               matchRatio: evidenceCheck.matchRatio,
@@ -158,7 +159,7 @@ Use this when the question is specifically about which browsers or runtimes supp
               verdict: bcd ? "strong" : weakEvidence ? "weak" : evidenceCheck.ok ? "strong" : "weak",
             },
           };
-          // Envelope keeps evidence.ok available on cache hits — a bare string
+          // Envelope keeps evidence.ok available on cache hits - a bare string
           // cache silently dropped the whole structuredContent block.
           docCache.set(cacheKey, JSON.stringify({ text: response, structuredContent }));
 

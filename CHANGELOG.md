@@ -39,6 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   services instead of registries directly.
 - Drill-down sidebar navigation with an MCP submenu, a redesigned
   404 page, and dark mode as the default theme.
+- Centralized `GETLIB_*` configuration boundary with fail-closed
+  validation for tokens, paths, flags, and auth settings.
+- Tool execution hardening: per-tool timeouts with actionable
+  responses, extraction refusal guards, filesystem and network
+  boundary checks, and lockfile-based version detection.
 
 ### Changed
 
@@ -54,6 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Align dashboard, statistics, and MCP catalog UI with the new
   web client and contracts, with shared tooltips, ranking
   helpers, and honest sample-data copy.
+- Centralize fetching behind timeout, redirect, semaphore, and
+  SSRF protection, with an idempotent guard install, backoff on
+  rate limits, and circuit breaking on search providers.
 
 ## [0.1.0] - 2026-09-08
 

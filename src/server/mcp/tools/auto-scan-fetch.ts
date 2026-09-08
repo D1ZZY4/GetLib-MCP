@@ -2,6 +2,7 @@ import { lookupByAlias, lookupById, fuzzySearch } from "../sources/registry";
 import { fetchDocs, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../services/fetcher";
 import { extractRelevantContent } from "../utils/extract";
 import { sanitizeContent } from "../utils/sanitize";
+import { config } from "../config";
 import type { LibraryEntry } from "../types";
 
 export interface LibraryResult {
@@ -13,7 +14,7 @@ export interface LibraryResult {
 
 /** Server-wide FetchSemaphore caps at 12, so 8 leaves headroom for other tools. */
 function concurrency(): number {
-  const raw = parseInt(process.env.GETLIB_CONCURRENCY ?? "8", 10);
+  const raw = config.concurrency;
   return Number.isFinite(raw) && raw > 0 ? Math.min(raw, 12) : 8;
 }
 
@@ -31,7 +32,7 @@ export function matchDepToRegistry(depName: string): LibraryEntry | null {
     }
   }
 
-  // fuzzy — only use if score is high enough (first result, short names only)
+  // fuzzy - only use if score is high enough (first result, short names only)
   const fuzzy = fuzzySearch(depName, 1);
   if (fuzzy.length > 0 && fuzzy[0]) {
     const entry = lookupById(fuzzy[0].id);

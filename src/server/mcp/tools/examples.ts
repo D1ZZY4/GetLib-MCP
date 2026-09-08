@@ -1,5 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
+import { config } from "../config";
 import { withTelemetry } from "../services/telemetry";
 import { fetchWithTimeout, githubAuthHeaders } from "../services/fetcher";
 import { docCache, diskDocCache } from "../services/cache";
@@ -18,9 +19,10 @@ const InputSchema = z.object({
     .describe("Number of code examples to return (default: 5, max: 10)"),
 });
 
-/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+/** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = {
+  structuredContent: { timedOut: true },
   content: [{ type: "text" as const, text: "Example search timed out. Retry, or call gl_get_docs with the same pattern as the topic." }],
 };
 
@@ -28,7 +30,7 @@ function buildQuery(library: string, pattern: string | undefined, language: stri
   const parts = [pattern ? `${library} ${pattern}` : `import ${library}`];
   if (language) parts.push(`language:${language}`);
   parts.push("-path:test -path:__test__ -path:spec -path:node_modules -path:.next");
-  // Exclude documentation/markdown files — gl_examples is for real code, not
+  // Exclude documentation/markdown files - gl_examples is for real code, not
   // READMEs/API.md (which GitHub code search otherwise returns as top hits).
   parts.push("-extension:md -extension:mdx -extension:markdown -extension:rst -extension:txt");
   return parts.join(" ");
@@ -81,8 +83,8 @@ Source: open-source GitHub repositories (not the library's own docs). Use this w
           // GitHub code search is authenticated-only: without a token the call
           // is a guaranteed 401/403. Skip straight to the docs-derived path
           // instead of spending a round trip to be told so.
-          if (!process.env.GETLIB_GITHUB_TOKEN) {
-            return fallback("GitHub code search needs GETLIB_GITHUB_TOKEN — showing documentation-derived examples instead.");
+          if (!config.githubToken) {
+            return fallback("GitHub code search needs GETLIB_GITHUB_TOKEN - showing documentation-derived examples instead.");
           }
 
           try {
@@ -96,7 +98,7 @@ Source: open-source GitHub repositories (not the library's own docs). Use this w
               return fallback(
                 res.status === 403 || res.status === 429
                   ? "GitHub API rate limit reached (set GETLIB_GITHUB_TOKEN for 5000 req/hr)."
-                  : `GitHub code search unavailable (HTTP ${res.status} — it requires GETLIB_GITHUB_TOKEN).`,
+                  : `GitHub code search unavailable (HTTP ${res.status} - it requires GETLIB_GITHUB_TOKEN).`,
               );
             }
 

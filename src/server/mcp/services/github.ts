@@ -1,4 +1,5 @@
 import { CACHE_TTLS } from "../constants";
+import { config } from "../config";
 import type { FetchResult } from "../types";
 import { docCache, diskDocCache } from "./cache";
 import { log } from "../utils/logger";
@@ -40,7 +41,7 @@ export async function fetchGitHubContent(
   // Fallback: GitHub REST API. Works unauthenticated (60 req/hr); GETLIB_GITHUB_TOKEN
   // raises the limit to 5000/hr. Previously gated entirely behind the token, which
   // disabled the fallback for the common no-token case.
-  const token = process.env.GETLIB_GITHUB_TOKEN;
+  const token = config.githubToken;
   const apiHeaders: Record<string, string> = { Accept: "application/vnd.github.raw+json" };
   if (token) apiHeaders.Authorization = `Bearer ${token}`;
   for (const branch of ["main", "master"]) {
@@ -73,7 +74,7 @@ export async function fetchGitHubReleases(githubUrl: string): Promise<string | n
   }
 
   try {
-    // GitHub releases API has no server-side prerelease filter — we must fetch
+    // GitHub releases API has no server-side prerelease filter - we must fetch
     // a window and filter client-side. Canary-heavy projects (Next.js, etc.)
     // can have the top 3 entries all be prereleases, so fetch 30 (the API default)
     // to ensure we see real stable releases.
@@ -148,7 +149,7 @@ export async function fetchGitHubExamples(githubUrl: string): Promise<string | n
     "docs/patterns.md",
   ];
 
-  // Try up to 6 candidates concurrently — return first hit
+  // Try up to 6 candidates concurrently - return first hit
   const candidates = paths.flatMap((path) =>
     ["main", "master"].map((branch) => ({ path, branch })),
   );

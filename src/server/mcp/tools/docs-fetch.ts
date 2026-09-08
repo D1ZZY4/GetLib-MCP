@@ -7,7 +7,9 @@ import { isValidPackageName, type DocsTarget } from "./docs-resolve";
 /** README at a version tag, when the library has a GitHub repo. */
 async function fetchTaggedReadme(githubUrl: string, version: string): Promise<FetchResult | undefined> {
   const ghMatch = githubUrl.match(/github\.com\/([^/]+\/[^/]+)/);
-  if (!ghMatch) return undefined;
+  // Same allowlist as fetchVersionedNpm - version lands in a URL path
+  // segment, so reject traversal and over-long input before construction.
+  if (!ghMatch || !/^[\w.-]+$/.test(version)) return undefined;
   const tagRef = version.startsWith("v") ? version : `v${version}`;
   const rawUrl = `https://raw.githubusercontent.com/${ghMatch[1]}/${tagRef}/README.md`;
   const raw = await fetchAsMarkdownRace(rawUrl).catch(() => null);

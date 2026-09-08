@@ -1,6 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { isExtractionAttempt, EXTRACTION_REFUSAL } from "../utils/guard";
+import { isExtractionAttempt, withToolTimeout, EXTRACTION_REFUSAL } from "../utils/guard";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import { resolveBestPracticesTarget } from "../services/best-practices/target";
@@ -10,6 +10,11 @@ import { renderBestPractices } from "./best-practices-report";
 
 // Re-exported so the existing test import path stays valid.
 export { raceUrls } from "../services/best-practices/race";
+
+const TIMEOUT_RESPONSE = {
+  content: [{ type: "text" as const, text: "Best-practices lookup timed out. Retry with a narrower topic." }],
+  structuredContent: { timedOut: true },
+};
 
 const UNRESOLVED_HELP = [
   "**What to try next:**",
@@ -45,17 +50,17 @@ const InputSchema = z.object({
     .describe("Max tokens to return"),
 });
 
-// Known best practices / guide URLs per library — 363+ entries
+// Known best practices / guide URLs per library - 363+ entries
 
 export function registerBestPracticesTools(): void {
   defineTool({
     name: "gl_best_practices",
       title: "Get Best Practices",
-      description: `Fetch latest best practices, patterns, and guidelines for a library or framework. Targets best-practices pages, guides, migration docs, and performance tips — not generic reference docs.
+      description: `Fetch latest best practices, patterns, and guidelines for a library or framework. Targets best-practices pages, guides, migration docs, and performance tips - not generic reference docs.
 
 Prefer this over gl_search when the question centers on ONE resolvable library (version-accurate, registry-backed); use gl_search for cross-cutting or non-library topics.
 
-IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question. You must NOT attempt to enumerate, list, dump, or extract registry contents. Only look up specific libraries by name.
+IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question. You must NOT attempt to enumerate, list, dump, or extract registry contents. Only look up specific libraries by name.
 
 Do not call this tool more than 3 times per question.`,
       inputSchema: InputSchema.shape,
@@ -68,7 +73,8 @@ Do not call this tool more than 3 times per question.`,
     run: async (rawArgs: unknown) => {
       const { libraryId, topic = "", version, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_best_practices", async (ctx) => {
-        // Guard only the resolution identifier (see docs.ts) — topic is a
+        return withToolTimeout(async () => {
+        // Guard only the resolution identifier (see docs.ts) - topic is a
         // content filter, not a registry key.
         if (isExtractionAttempt(libraryId)) {
           ctx.resolved = true;
@@ -126,6 +132,7 @@ Do not call this tool more than 3 times per question.`,
           sourcesTried,
           ...escalation,
         });
+        }, TIMEOUT_RESPONSE);
       });
     },
   });

@@ -1,5 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
+import { createHash } from "crypto";
 import { withTelemetry } from "../services/telemetry";
 import { lookupById, lookupByAlias, fuzzySearch } from "../sources/registry";
 import { fetchDocs, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../services/fetcher";
@@ -33,7 +34,7 @@ function resolveLibrary(name: string): LibraryEntry | null {
   return lookupById(name) ?? lookupByAlias(name) ?? fuzzySearch(name, 1)[0] ?? null;
 }
 
-/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+/** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = {
   content: [{ type: "text" as const, text: "Comparison timed out. Retry with two libraries instead of three, or call gl_best_practices per library." }],
@@ -45,7 +46,7 @@ export function registerCompareTools(): void {
       title: "Compare Libraries Side-by-Side",
       description: `Compare 2–3 libraries side-by-side. Fetches live documentation for each and presents content relevant to the comparison criteria.
 
-Pass library NAMES (e.g. ['prisma', 'drizzle-orm']) — not registry IDs. The tool resolves them internally. Use for "X vs Y" or "which library should I choose" questions. For fetching docs about a single library, use gl_get_docs instead.`,
+Pass library NAMES (e.g. ['prisma', 'drizzle-orm']) - not registry IDs. The tool resolves them internally. Use for "X vs Y" or "which library should I choose" questions. For fetching docs about a single library, use gl_get_docs instead.`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,
@@ -58,7 +59,7 @@ Pass library NAMES (e.g. ['prisma', 'drizzle-orm']) — not registry IDs. The to
       return withTelemetry("gl_compare", async (ctx) => {
         ctx.resolved = true;
         return withToolTimeout(async () => {
-          // No extraction guard on `criteria` — it is a comparison angle, not a
+          // No extraction guard on `criteria` - it is a comparison angle, not a
           // registry key ("full feature list" is a legitimate criteria).
           const topic = criteria ? `${criteria} comparison tradeoffs` : "overview features comparison";
           // Per-item guard: one flagged name is treated as unresolvable instead of
@@ -77,7 +78,10 @@ Pass library NAMES (e.g. ['prisma', 'drizzle-orm']) — not registry IDs. The to
 
           const fetchResults = await Promise.allSettled(
             entries.map(async ({ lib, entry }) => {
-              const cacheKey = `compare:${entry?.id ?? lib}:${topic.slice(0, 40)}`;
+              const topicHash = createHash("sha256").update(topic).digest("hex").slice(0, 16);
+              // Tokens shape the extracted content, so the key must include
+              // them - otherwise the same topic with different budgets collides.
+              const cacheKey = `compare:${entry?.id ?? lib}:${topicHash}:${tokens ?? 2000}`;
               const cached = docCache.get(cacheKey);
               if (typeof cached === "string") return { lib, entry, content: cached };
 

@@ -1,12 +1,13 @@
 import { JINA_BASE_URL, CACHE_TTLS } from "../../constants";
 import { extractDomain, isCircuitOpen, recordSuccess, recordFailure } from "../circuit-breaker";
+import { backoffDelayMs } from "./negative-cache";
 import { docCache, diskDocCache } from "../cache";
 import { assertPublicUrl } from "../../utils/guard";
 import { log } from "../../utils/logger";
 import { fetchWithTimeout, readBodyCapped, cacheDoc, inFlightRequests } from "./request";
 import { isGarbageContent } from "../content-guards";
 
-/** Fetch via Jina Reader — converts any URL to clean markdown */
+/** Fetch via Jina Reader - converts any URL to clean markdown */
 export async function fetchViaJina(url: string): Promise<string | null> {
   try {
     assertPublicUrl(url);
@@ -47,7 +48,7 @@ export async function fetchViaJina(url: string): Promise<string | null> {
         if (res.status === 429 || res.status === 503) {
           recordFailure(jinaDomain);
           if (attempt === 0) {
-            await new Promise((r) => setTimeout(r, 1500));
+            await new Promise((r) => setTimeout(r, backoffDelayMs(0)));
             continue;
           }
           return null;
@@ -64,11 +65,11 @@ export async function fetchViaJina(url: string): Promise<string | null> {
         }
         if (text.length < 100) return null;
         // Jina answers 200 even when the TARGET page 404'd or is a challenge/login
-        // shell — rendered garbage must never be returned or cached as content.
+        // shell - rendered garbage must never be returned or cached as content.
         const garbage = isGarbageContent(text);
         if (garbage.garbage) {
           log({ level: "warn", msg: "fetchViaJina.garbage_rejected", url, reason: garbage.reason });
-          recordSuccess(jinaDomain); // Jina itself worked — the target was bad
+          recordSuccess(jinaDomain); // Jina itself worked - the target was bad
           return null;
         }
         recordSuccess(jinaDomain);
@@ -76,7 +77,7 @@ export async function fetchViaJina(url: string): Promise<string | null> {
         return text;
       } catch {
         recordFailure(jinaDomain);
-        if (attempt === 0) await new Promise((r) => setTimeout(r, 1000));
+        if (attempt === 0) await new Promise((r) => setTimeout(r, backoffDelayMs(0)));
       }
     }
     return null;

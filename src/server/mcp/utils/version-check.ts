@@ -1,4 +1,6 @@
-import { SERVER_VERSION, NPM_REGISTRY_URL, FETCH_TIMEOUT_MS } from "../constants";
+import { SERVER_VERSION, NPM_REGISTRY_URL } from "../constants";
+import { fetchWithTimeout, readBodyCapped } from "../services/http/request";
+import { log } from "./logger";
 
 let cachedLatest: { version: string; checkedAt: number } | null = null;
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
@@ -8,22 +10,24 @@ export async function getLatestVersion(): Promise<string | null> {
     return cachedLatest.version;
   }
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), Math.min(5_000, FETCH_TIMEOUT_MS));
-    const res = await fetch(`${NPM_REGISTRY_URL}/getlib-mcp/latest`, {
-      signal: controller.signal,
-      redirect: "manual",
-      headers: { Accept: "application/json" },
+    // Centralized fetch boundary: timeout, redirect policy, semaphore, and
+    // SSRF guard in one place instead of a bespoke AbortController here.
+    const res = await fetchWithTimeout(`${NPM_REGISTRY_URL}/getlib-mcp/latest`, 5_000, {
+      Accept: "application/json",
     });
-    clearTimeout(timeout);
     if (!res.ok) return null;
-    const data = (await res.json()) as { version?: string };
+    // Cap the body before parsing - an unbounded res.json() lets a
+    // compromised mirror exhaust memory with a huge payload.
+    const text = await readBodyCapped(res, 64 * 1024);
+    if (text === null) return null;
+    const data = JSON.parse(text) as { version?: string };
     if (typeof data.version === "string" && /^\d+\.\d+\.\d+/.test(data.version)) {
       cachedLatest = { version: data.version, checkedAt: Date.now() };
       return data.version;
     }
-  } catch {
-    // network error — silently ignore
+  } catch (error) {
+    // network error - structured log and stay silent to the caller
+    log({ level: "debug", msg: "version-check.failed", error: error instanceof Error ? error.message : String(error) });
   }
   return null;
 }

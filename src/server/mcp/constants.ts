@@ -3,17 +3,18 @@ import { config } from "./config";
 export const SERVER_NAME = "getlib-mcp";
 export const SERVER_VERSION = "0.1.0";
 
-// Number of MCP tools registered in server.ts — single source of truth for the
+// Number of MCP tools registered in server.ts - single source of truth for the
 // `/api/mcp/servers` payloads and the server startup log, so the count
 // cannot silently drift when a tool is added/removed.
 export const TOOL_COUNT = 14;
 
 export const CHARS_PER_TOKEN = 3.8;
 
-// Disk cache directory for persistent cross-invocation caching
-const _rawCacheDir =
-  process.env.GETLIB_CACHE_DIR ??
-  (process.env.HOME ? `${process.env.HOME}/.getlib-mcp-cache` : "/tmp/.getlib-mcp-cache");
+// Disk cache directory for persistent cross-invocation caching.
+// Resolved through the centralized config boundary (config.cacheDir);
+// the system-directory guard below stays here so misconfiguration
+// fails fast at import time.
+const _rawCacheDir = config.cacheDir;
 const _SYSTEM_DIRS = ["/etc", "/proc", "/sys", "/dev", "/boot", "/root", "/bin", "/sbin", "/usr", "/var/run", "/run", "/var/log"];
 if (_SYSTEM_DIRS.some((d) => _rawCacheDir === d || _rawCacheDir.startsWith(d + "/"))) {
   throw new Error(`GETLIB_CACHE_DIR must not point to a system directory: ${_rawCacheDir}`);
@@ -55,7 +56,7 @@ export const PYPI_URL = "https://pypi.org/pypi";
 export const GITHUB_API_URL = "https://api.github.com";
 export const GITHUB_RAW_URL = "https://raw.githubusercontent.com";
 
-// Prompt injection guard patterns — strip suspicious LLM instruction attempts from fetched content
+// Prompt injection guard patterns - strip suspicious LLM instruction attempts from fetched content
 export const INJECTION_PATTERNS: RegExp[] = [
   /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
   /you\s+(are|must|should|will|have\s+to)\s+now/gi,
@@ -76,7 +77,7 @@ export const INJECTION_PATTERNS: RegExp[] = [
   /<\|(?:im_|system|user|assistant|endoftext)[_a-z]*\|?>/gi,
   // Markdown image exfiltration attempts (incl. modern OAST / callback platforms)
   /!\[.*?\]\(https?:\/\/[^)]*(?:exfil|steal|leak|callback|webhook|requestbin|hookbin|burp|interact\.sh|oast\.(?:me|site|fun|live|pro)|canarytokens|pipedream\.net|ngrok(?:\.io|-free\.app)|webhook\.site|beeceptor)[^)]*\)/gi,
-  // Tool/function override attempts — scoped to delimiter / role-key usage so
+  // Tool/function override attempts - scoped to delimiter / role-key usage so
   // legitimate prose references (e.g. ".tool_calls" in OpenAI/MCP API docs) survive.
   /(?:^|<)\s*(?:tool_call|function_call|tool_result)\s*(?:>|\s*:\s*"(?:tool|function))/gim,
   // Claude / Llama role delimiters + instruction-exfiltration prompts

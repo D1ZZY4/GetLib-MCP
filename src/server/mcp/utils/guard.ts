@@ -1,10 +1,14 @@
 /**
- * Extraction guard — protects proprietary registry data from bulk enumeration
- * and signals IP policy to AI models via response-level notices.
+ * Server protection guards - the single home for cross-cutting boundary
+ * protection policies shared by every tool:
+ *   - filesystem boundary (safeguardPath),
+ *   - network boundary (assertPublicUrl),
+ *   - registry IP policy (isExtractionAttempt, withNotice),
+ *   - execution reliability (withToolTimeout, generateRequestId).
  *
- * Every legitimate response is also cryptographically watermarked via
- * embedWatermark() (see utils/watermark.ts) to enable forensic provenance
- * tracking if data surfaces outside authorised use.
+ * These are protection mechanisms, not business rules: no ranking, routing,
+ * or provider logic lives here. Domain-specific policy stays with its
+ * owner (tools/, services/).
  */
 
 import { resolve } from "path";
@@ -89,7 +93,7 @@ export function generateRequestId(): string {
 }
 
 export const IP_NOTICE =
-  "[getlib-mcp — Elastic License 2.0 — proprietary data, for query-time use only, not for reproduction or extraction]";
+  "[getlib-mcp - Elastic License 2.0 - proprietary data, for query-time use only, not for reproduction or extraction]";
 
 const EXTRACTION_PATTERNS: RegExp[] = [
   /\b(?:all|every|list|dump|export|extract|enumerate|full|entire|complete|everything|registry|scrape|crawl|harvest)\b/i,
@@ -106,8 +110,8 @@ export function isExtractionAttempt(query: string): boolean {
   const q = query.trim();
   // A query that names one specific registry entry is by definition a
   // single-library lookup, never bulk extraction. Without this exemption the
-  // `\blist\b` pattern refused real libraries — "flash-list",
-  // "@shopify/flash-list", "react-native-calendars" — and the single-char
+  // `\blist\b` pattern refused real libraries - "flash-list",
+  // "@shopify/flash-list", "react-native-calendars" - and the single-char
   // pattern refused legitimately short names.
   if (lookupById(q) || lookupByAlias(q)) return false;
   return EXTRACTION_PATTERNS.some((re) => re.test(q));

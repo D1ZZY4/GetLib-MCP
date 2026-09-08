@@ -26,15 +26,17 @@
  */
 
 import { randomBytes, createHash } from "crypto";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync } from "fs";
+import { writeFile } from "fs/promises";
 import { join } from "path";
 import { homedir } from "os";
+import { config } from "../config";
 
 // Invisible Unicode mathematical operators (not whitespace, not ZWJ/ZWS)
 const BIT0 = "\u2061"; // FUNCTION APPLICATION
 const BIT1 = "\u2062"; // INVISIBLE TIMES
 
-// Persistent installation key file — created once per server instance
+// Persistent installation key file - created once per server instance
 const INSTALL_KEY_FILE = join(homedir(), ".getlib-mcp-install.key");
 
 let _cachedInstallId: string | undefined;
@@ -45,21 +47,22 @@ let _cachedInstallId: string | undefined;
  */
 export function getInstallId(): string {
   if (_cachedInstallId !== undefined) return _cachedInstallId;
-  if (existsSync(INSTALL_KEY_FILE)) {
+  try {
     const raw = readFileSync(INSTALL_KEY_FILE, "utf-8").trim();
     // Validate stored ID is 8 lowercase hex chars
     if (/^[0-9a-f]{8}$/.test(raw)) {
       _cachedInstallId = raw;
       return raw;
     }
+  } catch {
+    // Missing/unreadable key file - fall through to generation below.
   }
   // Generate a new 4-byte (8 hex char) installation ID
   const id = randomBytes(4).toString("hex");
-  try {
-    writeFileSync(INSTALL_KEY_FILE, id + "\n", { mode: 0o600 });
-  } catch {
-    // Read-only fs or container environment — use the generated ID for this session only
-  }
+  // Persist without blocking the event loop; a read-only fs or container
+  // environment just keeps the session-only ID via the swallowed rejection.
+  // The single small sync read above runs at most once per process.
+  void writeFile(INSTALL_KEY_FILE, id + "\n", { mode: 0o600 }).catch(() => {});
   _cachedInstallId = id;
   return id;
 }
@@ -82,14 +85,14 @@ function hexToInvisible(hex: string): string {
  * Inserted after the first newline character in the text.
  */
 export function embedWatermark(text: string): string {
-  // Privacy opt-out for air-gapped / multi-tenant installs — skip the install
+  // Privacy opt-out for air-gapped / multi-tenant installs - skip the install
   // fingerprint entirely, before any file I/O to read the install key.
-  if (process.env["GETLIB_NO_WATERMARK"] === "1") return text;
+  if (config.watermarkDisabled) return text;
   const installId = getInstallId();
   const nonce = randomBytes(4).toString("hex");
   const invisible = hexToInvisible(installId) + hexToInvisible(nonce);
 
-  // Insert after first newline — sits invisibly in the IP notice line
+  // Insert after first newline - sits invisibly in the IP notice line
   const pos = text.indexOf("\n");
   if (pos === -1) return text + invisible;
   return text.slice(0, pos + 1) + invisible + text.slice(pos + 1);
@@ -99,9 +102,9 @@ export function embedWatermark(text: string): string {
  * Extract and decode the watermark embedded in text.
  *
  * Returns:
- *   found     — whether a valid watermark was detected
- *   installId — 8-char hex ID of the server instance that produced this text
- *   nonce     — 8-char hex per-request nonce (proves distinct origin per response)
+ *   found     - whether a valid watermark was detected
+ *   installId - 8-char hex ID of the server instance that produced this text
+ *   nonce     - 8-char hex per-request nonce (proves distinct origin per response)
  *
  * Usage for forensic detection:
  *   import { detectWatermark } from "getlib-mcp/dist/utils/watermark.js";
@@ -139,7 +142,7 @@ export function detectWatermark(text: string): {
 
 /**
  * Returns a compact SHA-256-based integrity token for the response text
- * (excluding the embedded invisible chars). Not embedded in responses —
+ * (excluding the embedded invisible chars). Not embedded in responses -
  * used for internal audit logging if desired.
  */
 export function responseIntegrityToken(text: string): string {

@@ -1,12 +1,12 @@
 import { createHash } from "crypto";
 import { FETCH_TIMEOUT_MS, SERVER_VERSION } from "../../constants";
+import { config } from "../../config";
 import { docCache, diskDocCache } from "../cache";
 import { assertPublicUrl } from "../../utils/guard";
 import { sanitizeContent } from "../../utils/sanitize";
 import { log } from "../../utils/logger";
 import { fetchSemaphore, hostSemaphore } from "./semaphore";
-// Installs the SSRF-guarding DNS lookup on the global undici dispatcher.
-import "./ssrf";
+import { installSsrfGuard } from "./ssrf";
 
 /** In-flight deduplication: prevents N concurrent fetches of the same URL. */
 export const inFlightRequests = new Map<string, Promise<string | null>>();
@@ -22,7 +22,7 @@ const USER_AGENT =
 /**
  * Write fetched documentation CONTENT to memory + disk cache, sanitizing once
  * before storage so poisoned upstream content is never persisted raw (SEC-009).
- * Metadata writes (npm/pypi JSON, sitemap URL lists) must NOT use this — running
+ * Metadata writes (npm/pypi JSON, sitemap URL lists) must NOT use this - running
  * them through the injection-stripper would corrupt the JSON.
  */
 export function cacheDoc(cacheKey: string, content: string, ttl: number): void {
@@ -33,7 +33,7 @@ export function cacheDoc(cacheKey: string, content: string, ttl: number): void {
 
 /** Build Authorization header for GitHub API if GETLIB_GITHUB_TOKEN is set */
 export function githubAuthHeaders(): Record<string, string> {
-  const token = process.env.GETLIB_GITHUB_TOKEN;
+  const token = config.githubToken;
   if (!token) return {};
   return { Authorization: `Bearer ${token}` };
 }
@@ -80,6 +80,9 @@ export async function fetchWithTimeout(
   ms = FETCH_TIMEOUT_MS,
   extraHeaders?: Record<string, string>,
 ): Promise<Response> {
+  // Guarantee the SSRF-guarding dispatcher no matter which entry point
+  // reached this fetch first (idempotent no-op after the first call).
+  installSsrfGuard();
   // Host bulkhead first, then the global cap: acquiring globally first would
   // let queued same-host waiters occupy global slots while blocked.
   const hostSem = hostSemaphore(url);
@@ -93,7 +96,7 @@ export async function fetchWithTimeout(
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
   // Once a successful response is returned, timer ownership moves to the body
-  // stream — clearing it at header-receipt time would let a slow-drip body
+  // stream - clearing it at header-receipt time would let a slow-drip body
   // hang callers indefinitely past the deadline.
   let timerHandedOff = false;
   try {

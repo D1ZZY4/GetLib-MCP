@@ -3,6 +3,7 @@ import { z } from "zod";
 import { normalizeQueryYear } from "../utils/extract";
 import { checkEvidence, buildEvidenceBlock } from "../utils/evidence";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
+import { withToolTimeout } from "../utils/guard";
 import { withTelemetry } from "../services/telemetry";
 import { collectSearchSources } from "../services/search/collect";
 import { addWebSearchSources } from "../services/search/fetch-topic";
@@ -38,12 +39,22 @@ const NO_RESULTS_HELP = [
   "- Try gl_get_docs with a direct URL as the libraryId",
 ].join("\n");
 
+const TIMEOUT_RESPONSE = {
+  content: [{ type: "text" as const, text: "Search timed out. Retry with a narrower query." }],
+  structuredContent: {
+    timedOut: true,
+    query: "",
+    sources: [] as Array<{ name: string; url: string; content: string }>,
+    evidence: { ok: false, matchRatio: 0, occurrences: 0, verdict: "miss" as const },
+  },
+};
+
 export function registerSearchTools(): void {
   const currentYear = new Date().getFullYear();
   defineTool({
     name: "gl_search",
       title: "Search Any Topic",
-      description: `Search for latest best practices, docs, or guidance on ANY topic — no library name needed.
+      description: `Search for latest best practices, docs, or guidance on ANY topic - no library name needed.
 
 Current year: ${currentYear}. All searches are normalized to fetch ${currentYear} content.
 
@@ -58,12 +69,12 @@ Works for:
 - Infrastructure: "Docker best practices", "GitHub Actions CI/CD"
 - Anything else: just ask
 
-If the query names ONE specific library, prefer gl_resolve_library + gl_get_docs/gl_best_practices for version-accurate, registry-backed results — use gl_search for standards, cross-cutting topics, or when no library applies. For browser/runtime feature support use gl_compat; for GitHub code examples use gl_examples.
+If the query names ONE specific library, prefer gl_resolve_library + gl_get_docs/gl_best_practices for version-accurate, registry-backed results - use gl_search for standards, cross-cutting topics, or when no library applies. For browser/runtime feature support use gl_compat; for GitHub code examples use gl_examples.
 
 Say "use gl" or "gl search [topic]" to invoke.
 
 Examples:
-- gl_search({ query: "latest best practices" }) — auto-detects from project context
+- gl_search({ query: "latest best practices" }) - auto-detects from project context
 - gl_search({ query: "WCAG 2.2 keyboard navigation" })
 - gl_search({ query: "SQL injection prevention ${currentYear}" })
 - gl_search({ query: "CSS container queries browser support" })
@@ -78,6 +89,7 @@ Examples:
     run: async (rawArgs: unknown) => {
       const { query: rawQuery, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_search", async (ctx) => {
+        return withToolTimeout(async () => {
         const query = normalizeQueryYear(rawQuery);
         const { results, webSearched } = await collectSearchSources(query, tokens);
 
@@ -87,7 +99,7 @@ Examples:
           };
         }
 
-        // Evidence-driven escalation — sources exist but combined coverage is weak:
+        // Evidence-driven escalation - sources exist but combined coverage is weak:
         // add authoritative web sources once instead of shipping a thin answer.
         let combinedCheck = checkEvidence(results.map((r) => r.content).join("\n\n"), query);
         if (!combinedCheck.ok && !webSearched && results.length < 3) {
@@ -125,6 +137,7 @@ Examples:
             },
           },
         };
+        }, TIMEOUT_RESPONSE);
       });
     },
   });

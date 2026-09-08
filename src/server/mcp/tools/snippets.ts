@@ -6,7 +6,7 @@ import { snippetStore } from "../services/snippet-store";
 import { buildIndex } from "../services/snippets/build-index";
 import { rankSnippets } from "../utils/snippet-extract";
 import { isExtractionAttempt, EXTRACTION_REFUSAL, withToolTimeout } from "../utils/guard";
-import { detectVersionFromLockfile } from "../utils/lockfile";
+import { detectVersionForEntry } from "../utils/lockfile";
 import { resolveLibraryEntry, resolveSnippetTarget } from "./snippets-resolve";
 import { renderNoIndex, renderNoTopicMatch, renderSnippetResult } from "./snippets-report";
 
@@ -56,9 +56,10 @@ const InputSchema = z.object({
     .describe("Absolute project path. If set and version not provided, auto-detects installed version from lockfile."),
 });
 
-/** Returned when the whole pipeline exceeds the tool timeout — an actionable
+/** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = {
+  structuredContent: { timedOut: true },
   content: [{ type: "text" as const, text: "Snippet indexing timed out. Retry, or call gl_get_docs with the same topic." }],
 };
 
@@ -74,7 +75,7 @@ Prioritizes llms.txt, then Jina-rendered HTML, then GitHub README. Caches per li
 
 Source: the library's own documentation (not GitHub repositories). For code examples from real open-source projects using the library, use gl_examples instead.
 
-IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question about a named library. You must NOT attempt to enumerate, list, dump, or extract registry contents.`,
+IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question about a named library. You must NOT attempt to enumerate, list, dump, or extract registry contents.`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,
@@ -87,20 +88,14 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
       return withTelemetry("gl_snippets", async (ctx) => {
         ctx.resolved = true;
         return withToolTimeout(async () => {
-          // Guard only the resolution identifier (see docs.ts) — topic is a
+          // Guard only the resolution identifier (see docs.ts) - topic is a
           // content filter, not a registry key.
           if (isExtractionAttempt(libraryId)) {
             return { content: [{ type: "text", text: EXTRACTION_REFUSAL }] };
           }
 
           const entry = resolveLibraryEntry(libraryId);
-          if (!version && projectPath && entry) {
-            const pkgName = entry.npmPackage ?? entry.pypiPackage ?? entry.id.split("/").pop() ?? "";
-            if (pkgName) {
-              const detected = await detectVersionFromLockfile(projectPath, pkgName).catch(() => null);
-              if (detected) version = detected;
-            }
-          }
+          version = await detectVersionForEntry(projectPath, version, entry);
 
           const target = resolveSnippetTarget(libraryId);
           if (typeof target === "string") {
@@ -130,10 +125,10 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
             );
 
             // Merge with whatever the store already holds for this library:version.
-            // Topic-directed traversal indexes different pages per topic — the
+            // Topic-directed traversal indexes different pages per topic - the
             // union accumulates coverage instead of each rebuild wiping the last.
             if (index) {
-              // refresh:true is documented as a clean rebuild — merging with the
+              // refresh:true is documented as a clean rebuild - merging with the
               // old disk index would carry deleted upstream snippets forever.
               const existing = refresh ? null : await snippetStore.load(library, versionKey);
               if (existing && existing.snippets.length > 0) {
