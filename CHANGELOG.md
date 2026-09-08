@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared web fetch client with size limits and error envelopes,
   a shared async-data hook with retry, design tokens, and
   web-owned MCP contracts.
+- Shared API route helpers for request IDs, capped JSON bodies,
+  and mapped error envelopes, with routes calling application
+  services instead of registries directly.
 - Drill-down sidebar navigation with an MCP submenu, a redesigned
   404 page, and dark mode as the default theme.
 

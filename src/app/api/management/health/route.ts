@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
 import { getHealthSnapshot } from "@/application/health/health.service";
-import "@/server/mcp/registry/registry-loader";
+import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET() {
-  return NextResponse.json(getHealthSnapshot());
+  const id = requestId();
+  try {
+    return jsonOk(getHealthSnapshot());
+  } catch (error) {
+    return mapRouteError(error, id);
+  }
 }

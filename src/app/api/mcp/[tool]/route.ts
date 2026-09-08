@@ -1,25 +1,17 @@
-import { NextResponse } from "next/server";
-import { runTool } from "@/server/mcp/registry/tool-registry";
-import "@/server/mcp/registry/registry-loader";
+import { executeTool } from "@/application/mcp/mcp-catalog.service";
+import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 interface RouteParams {
   params: Promise<{ tool: string }>;
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
-  const { tool } = await params;
-
-  let args: unknown;
+  const id = requestId();
   try {
-    args = await request.json();
-  } catch {
-    args = undefined;
-  }
-
-  try {
-    const result = await runTool(tool, args);
-    return NextResponse.json({ tool, result });
-  } catch {
-    return NextResponse.json({ error: `Unknown tool: ${tool}` }, { status: 404 });
+    const { tool } = await params;
+    const args = await readJsonBody(request);
+    return jsonOk(await executeTool(tool, args));
+  } catch (error) {
+    return mapRouteError(error, id);
   }
 }

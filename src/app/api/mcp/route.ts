@@ -1,13 +1,11 @@
-import { NextResponse } from "next/server";
-import { listPrompts } from "@/server/mcp/registry/prompt-registry";
-import { listResources } from "@/server/mcp/registry/resource-registry";
-import { listTools } from "@/server/mcp/registry/tool-registry";
-import "@/server/mcp/registry/registry-loader";
+import { getMcpCatalog } from "@/application/mcp/mcp-catalog.service";
+import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET() {
-  return NextResponse.json({
-    tools: listTools(),
-    resources: listResources(),
-    prompts: listPrompts(),
-  });
+  const id = requestId();
+  try {
+    return jsonOk(getMcpCatalog());
+  } catch (error) {
+    return mapRouteError(error, id);
+  }
 }

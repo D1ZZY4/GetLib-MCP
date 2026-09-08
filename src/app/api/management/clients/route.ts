@@ -1,6 +1,11 @@
-import { NextResponse } from "next/server";
 import { listClients } from "@/application/clients/clients.service";
+import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET() {
-  return NextResponse.json(listClients());
+  const id = requestId();
+  try {
+    return jsonOk(listClients());
+  } catch (error) {
+    return mapRouteError(error, id);
+  }
 }
