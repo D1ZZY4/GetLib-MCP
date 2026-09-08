@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - SSE transport for the MCP server, served at `/api/mcp/sse`,
   with session tracking and transport modes.
+- Registry loader that replaces the hardcoded registration
+  sequence, with typed prompt arguments surfaced to clients.
+- New MCP prompts for audit, best practices, compare, docs, and
+  migration, plus an application-level MCP catalog used by API
+  routes and the dashboard.
 
 ### Changed
 

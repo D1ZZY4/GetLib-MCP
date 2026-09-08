@@ -1,42 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
-import { listPrompts, renderPrompt } from "./registry/prompt-registry";
+import { z } from "zod";
+import { getPrompt, listPrompts, renderPrompt, type GlPromptArg } from "./registry/prompt-registry";
 import { listResources, readResource } from "./registry/resource-registry";
 import { listTools, getTool, runTool } from "./registry/tool-registry";
-import { registerReviewPrompts } from "./prompts/review.prompt";
-import { registerLibraryResources } from "./resources/libraries.resource";
-import { registerAuditTools } from "./tools/audit";
-import { registerAutoScanTools } from "./tools/auto-scan";
-import { registerBatchResolveTools } from "./tools/batch-resolve";
-import { registerBestPracticesTools } from "./tools/best-practices";
-import { registerChangelogTools } from "./tools/changelog";
-import { registerCompatTools } from "./tools/compat";
-import { registerCompareTools } from "./tools/compare";
-import { registerDispatchTools } from "./tools/dispatch";
-import { registerDocsTools } from "./tools/docs";
-import { registerExamplesTools } from "./tools/examples";
-import { registerMigrationTools } from "./tools/migration";
-import { registerResolveTools } from "./tools/resolve";
-import { registerSearchTools } from "./tools/search";
-import { registerSnippetsTools } from "./tools/snippets";
+import { ensureRegistryLoaded } from "./registry/registry-loader";
 
 export function createServer(): McpServer {
-  registerDispatchTools();
-  registerResolveTools();
-  registerDocsTools();
-  registerBestPracticesTools();
-  registerAutoScanTools();
-  registerSearchTools();
-  registerAuditTools();
-  registerChangelogTools();
-  registerCompatTools();
-  registerCompareTools();
-  registerExamplesTools();
-  registerMigrationTools();
-  registerBatchResolveTools();
-  registerSnippetsTools();
-  registerLibraryResources();
-  registerReviewPrompts();
+  ensureRegistryLoaded();
 
   const server = new McpServer(
     { name: "getlib-mcp", version: "0.1.0" },
@@ -80,13 +51,32 @@ export function createServer(): McpServer {
 
   for (const prompt of listPrompts()) {
     const name = prompt.name;
-    server.registerPrompt(name, { description: prompt.description }, async () => {
-      const rendered = (await renderPrompt(name)) as {
+    const def = getPrompt(name);
+    const argsSchema = def?.args ? toPromptArgsSchema(def.args) : undefined;
+    const respond = async (args: unknown) => {
+      const rendered = (await renderPrompt(name, args)) as {
         messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
       };
       return { messages: rendered.messages };
-    });
+    };
+    server.registerPrompt(
+      name,
+      {
+        description: prompt.description,
+        ...(argsSchema ? { argsSchema: argsSchema as ZodRawShapeCompat } : {}),
+      },
+      respond,
+    );
   }
 
   return server;
+}
+
+function toPromptArgsSchema(args: GlPromptArg[]): Record<string, z.ZodType> {
+  const shape: Record<string, z.ZodType> = {};
+  for (const arg of args) {
+    const field = z.string().describe(arg.description);
+    shape[arg.name] = arg.required ? field : field.optional();
+  }
+  return shape;
 }

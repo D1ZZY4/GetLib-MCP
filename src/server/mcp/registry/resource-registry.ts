@@ -10,9 +10,20 @@ export interface GlResourceDef {
 }
 
 const resources = new Map<string, GlResourceDef>();
+const resourceUris = new Set<string>();
 
 export function defineResource(def: GlResourceDef): GlResourceDef {
+  if (def.name.length === 0) {
+    throw new Error("Resource name must not be empty");
+  }
+  if (resources.has(def.name)) {
+    throw new Error(`Duplicate resource registration: "${def.name}"`);
+  }
+  if (resourceUris.has(def.uri)) {
+    throw new Error(`Duplicate resource URI registration: "${def.uri}"`);
+  }
   resources.set(def.name, def);
+  resourceUris.add(def.uri);
   return def;
 }
 

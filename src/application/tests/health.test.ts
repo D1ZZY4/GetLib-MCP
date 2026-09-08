@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { getHealthSnapshot } from "../health/health.service";
 import { TOOL_COUNT } from "@/server/mcp/constants";
-import "@/server/mcp/registry/registry-loader";
 
 describe("health application service", () => {
   test("reports a healthy snapshot with live counts", () => {

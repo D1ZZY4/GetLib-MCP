@@ -1,5 +1,6 @@
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
 import { listPrompts } from "@/server/mcp/registry/prompt-registry";
+import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
 import { listResources } from "@/server/mcp/registry/resource-registry";
 import { listTools } from "@/server/mcp/registry/tool-registry";
 import { docCache } from "@/server/mcp/services/cache";
@@ -29,11 +30,12 @@ export interface HealthSnapshot {
 }
 
 /**
- * Operational health snapshot for the MCP control plane. Callers must
- * ensure the registries are loaded first (import the registry-loader
- * side-effect module) so primitive counts reflect this process.
+ * Operational health snapshot for the MCP control plane. The registry is
+ * loaded deterministically on first call, so callers must not import the
+ * registry-loader side-effect module themselves.
  */
 export function getHealthSnapshot(): HealthSnapshot {
+  ensureRegistryLoaded();
   const circuits = getCircuitSummary();
   return {
     status: circuits.open > 0 ? "degraded" : "healthy",
