@@ -1,6 +1,7 @@
 import { tokenize, expandTopicTokens } from "../utils/extract";
 import { joinDocPath } from "../utils/url-join";
 import { DEFAULT_URL_PATTERNS } from "../sources/doc-url-patterns";
+import { isSourceEnabled } from "./source-settings";
 
 export function scoreTopicRelevance(content: string, topic: string): number {
   const topicTokens = tokenize(topic);
@@ -77,7 +78,7 @@ export function rankLinksForTopic(
   links: Array<{ url: string; text: string }>,
   topic: string,
 ): Array<{ url: string; text: string; score: number }> {
-  // Synonyms bridge caller vocabulary to docs vocabulary — a "migration"
+  // Synonyms bridge caller vocabulary to docs vocabulary - a "migration"
   // query must find the "Upgrade guide" link.
   const topicTokens = expandTopicTokens(tokenize(topic));
   if (topicTokens.length === 0 || links.length === 0) return [];
@@ -122,7 +123,9 @@ export function buildTopicUrls(
 
   const allPatterns = [
     ...(urlPatterns ?? []),
-    ...DEFAULT_URL_PATTERNS,
+    // Disabled on the Sources page: caller-supplied patterns still apply,
+    // the shared default table does not.
+    ...(isSourceEnabled("doc-url-patterns") ? DEFAULT_URL_PATTERNS : []),
   ].filter((p, i, arr) => arr.indexOf(p) === i);
 
   const urls: string[] = [];
@@ -132,7 +135,7 @@ export function buildTopicUrls(
     for (const slug of [hyphenSlug, slashSlug]) {
       // joinDocPath keeps the docs base segment for sub-path docs sites
       // (docs.swmansion.com/react-native-screens/...), which origin-only
-      // joining dropped — every guessed topic URL there 404'd.
+      // joining dropped - every guessed topic URL there 404'd.
       for (const url of joinDocPath(docsUrl, pattern.replace("{slug}", slug))) {
         if (seen.has(url)) continue;
         seen.add(url);

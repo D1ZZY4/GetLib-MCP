@@ -1,4 +1,5 @@
 import { TOPIC_URL_MAP } from "../../sources/topic-urls";
+import { isSourceEnabled } from "../source-settings";
 
 /** Cache compiled regexes for topic patterns to avoid re-creation per call */
 const patternRegexCache = new Map<string, RegExp>();
@@ -21,6 +22,7 @@ function matchesPattern(query: string, pattern: string): boolean {
 }
 
 export function findTopicUrls(query: string): Array<{ urls: string[]; name: string }> {
+  if (!isSourceEnabled("topic-urls")) return [];
   const q = query.toLowerCase();
   const matches: Array<{ urls: string[]; name: string; score: number }> = [];
 

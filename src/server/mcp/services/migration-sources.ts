@@ -3,6 +3,7 @@ import { checkEvidence } from "../utils/evidence";
 import { webSearch } from "./search/engines";
 import { isAuthoritativeUrl } from "./search/url-rank";
 import { MIGRATION_PATHS, MIGRATION_URL_SUFFIXES, versionDocSuffixes } from "../sources/migration-paths";
+import { isSourceEnabled } from "./source-settings";
 import { filterReleasesByVersion } from "../utils/release-filter";
 
 export interface MigrationSection {
@@ -12,7 +13,7 @@ export interface MigrationSection {
 
 
 /**
- * Version-specific upgrade guide — the gold-standard source when the target
+ * Version-specific upgrade guide - the gold-standard source when the target
  * version is known (e.g. nextjs.org/docs/app/guides/upgrading/version-16).
  * Fetched first and unconditionally so a stale monolithic docs/upgrading.md on
  * GitHub cannot pre-empt the correct page.
@@ -29,7 +30,7 @@ export async function fetchVersionGuide(docsUrl: string, toVersion: string): Pro
       }),
     );
   } catch {
-    return null; // no version-specific page — callers fall through to other sources
+    return null; // no version-specific page - callers fall through to other sources
   }
 }
 
@@ -40,15 +41,19 @@ export async function fetchGitHubMigrationDocs(
   toVersion: string | undefined,
 ): Promise<MigrationSection[]> {
   const sections: MigrationSection[] = [];
-  const migrationDocs = await Promise.allSettled(
-    MIGRATION_PATHS.map(async (path) => {
-      const result = await fetchGitHubContent(githubUrl, path);
-      if (result && result.content.length > 200) {
-        return { source: `GitHub: ${path}`, content: result.content };
-      }
-      throw new Error("no content");
-    }),
-  );
+  // Disabled on the Sources page: skip the curated migration-path files.
+  // Release notes below are live GitHub data, not a source table, so they stay.
+  const migrationDocs = isSourceEnabled("migration-paths")
+    ? await Promise.allSettled(
+        MIGRATION_PATHS.map(async (path) => {
+          const result = await fetchGitHubContent(githubUrl, path);
+          if (result && result.content.length > 200) {
+            return { source: `GitHub: ${path}`, content: result.content };
+          }
+          throw new Error("no content");
+        }),
+      )
+    : [];
   for (const result of migrationDocs) {
     if (result.status === "fulfilled") {
       sections.push(result.value);
@@ -88,7 +93,7 @@ export async function fetchConventionalUpgradeDocs(docsUrl: string): Promise<Mig
 
 /**
  * Release notes alone are not a migration guide. Official upgrade guides often
- * live at unguessable URLs (react.dev publishes them as dated blog posts) — find
+ * live at unguessable URLs (react.dev publishes them as dated blog posts) - find
  * them the way a human would, preferring the library's own docs host, then other
  * authoritative domains.
  */
@@ -120,7 +125,7 @@ export async function searchForUpgradeGuide(
   });
   const candidates = [...new Set([...sameHost, ...found.filter(isAuthoritativeUrl)])].slice(0, 3);
 
-  // Fetched in one round, evaluated in rank order — the serial await this
+  // Fetched in one round, evaluated in rank order - the serial await this
   // replaces added up to 3 full fetch timeouts to a call that already spent its
   // budget on the guide + release paths.
   const fetched = await Promise.all(

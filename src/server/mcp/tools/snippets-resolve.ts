@@ -1,6 +1,6 @@
 import { lookupById, lookupByAlias } from "../sources/registry";
-import { assertPublicUrl } from "../utils/guard";
-import { isValidPackageName } from "./docs-resolve";
+import { checkLibraryAccess, isSourceEnabled } from "../services/source-settings";
+import { resolveBareTarget } from "./docs-resolve";
 
 export interface SnippetTarget {
   library: string;
@@ -12,6 +12,7 @@ export interface SnippetTarget {
 }
 
 export function resolveLibraryEntry(libraryId: string) {
+  if (!isSourceEnabled("library-registry")) return undefined;
   return lookupById(libraryId) ?? lookupByAlias(libraryId);
 }
 
@@ -21,6 +22,8 @@ export function resolveLibraryEntry(libraryId: string) {
  */
 export function resolveSnippetTarget(libraryId: string): SnippetTarget | string {
   const entry = resolveLibraryEntry(libraryId);
+  const blocked = checkLibraryAccess(libraryId, entry ? [entry.id, entry.name] : []);
+  if (blocked) return blocked;
   if (entry) {
     return {
       library: entry.id,
@@ -34,27 +37,17 @@ export function resolveSnippetTarget(libraryId: string): SnippetTarget | string 
 
   const bare = { llmsTxtUrl: undefined, llmsFullTxtUrl: undefined, githubUrl: undefined };
 
-  // npm:/pypi: IDs are documented in this tool's own schema — resolve
-  // them the same way gl_get_docs does instead of refusing.
-  if (libraryId.startsWith("npm:")) {
-    const pkg = libraryId.slice(4);
-    if (!isValidPackageName(pkg)) return `Invalid npm package name: "${pkg}".`;
-    return { ...bare, library: libraryId, docsUrl: `https://www.npmjs.com/package/${pkg}`, displayName: pkg };
-  }
-
-  if (libraryId.startsWith("pypi:")) {
-    const pkg = libraryId.slice(5);
-    if (!isValidPackageName(pkg)) return `Invalid PyPI package name: "${pkg}".`;
-    return { ...bare, library: libraryId, docsUrl: `https://pypi.org/project/${pkg}`, displayName: pkg };
-  }
-
-  if (libraryId.startsWith("http://") || libraryId.startsWith("https://")) {
-    try {
-      assertPublicUrl(libraryId);
-    } catch {
-      return "URL not allowed: must be a public HTTPS address.";
+  // npm:/pypi:/URL ids share validation and messages with gl_get_docs.
+  const bareTarget = resolveBareTarget(libraryId);
+  if (typeof bareTarget === "string") return bareTarget;
+  if (bareTarget !== null) {
+    if (bareTarget.kind === "url") {
+      return { ...bare, library: libraryId, docsUrl: bareTarget.url, displayName: bareTarget.hostname };
     }
-    return { ...bare, library: libraryId, docsUrl: libraryId, displayName: new URL(libraryId).hostname };
+    if (bareTarget.kind === "npm") {
+      return { ...bare, library: libraryId, docsUrl: `https://www.npmjs.com/package/${bareTarget.pkg}`, displayName: bareTarget.pkg };
+    }
+    return { ...bare, library: libraryId, docsUrl: `https://pypi.org/project/${bareTarget.pkg}`, displayName: bareTarget.pkg };
   }
 
   return `Could not resolve "${libraryId}". Run gl_resolve_library first.`;

@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New MCP prompts for audit, best practices, compare, docs, and
   migration, plus an application-level MCP catalog used by API
   routes and the dashboard.
+- Source enablement settings that gate individual providers,
+  source tables, and the library registry, with blocked-library
+  lists and wildcard overrides.
+- Source management APIs and a reworked Sources UI with live
+  entry counts, per-source toggles, and blocked/wildcard lists.
 
 ### Changed
 

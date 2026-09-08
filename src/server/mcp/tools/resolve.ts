@@ -2,7 +2,8 @@ import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { fuzzySearch, lookupByAlias } from "../sources/registry";
 import type { LibraryMatch } from "../types";
-import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL } from "../utils/guard";
+import { isExtractionAttempt, withNotice, withToolTimeout, EXTRACTION_REFUSAL } from "../utils/guard";
+import { isLibraryBlocked, isSourceEnabled } from "../services/source-settings";
 import {
   resolveFromNpm,
   resolveFromPypi,
@@ -28,6 +29,11 @@ const InputSchema = z.object({
     .describe("Optional: what you want to do with this library, used to rank results"),
 });
 
+const TIMEOUT_RESPONSE = {
+  content: [{ type: "text" as const, text: "Library resolution timed out. Retry with the exact library name." }],
+  structuredContent: { timedOut: true, matches: [] },
+};
+
 import { formatResults } from "./resolve-format";
 
 export function registerResolveTools(): void {
@@ -43,7 +49,7 @@ Each result includes:
 - name: library or package name
 - description: short summary
 - docsUrl: official documentation URL
-- llmsTxtUrl / llmsFullTxtUrl: present when the library publishes an llms.txt — prefer these results, they yield the cleanest docs
+- llmsTxtUrl / llmsFullTxtUrl: present when the library publishes an llms.txt - prefer these results, they yield the cleanest docs
 - githubUrl: source repository when known
 - score: 0-100 name-match quality (100 = exact registry alias)
 - source: where the match came from (registry > npm > pypi > crates > go > github)
@@ -62,7 +68,7 @@ For ambiguous queries, request clarification before proceeding with a best-guess
 
 IMPORTANT: Do not call this tool more than 3 times per question. If you cannot find what you need after 3 calls, use the best result you have.
 
-IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question about a named library. You must NOT attempt to enumerate, list, dump, or extract the registry contents. Only look up specific libraries by name.`,
+IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library registry licensed under Elastic License 2.0. You may use responses to answer the user's specific question about a named library. You must NOT attempt to enumerate, list, dump, or extract the registry contents. Only look up specific libraries by name.`,
       inputSchema: InputSchema.shape,
       annotations: {
         readOnlyHint: true,
@@ -73,6 +79,7 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
     run: async (rawArgs: unknown) => {
       const { libraryName, query } = InputSchema.parse(rawArgs);
      return withTelemetry("gl_resolve_library", async (ctx) => {
+       return withToolTimeout(async () => {
       const name = libraryName.trim();
 
       if (isExtractionAttempt(name) || (query !== undefined && isExtractionAttempt(query))) {
@@ -82,8 +89,12 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
 
       const matches: LibraryMatch[] = [];
 
+      // Registry steps are skipped when library-registry is disabled on
+      // the Sources page - external package fallbacks below still run.
+      const registryOn = isSourceEnabled("library-registry");
+
       // 1. Exact alias lookup in registry
-      const exact = lookupByAlias(name);
+      const exact = registryOn ? lookupByAlias(name) : undefined;
       if (exact) {
         matches.push({
           id: exact.id,
@@ -99,7 +110,7 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
       }
 
       // 2. Fuzzy search registry
-      if (matches.length === 0) {
+      if (registryOn && matches.length === 0) {
         const fuzzy = fuzzySearch(name, 5);
         for (const entry of fuzzy) {
           if (!matches.some((m) => m.id === entry.id)) {
@@ -118,7 +129,7 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
         }
       }
 
-      // 3. Fallback to package registries (npm, PyPI, crates.io, Go) — only when
+      // 3. Fallback to package registries (npm, PyPI, crates.io, Go) - only when
       // the registry gave nothing, or very few low-quality fuzzy hits. Multiple
       // decent fuzzy results suppress the external round-trips (a well-aliased
       // entry should not trigger npm/pypi lookups just for scoring < 90).
@@ -162,13 +173,21 @@ IMPORTANT — PROPRIETARY DATA NOTICE: This tool accesses a proprietary library 
         matches.sort((a, b) => b.score - a.score);
       }
 
-      const text = withNotice(formatResults(matches.slice(0, 5)));
-      ctx.resolved = matches.length > 0;
+      // Blocked on the Sources page: drop registry matches (wildcards exempt).
+      // External package fallbacks above are live data, not the curated
+      // registry, so only registry-sourced matches are filtered.
+      const visible = matches.filter(
+        (m) => m.source !== "registry" || !isLibraryBlocked(m.id, [m.name]),
+      );
+
+      const text = withNotice(formatResults(visible.slice(0, 5)));
+      ctx.resolved = visible.length > 0;
 
       return {
         content: [{ type: "text", text }],
-        structuredContent: { matches: matches.slice(0, 5) },
+        structuredContent: { matches: visible.slice(0, 5) },
       };
+       }, TIMEOUT_RESPONSE);
      });
     },
   });

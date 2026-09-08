@@ -25,6 +25,7 @@ export function SourceGroupCard({ group, onToggle }: SourceGroupCardProps) {
                     <Switch.Thumb />
                   </Switch.Control>
                   {item.name}
+                  <span className="ml-2 text-xs text-muted tabular-nums">{item.entries}</span>
                 </Switch.Content>
                 <Description>{item.description}</Description>
               </Switch>

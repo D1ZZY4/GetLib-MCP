@@ -7,6 +7,7 @@ import { sanitizeContent } from "../../utils/sanitize";
 import { findTopicUrls } from "./topic-match";
 import { buildDirectDocsUrls, buildJinaFallbackUrls } from "./candidates";
 import { searchMDN, searchDDGInstant } from "./engines";
+import { isSourceEnabled } from "../source-settings";
 import { fetchTopicContent, addWebSearchSources, type SearchSource } from "./fetch-topic";
 
 /** Push every fulfilled candidate not already collected, stopping at `limit` sources. */
@@ -55,7 +56,7 @@ export async function collectSearchSources(
     if (!entry) continue;
     try {
       let fetchResult = await fetchDocs(entry.docsUrl, entry.llmsTxtUrl, entry.llmsFullTxtUrl);
-      // llms.txt is usually an index of links — traverse it to the actual
+      // llms.txt is usually an index of links - traverse it to the actual
       // topic pages instead of extracting from the link list itself.
       fetchResult = await deepFetchForTopic(fetchResult, query, entry.docsUrl, entry.urlPatterns);
       const safe = sanitizeContent(fetchResult.content);
@@ -73,7 +74,7 @@ export async function collectSearchSources(
     }
   }
 
-  // 2. Topic map — curated official docs URLs for non-library topics
+  // 2. Topic map - curated official docs URLs for non-library topics
   const topicMatches = findTopicUrls(query);
   for (const topic of topicMatches) {
     // Cap the topic-map contribution and check BEFORE fetching: two high-quality
@@ -90,7 +91,7 @@ export async function collectSearchSources(
   }
 
   // 3. Try direct URL construction for common documentation sites.
-  // Runs whenever we have FEWER THAN TWO sources — one weak hit must not
+  // Runs whenever we have FEWER THAN TWO sources - one weak hit must not
   // stop sourcing (that is exactly how thin single-page answers happen).
   if (results.length < 2) {
     const directUrls = buildDirectDocsUrls(query);
@@ -107,7 +108,7 @@ export async function collectSearchSources(
     }
   }
 
-  // 4. MDN JSON API search — free, structured, no scraping needed
+  // 4. MDN JSON API search - free, structured, no scraping needed
   if (results.length < 2) {
     const mdnResults = await searchMDN(query);
     if (mdnResults.length > 0) {
@@ -123,7 +124,7 @@ export async function collectSearchSources(
     }
   }
 
-  // 4b. DuckDuckGo Instant Answer API — free structured JSON, no HTML scraping
+  // 4b. DuckDuckGo Instant Answer API - free structured JSON, no HTML scraping
   if (results.length === 0) {
     const ddgUrls = await searchDDGInstant(query);
     if (ddgUrls.length > 0) {
@@ -150,7 +151,7 @@ export async function collectSearchSources(
     await addWebSearchSources(query, results, Math.floor(tokens / 2), 3, 2);
   }
 
-  // 6. Fallback — try DevDocs (pre-parsed docs for 200+ technologies)
+  // 6. Fallback - try DevDocs (pre-parsed docs for 200+ technologies)
   if (results.length === 0) {
     const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
     const techSlug = queryWords[0] ?? query.split(" ")[0] ?? "";
@@ -170,13 +171,13 @@ export async function collectSearchSources(
     }
   }
 
-  // 7. Fallback — try Jina Reader directly on the query as a URL-like topic
+  // 7. Fallback - try Jina Reader directly on the query as a URL-like topic
   if (results.length === 0) {
     for (const candidate of buildJinaFallbackUrls(query).slice(0, 2)) {
       const content = await fetchTopicContent(candidate.url, query, tokens);
       if (content.length > 200) {
         results.push({
-          source: `${candidate.name} (search results — weak evidence, follow links)`,
+          source: `${candidate.name} (search results - weak evidence, follow links)`,
           url: candidate.url,
           content,
         });
@@ -185,12 +186,12 @@ export async function collectSearchSources(
     }
   }
 
-  // 8. Fallback — try fetching MDN search
-  if (results.length === 0) {
+  // 8. Fallback - try fetching MDN search
+  if (results.length === 0 && isSourceEnabled("search-mdn")) {
     const mdnSearch = `https://developer.mozilla.org/en-US/search?q=${encodeURIComponent(query)}`;
     const content = await fetchTopicContent(mdnSearch, query, tokens);
     if (content.length > 200) {
-      results.push({ source: "MDN search results (weak evidence — follow links)", url: mdnSearch, content });
+      results.push({ source: "MDN search results (weak evidence - follow links)", url: mdnSearch, content });
     }
   }
 

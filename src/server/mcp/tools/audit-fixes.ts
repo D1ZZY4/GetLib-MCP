@@ -4,11 +4,12 @@ import { extractRelevantContent } from "../utils/extract";
 import { checkEvidence } from "../utils/evidence";
 import { sanitizeContent } from "../utils/sanitize";
 import { FIX_TARGET_GROUPS, PYTHON_FIX_URLS, KEYWORD_TO_LIB } from "../sources/audit-fix-urls";
+import { isSourceEnabled } from "../services/source-settings";
 
 /**
  * Fetch + evidence-gate a guidance page. Index pages, search results and
  * off-topic articles fail checkEvidence (zero topic-term coverage) and are
- * dropped — the pattern's built-in fix text stands instead of generic filler.
+ * dropped - the pattern's built-in fix text stands instead of generic filler.
  */
 async function fetchGuidance(url: string, query: string, tokens: number): Promise<string> {
   const raw = await fetchAsMarkdownRace(url);
@@ -40,7 +41,7 @@ async function fetchFromRegistry(query: string, tokens: number): Promise<string>
       const safe = sanitizeContent(result.content);
       const { text } = extractRelevantContent(safe, query, tokens);
       // Evidence gate: docs that never mention the finding's terms are
-      // generic filler — reject and keep hunting instead of returning them.
+      // generic filler - reject and keep hunting instead of returning them.
       if (text.length > 200 && checkEvidence(text, query).matchRatio > 0) {
         return `_Source: ${result.url} (fetched live)_\n\n${text}`;
       }
@@ -52,7 +53,7 @@ async function fetchFromRegistry(query: string, tokens: number): Promise<string>
       if (releases) {
         const { text } = extractRelevantContent(sanitizeContent(releases), query, Math.floor(tokens / 2));
         if (text.length > 100 && checkEvidence(text, query).matchRatio > 0) {
-          return `_Source: ${entry.githubUrl}/releases — release notes for context, not a how-to guide_\n\n${text}`;
+          return `_Source: ${entry.githubUrl}/releases - release notes for context, not a how-to guide_\n\n${text}`;
         }
       }
     }
@@ -62,13 +63,15 @@ async function fetchFromRegistry(query: string, tokens: number): Promise<string>
 
 /** Curated deep links per finding class, with a broader page as fallback. */
 async function fetchFromCuratedDocs(query: string, tokens: number): Promise<string> {
+  // Disabled on the Sources page: skip curated fix-target links entirely.
+  if (!isSourceEnabled("fix-targets")) return "";
   for (const group of FIX_TARGET_GROUPS) {
     if (!group.match.test(query)) continue;
     for (const [re, url] of group.targets) {
       if (!re.test(query)) continue;
       const text = await fetchGuidance(url, query, tokens);
       if (text.length > 0) return text;
-      break; // most specific target matched but came back empty — go broad
+      break; // most specific target matched but came back empty - go broad
     }
     const fallback = await fetchGuidance(
       group.fallback.replace("{q}", encodeURIComponent(query)),
@@ -94,7 +97,7 @@ async function fetchPythonGuidance(query: string, tokens: number): Promise<strin
 
 /**
  * Live remediation guidance for one audit finding. Returns "" when nothing
- * on-topic could be verified — callers fall back to the pattern's own fix text
+ * on-topic could be verified - callers fall back to the pattern's own fix text
  * rather than serving generic filler.
  */
 export async function fetchBestPractice(query: string, tokens: number): Promise<string> {

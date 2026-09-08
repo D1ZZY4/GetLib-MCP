@@ -4,6 +4,7 @@ import { extractRelevantContent, expandTopicTokens } from "../../utils/extract";
 import { sanitizeContent } from "../../utils/sanitize";
 import { joinDocPaths } from "../../utils/url-join";
 import { BEST_PRACTICES_URLS, GENERIC_BP_SUFFIXES } from "../../sources/best-practice-urls";
+import { isSourceEnabled } from "../source-settings";
 import { raceUrls } from "./race";
 import { sitemapCandidates, fetchDocsLlmsTxt, fetchFromGitHub } from "./discovery";
 
@@ -43,7 +44,7 @@ function asContent(hit: RaceHit, topic: string, tokens: number): BestPracticesCo
  */
 function rankKnownUrls(knownUrls: string[], topic: string): { targets: string[]; deferred: boolean } {
   if (!topic) return { targets: knownUrls, deferred: false };
-  // Keep short version tokens ("v4", "v3") that the >2-char filter would drop —
+  // Keep short version tokens ("v4", "v3") that the >2-char filter would drop -
   // they are exactly the signal that distinguishes a migration/version page.
   const words = expandTopicTokens(
     topic
@@ -71,9 +72,11 @@ export async function fetchBestPracticesContent(
   bestPracticesPaths?: string[],
 ): Promise<BestPracticesContent> {
   // joinDocPaths keeps the docs base segment ("supabase.com/docs" + "/guides"),
-  // which plain origin-joining dropped — that produced a 404 for 46 entries.
+  // which plain origin-joining dropped - that produced a 404 for 46 entries.
   const registryUrls = bestPracticesPaths?.length ? joinDocPaths(docsUrl, bestPracticesPaths) : [];
-  const knownUrls = [...(BEST_PRACTICES_URLS[libraryId] ?? []), ...registryUrls]
+  // Disabled on the Sources page: the shared curated table is skipped,
+  // registry-provided paths still apply.
+  const knownUrls = [...(isSourceEnabled("best-practice-urls") ? (BEST_PRACTICES_URLS[libraryId] ?? []) : []), ...registryUrls]
     .filter((u, i, arr) => arr.indexOf(u) === i);
 
   // 1. Race known best-practices URLs in parallel
@@ -120,7 +123,7 @@ export async function fetchBestPracticesContent(
     const { text, truncated } = extractRelevantContent(sanitizeContent(result.content), enrichedTopic, tokens);
     return { text, sourceUrl: result.url, truncated, extraSources: [], sourceType: result.sourceType };
   } catch {
-    // ignore — GitHub and the deferred-known-URL retry remain
+    // ignore - GitHub and the deferred-known-URL retry remain
   }
 
   // 4. GitHub examples / guidance markdown
@@ -130,7 +133,7 @@ export async function fetchBestPracticesContent(
   }
 
   // Last resort: the topic matched no known best-practices URL and every
-  // topic-specific source above failed — fall back to the canonical known pages
+  // topic-specific source above failed - fall back to the canonical known pages
   // now rather than returning nothing.
   if (deferred && knownUrls.length > 0) {
     const hit = await raceUrls(knownUrls.slice(0, 5), topic);

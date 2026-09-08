@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "fs/promises";
 import { join, extname, relative } from "path";
 import { AUDIT_PATTERNS, type Issue } from "../sources/audit-patterns";
+import { isSourceEnabled } from "../services/source-settings";
 import { buildCommentMap, SKIP_FILE_RE } from "../utils/comment-map";
 
 export interface SourceFile {
@@ -37,12 +38,12 @@ export async function readProjectFiles(
             const content = await readFile(fullPath, "utf-8");
             files.push({ path: relative(projectPath, fullPath), content });
           } catch {
-            // unreadable — skip
+            // unreadable - skip
           }
         }
       }
     } catch {
-      // unreadable dir — skip
+      // unreadable dir - skip
     }
   }
 
@@ -53,6 +54,9 @@ export function runPatterns(
   files: SourceFile[],
   categories: string[],
 ): Issue[] {
+  // Disabled on the Sources page: pattern scanning is off, so no pattern
+  // issues can be produced. File reading itself is unaffected.
+  if (!isSourceEnabled("audit-patterns")) return [];
   const issues: Issue[] = [];
   const checkAll = categories.includes("all");
 
