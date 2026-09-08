@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   services, tools, source tables, and utilities) to comply
   with the repository punctuation policy. Pure punctuation
   swap, no behavior change.
+- Upgrade Zod to v4 alongside Supabase, Undici, and Node types.
+- Add `check:no-em-dash`, and chain typecheck, lint, and tests
+  behind the `lint` and `validate` scripts.
 
 ## [0.1.0] - 2026-09-08
 

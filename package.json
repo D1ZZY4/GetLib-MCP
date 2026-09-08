@@ -10,25 +10,27 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit",
+    "check:no-em-dash": "rg -lP \"\\x{2014}\" --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!bun.lock' --glob '!AGENTS.md' . && echo 'EM DASH FOUND' && exit 1 || echo 'no-em-dash: clean'",
+    "lint": "tsc --noEmit && bun run check:no-em-dash",
+    "validate": "bun run typecheck && bun run check:no-em-dash && bun test",
     "test": "bun test"
   },
   "dependencies": {
     "@heroui/react": "^3.2.4",
     "@heroui/styles": "^3.2.4",
     "@modelcontextprotocol/sdk": "^1.17.5",
-    "@supabase/supabase-js": "^2.57.4",
+    "@supabase/supabase-js": "^2.116.0",
     "@tailwindcss/postcss": "^4.3.3",
     "next": "^16.3.4",
     "next-themes": "^0.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.10.1",
-    "undici": "^7.29.1",
-    "zod": "^3.25.76"
+    "undici": "^8.10.2",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "26.4.1",
+    "@types/node": "^26.5.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "bun-types": "^1.4.2",
