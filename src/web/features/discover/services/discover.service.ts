@@ -1,52 +1,111 @@
-import type { MockDiscoverLibrary } from "../../../types/library";
+import { postJson } from "@/web/lib/api-client";
 
-export const mockDiscoverLibraries: MockDiscoverLibrary[] = [
-  {
-    id: "react",
-    name: "react",
-    description: "Component-based UI library for building interactive web interfaces.",
-    latestVersion: "19.2.0",
-    weeklyDownloads: "28.4M",
-    tags: ["ui", "frontend"],
-  },
-  {
-    id: "tailwindcss",
-    name: "tailwindcss",
-    description: "Utility-first CSS framework for rapidly building custom designs.",
-    latestVersion: "4.1.13",
-    weeklyDownloads: "9.1M",
-    tags: ["css", "styling"],
-  },
-  {
-    id: "supabase-js",
-    name: "@supabase/supabase-js",
-    description: "Isomorphic client for Supabase auth, database, and realtime.",
-    latestVersion: "2.57.4",
-    weeklyDownloads: "1.8M",
-    tags: ["backend", "database"],
-  },
-  {
-    id: "mcp-sdk",
-    name: "@modelcontextprotocol/sdk",
-    description: "Official SDK for building MCP servers and clients with tools.",
-    latestVersion: "1.17.5",
-    weeklyDownloads: "640K",
-    tags: ["mcp", "ai"],
-  },
-  {
-    id: "heroui-react",
-    name: "@heroui/react",
-    description: "Accessible React component library built on React Aria.",
-    latestVersion: "3.2.4",
-    weeklyDownloads: "210K",
-    tags: ["ui", "components"],
-  },
-  {
-    id: "vite",
-    name: "vite",
-    description: "Fast frontend build tool with instant dev server and HMR.",
-    latestVersion: "8.2.2",
-    weeklyDownloads: "12.6M",
-    tags: ["build", "tooling"],
-  },
-];
+export interface SearchSource {
+  name: string;
+  url: string;
+  content: string;
+}
+
+export interface SearchEvidence {
+  ok: boolean;
+  matchRatio: number;
+  occurrences: number;
+  verdict: "strong" | "weak" | "miss";
+}
+
+export interface DiscoverResult {
+  query: string;
+  sources: SearchSource[];
+  evidence: SearchEvidence;
+}
+
+export interface DocDetail {
+  displayName: string;
+  sourceUrl: string;
+  topic: string;
+  content: string;
+  truncated: boolean;
+  qualityScore: number;
+  verdict: "strong" | "weak" | "miss" | "untargeted";
+}
+
+interface ToolEnvelope {
+  tool: string;
+  result: {
+    content: Array<{ text: string }>;
+    structuredContent?: Record<string, unknown>;
+  };
+}
+
+function isSearchSource(value: unknown): value is SearchSource {
+  if (typeof value !== "object" || value === null) return false;
+  const source = value as Record<string, unknown>;
+  return (
+    typeof source.name === "string" &&
+    typeof source.url === "string" &&
+    typeof source.content === "string"
+  );
+}
+
+function parseEvidence(value: unknown): SearchEvidence {
+  const fallback: SearchEvidence = { ok: false, matchRatio: 0, occurrences: 0, verdict: "miss" };
+  if (typeof value !== "object" || value === null) return fallback;
+  const evidence = value as Record<string, unknown>;
+  const verdict = evidence.verdict;
+  return {
+    ok: evidence.ok === true,
+    matchRatio: typeof evidence.matchRatio === "number" ? evidence.matchRatio : 0,
+    occurrences: typeof evidence.occurrences === "number" ? evidence.occurrences : 0,
+    verdict: verdict === "strong" || verdict === "weak" || verdict === "miss" ? verdict : "miss",
+  };
+}
+
+/**
+ * Live documentation search through the shared search pipeline
+ * (gl_search): the same capability MCP clients call, not a mock catalog.
+ */
+export async function searchLibraries(query: string): Promise<DiscoverResult> {
+  const envelope = await postJson<ToolEnvelope>("/api/mcp/gl_search", { query });
+  const structured = envelope.result?.structuredContent;
+  const sources = Array.isArray(structured?.sources)
+    ? structured.sources.filter(isSearchSource)
+    : [];
+  return {
+    query: typeof structured?.query === "string" ? structured.query : query,
+    sources,
+    evidence: parseEvidence(structured?.evidence),
+  };
+}
+
+/**
+ * Full documentation for one source, for the detail route. gl_get_docs
+ * accepts a direct URL as the libraryId, so a clicked search result opens
+ * without a second resolve round-trip.
+ */
+export async function fetchDocDetail(sourceUrl: string, topic: string): Promise<DocDetail> {
+  const envelope = await postJson<ToolEnvelope>("/api/mcp/gl_get_docs", {
+    libraryId: sourceUrl,
+    ...(topic.trim() === "" ? {} : { topic }),
+  });
+  const structured = envelope.result?.structuredContent ?? {};
+  const evidence = parseEvidence(structured.evidence);
+  const verdictRaw = (structured.verdict as unknown) ?? evidence.verdict;
+  return {
+    displayName:
+      typeof structured.displayName === "string" && structured.displayName.length > 0
+        ? structured.displayName
+        : sourceUrl,
+    sourceUrl:
+      typeof structured.sourceUrl === "string" && structured.sourceUrl.length > 0
+        ? structured.sourceUrl
+        : sourceUrl,
+    topic: typeof structured.topic === "string" ? structured.topic : topic,
+    content: typeof structured.content === "string" ? structured.content : "",
+    truncated: structured.truncated === true,
+    qualityScore: typeof structured.qualityScore === "number" ? structured.qualityScore : 0,
+    verdict:
+      verdictRaw === "strong" || verdictRaw === "weak" || verdictRaw === "miss" || verdictRaw === "untargeted"
+        ? verdictRaw
+        : evidence.verdict,
+  };
+}

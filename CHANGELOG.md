@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   behavior and timing-safe password comparison.
 - Auth management APIs and a unified sign-up and sign-in UI
   with a guest session while server authentication is off.
+- Live documentation search through the shared search pipeline,
+  with evidence verdicts, deep-linkable queries, example prompts,
+  and per-source detail pages.
+- Install assistant with per-agent transport badges, local and
+  remote config snippets, and an accessible copy workflow.
 
 ### Changed
 

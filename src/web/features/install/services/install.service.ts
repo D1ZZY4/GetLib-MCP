@@ -1,5 +1,6 @@
 import type { MockAssistant } from "../../../types/library";
 
+const REMOTE_HTTP_URL = "https://your-server.com/api/mcp/http";
 export const mockAssistants: MockAssistant[] = [
   {
     id: "claude-code",
@@ -9,11 +10,21 @@ export const mockAssistants: MockAssistant[] = [
     snippet: `{
   "mcpServers": {
     "getlib": {
-      "command": "bunx",
+      "command": "npx",
       "args": ["getlib-mcp@latest"],
       "env": {
         "GETLIB_API_URL": "https://docs.example.com/api"
       }
+    }
+  }
+}`,
+    remoteConfigFile: "~/.claude.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "mcpServers": {
+    "getlib": {
+      "type": "http",
+      "url": "${REMOTE_HTTP_URL}"
     }
   }
 }`,
@@ -22,7 +33,8 @@ export const mockAssistants: MockAssistant[] = [
       "Paste the snippet into the mcpServers object.",
       "Restart Claude Code and verify getlib tools are listed.",
     ],
-    status: "connected",
+    status: "available",
+    transports: ["stdio", "streamable-http", "sse"],
   },
   {
     id: "cursor",
@@ -32,8 +44,17 @@ export const mockAssistants: MockAssistant[] = [
     snippet: `{
   "mcpServers": {
     "getlib": {
-      "command": "bunx",
+      "command": "npx",
       "args": ["getlib-mcp@latest"]
+    }
+  }
+}`,
+    remoteConfigFile: "~/.cursor/mcp.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "mcpServers": {
+    "getlib": {
+      "url": "${REMOTE_HTTP_URL}"
     }
   }
 }`,
@@ -43,6 +64,7 @@ export const mockAssistants: MockAssistant[] = [
       "Reload the window and check the MCP tools panel.",
     ],
     status: "available",
+    transports: ["stdio", "streamable-http", "sse"],
   },
   {
     id: "vscode",
@@ -53,8 +75,18 @@ export const mockAssistants: MockAssistant[] = [
   "servers": {
     "getlib": {
       "type": "stdio",
-      "command": "bunx",
+      "command": "npx",
       "args": ["getlib-mcp@latest"]
+    }
+  }
+}`,
+    remoteConfigFile: ".vscode/mcp.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "servers": {
+    "getlib": {
+      "type": "http",
+      "url": "${REMOTE_HTTP_URL}"
     }
   }
 }`,
@@ -64,6 +96,7 @@ export const mockAssistants: MockAssistant[] = [
       "Restart the MCP extension host.",
     ],
     status: "available",
+    transports: ["stdio", "streamable-http", "sse"],
   },
   {
     id: "cline",
@@ -73,8 +106,20 @@ export const mockAssistants: MockAssistant[] = [
     snippet: `{
   "mcpServers": {
     "getlib": {
-      "command": "bunx",
+      "command": "npx",
       "args": ["getlib-mcp@latest"],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}`,
+    remoteConfigFile: "cline_mcp_settings.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "mcpServers": {
+    "getlib": {
+      "type": "streamableHttp",
+      "url": "${REMOTE_HTTP_URL}",
       "disabled": false,
       "autoApprove": []
     }
@@ -86,6 +131,7 @@ export const mockAssistants: MockAssistant[] = [
       "Approve the getlib tools when prompted.",
     ],
     status: "available",
+    transports: ["stdio", "streamable-http", "sse"],
   },
   {
     id: "opencode",
@@ -96,7 +142,18 @@ export const mockAssistants: MockAssistant[] = [
   "mcp": {
     "getlib": {
       "type": "local",
-      "command": ["bunx", "getlib-mcp@latest"],
+      "command": ["npx", "getlib-mcp@latest"],
+      "enabled": true
+    }
+  }
+}`,
+    remoteConfigFile: "opencode.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "mcp": {
+    "getlib": {
+      "type": "remote",
+      "url": "${REMOTE_HTTP_URL}",
       "enabled": true
     }
   }
@@ -107,6 +164,7 @@ export const mockAssistants: MockAssistant[] = [
       "Restart opencode and verify getlib tools load.",
     ],
     status: "available",
+    transports: ["stdio", "streamable-http"],
   },
   {
     id: "codex",
@@ -114,15 +172,20 @@ export const mockAssistants: MockAssistant[] = [
     description: "Add GetLib to the OpenAI Codex CLI TOML config.",
     configFile: "~/.codex/config.toml",
     snippet: `[mcp_servers.getlib]
-command = "bunx"
+command = "npx"
 args = ["getlib-mcp@latest"]
 enabled = true`,
+    remoteConfigFile: "~/.codex/config.toml (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `[mcp_servers.getlib]
+url = "${REMOTE_HTTP_URL}"`,
     steps: [
       "Open ~/.codex/config.toml in your editor.",
       "Paste the snippet as a new mcp_servers table.",
       "Run codex mcp list to verify getlib appears.",
     ],
     status: "available",
+    transports: ["stdio", "streamable-http"],
   },
   {
     id: "kilo-code",
@@ -133,7 +196,18 @@ enabled = true`,
   "mcp": {
     "getlib": {
       "type": "local",
-      "command": ["bunx", "getlib-mcp@latest"],
+      "command": ["npx", "getlib-mcp@latest"],
+      "enabled": true
+    }
+  }
+}`,
+    remoteConfigFile: "./kilo.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "mcp": {
+    "getlib": {
+      "type": "remote",
+      "url": "${REMOTE_HTTP_URL}",
       "enabled": true
     }
   }
@@ -144,6 +218,7 @@ enabled = true`,
       "Run kilo mcp list to verify getlib appears.",
     ],
     status: "available",
+    transports: ["stdio", "streamable-http"],
   },
   {
     id: "windsurf",
@@ -153,8 +228,17 @@ enabled = true`,
     snippet: `{
   "mcpServers": {
     "getlib": {
-      "command": "bunx",
+      "command": "npx",
       "args": ["getlib-mcp@latest"]
+    }
+  }
+}`,
+    remoteConfigFile: "~/.codeium/windsurf/mcp_config.json (remote)",
+    remoteTransport: "streamable-http",
+    remoteSnippet: `{
+  "mcpServers": {
+    "getlib": {
+      "serverUrl": "${REMOTE_HTTP_URL}"
     }
   }
 }`,
@@ -163,6 +247,39 @@ enabled = true`,
       "Paste the snippet into the mcpServers object.",
       "Refresh the Cascade tools panel to verify getlib.",
     ],
+    status: "available",
+    transports: ["stdio", "streamable-http", "sse"],
+  },
+];
+
+export interface TransportModeDoc {
+  id: "stdio" | "sse" | "streamable-http";
+  label: string;
+  explanation: string;
+  status: "available" | "planned";
+}
+
+// MOCK ONLY: mirrors the server transport registry until a /api docs endpoint lands.
+export const mockTransportModes: TransportModeDoc[] = [
+  {
+    id: "stdio",
+    label: "STDIO",
+    explanation:
+      "Runs the server as a local process. Your AI agent spawns the command above and talks to it over stdin/stdout. Use this for agents on the same machine.",
+    status: "available",
+  },
+  {
+    id: "sse",
+    label: "SSE",
+    explanation:
+      "Legacy Server-Sent Events transport for remote agents. Open GET /api/mcp/sse for the event stream, then POST answers to /api/mcp/sse/messages. Prefer Streamable HTTP for new setups.",
+    status: "available",
+  },
+  {
+    id: "streamable-http",
+    label: "Streamable HTTP",
+    explanation:
+      "Remote transport over Streamable HTTP with session support. Use this for hosted dashboards and remote agents instead of spawning a local process.",
     status: "available",
   },
 ];
