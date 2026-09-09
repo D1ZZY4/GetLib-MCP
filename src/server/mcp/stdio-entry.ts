@@ -1,12 +1,14 @@
 import { LIBRARY_REGISTRY } from "./sources/registry";
 import { renderRoutingTable } from "./services/intent-router";
-import { SERVER_NAME, SERVER_VERSION, TOOL_COUNT } from "./constants";
+import { SERVER_NAME, SERVER_VERSION } from "./constants";
 import { initializeApplication } from "./init";
 import { listPrompts } from "./registry/prompt-registry";
 import { listResources } from "./registry/resource-registry";
 import { listTools } from "./registry/tool-registry";
 import { createServer } from "./server";
+import { shutdownApplication } from "./shutdown";
 import { connectStdio } from "./transport/stdio";
+import { ensureRegistryLoaded } from "./registry/registry-loader";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -15,12 +17,13 @@ async function main(): Promise<void> {
     return;
   }
   if (args.includes("--health")) {
+    ensureRegistryLoaded();
     console.log(
       JSON.stringify({
         status: "ok",
         name: SERVER_NAME,
         version: SERVER_VERSION,
-        tools: TOOL_COUNT,
+        tools: listTools().length,
         registryEntries: LIBRARY_REGISTRY.length,
         node: process.version,
       }),
@@ -34,6 +37,13 @@ async function main(): Promise<void> {
   await initializeApplication();
   const server = createServer();
   await connectStdio(server);
+  const shutdown = (signal: string): void => {
+    void shutdownApplication().finally(() => {
+      process.exit(signal === "SIGTERM" ? 0 : 130);
+    });
+  };
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
   console.error(
     `getlib-mcp server running on stdio with ${listTools().length} tools, ` +
       `${listResources().length} resources, ${listPrompts().length} prompts`,

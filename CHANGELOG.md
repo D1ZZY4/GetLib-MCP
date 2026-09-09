@@ -82,6 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lifecycle tests; production always rejects both.
 - Read-only settings snapshot endpoint with a Configuration tab
   and a no-secrets test; display identity comes from the session.
+- Graceful shutdown lifecycle draining MCP sessions and cached
+  repository handles, wired to stdio process signals.
 
 ### Changed
 
@@ -143,6 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Show environment-driven configuration on the Settings page with
   a live tab query param, and drop display name from the runtime
   info contract.
+- Require auth and tiered rate limits on Streamable HTTP and both
+  SSE routes; align HTTP/SSE session snapshots with the domain
+  contract and derive stdio health counts from the live registry.
 
 ## [0.1.0] - 2026-09-08
 

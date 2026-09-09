@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONRPCMessage, MessageExtraInfo } from "@modelcontextprotocol/sdk/types.js";
 import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
+import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
 import { createServer } from "../server";
 import { pruneSessionMap } from "./sessions";
 
@@ -144,11 +145,23 @@ export function closeSseSession(sessionId: string): void {
   }
 }
 
-export interface SseClientSession {
-  id: string;
+/** Closes every live SSE session. Shutdown path only. */
+export async function closeAllSseSessions(): Promise<void> {
+  const entries = [...sessions.values()];
+  sessions.clear();
+  await Promise.allSettled(
+    entries.map(async (entry) => {
+      try {
+        await entry.transport.close();
+      } catch {
+        // Best-effort cleanup during shutdown.
+      }
+    }),
+  );
+}
+
+export interface SseClientSession extends ClientSessionSnapshot {
   transport: "sse";
-  connectedAt: string;
-  lastSeenAt: string;
 }
 
 /** Snapshot of live SSE sessions for the clients control plane. */

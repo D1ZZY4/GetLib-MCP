@@ -1,5 +1,7 @@
 import { closeSseSession, openSseSession } from "@/server/mcp/transport/sse";
 import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
+import { requireManagementAuth } from "@/application/auth/session";
+import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
 import { jsonError, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET(req: Request) {
@@ -13,6 +15,8 @@ export async function GET(req: Request) {
       }
       throw error;
     }
+    checkRateLimit(req, "mcp/sse", READ_TIER);
+    requireManagementAuth(req);
     const { sessionId, stream } = await openSseSession();
     req.signal.addEventListener("abort", () => {
       closeSseSession(sessionId);

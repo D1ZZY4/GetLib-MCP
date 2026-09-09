@@ -1,5 +1,7 @@
 import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 import { UnknownSseSessionError, postSseMessage } from "@/server/mcp/transport/sse";
+import { requireManagementAuth } from "@/application/auth/session";
+import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import {
   jsonError,
   mapRouteError,
@@ -18,6 +20,8 @@ export async function POST(req: Request) {
       }
       throw error;
     }
+    checkRateLimit(req, "mcp/sse/messages", EXECUTION_TIER);
+    requireManagementAuth(req);
     const url = new URL(req.url);
     const sessionId = url.searchParams.get("sessionId");
     if (!sessionId) {
