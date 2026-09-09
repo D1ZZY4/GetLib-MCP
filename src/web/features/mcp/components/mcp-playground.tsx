@@ -8,13 +8,16 @@ import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 import { exampleArgsFor, runToolWithArgs } from "../services/playground.service";
 
 export function McpPlayground() {
-  const { catalog, loading, error } = useMcpCatalog();
+  const { catalog, loading, error, retry } = useMcpCatalog();
   const [tool, setTool] = useState<string | null>(null);
   const [argsText, setArgsText] = useState("{\n  \n}");
   const [output, setOutput] = useState<string | null>(null);
   const [durationMs, setDurationMs] = useState<number | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
+
+  const selected = tool !== null ? (catalog.tools.find((entry) => entry.name === tool) ?? null) : null;
 
   const selectTool = (name: string) => {
     setTool(name);
@@ -22,6 +25,7 @@ export function McpPlayground() {
     setOutput(null);
     setRunError(null);
     setDurationMs(null);
+    setRequestId(null);
   };
 
   const handleRun = async () => {
@@ -32,12 +36,14 @@ export function McpPlayground() {
       const result = await runToolWithArgs(tool, argsText);
       setOutput(result.output);
       setDurationMs(result.durationMs);
+      setRequestId(result.requestId);
     } catch (unknownError) {
       setRunError(
         unknownError instanceof Error ? unknownError.message : `We couldn't run ${tool}. Try again.`,
       );
       setOutput(null);
       setDurationMs(null);
+      setRequestId(null);
     } finally {
       setRunning(false);
     }
@@ -58,9 +64,14 @@ export function McpPlayground() {
           <Skeleton className="h-40 rounded-xl" />
         </div>
       ) : error !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
       ) : (
         <>
           <Card>
@@ -91,10 +102,25 @@ export function McpPlayground() {
                     </ListBox>
                   </Select.Popover>
                 </Select>
-                {tool !== null ? (
-                  <p className="text-xs text-muted">
-                    {catalog.tools.find((entry) => entry.name === tool)?.description}
-                  </p>
+                {selected !== null ? (
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs text-muted">{selected.description}</p>
+                    {selected.inputKeys.length > 0 ? (
+                      <ul className="flex flex-wrap gap-1.5" aria-label={`Expected arguments for ${selected.name}`}>
+                        {selected.inputKeys.map((input) => (
+                          <li
+                            key={input.key}
+                            title={input.description ?? undefined}
+                            className="rounded-full bg-surface-tertiary px-2 py-0.5 font-mono text-[11px] text-muted"
+                          >
+                            {input.key}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted">This tool takes no arguments.</p>
+                    )}
+                  </div>
                 ) : null}
                 <div>
                   <Label htmlFor="playground-args">Arguments (JSON)</Label>
@@ -134,7 +160,11 @@ export function McpPlayground() {
             <Card>
               <Card.Header>
                 <Card.Title className="font-mono text-sm">{tool}</Card.Title>
-                <Card.Description>Response envelope</Card.Description>
+                <Card.Description>
+                  Response envelope
+                  {requestId ? ` · request ${requestId}` : ""}
+                  {durationMs !== null ? ` · ${durationMs}ms server time` : ""}
+                </Card.Description>
               </Card.Header>
               <Card.Content>
                 <pre className="max-h-[480px] overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed tabular-nums">

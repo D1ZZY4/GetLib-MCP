@@ -3,20 +3,23 @@
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
+import { formatLogTime } from "@/web/lib/format";
 import type { HealthStatus } from "@/web/types/mcp";
 import { fetchHealth } from "../services/health.service";
 
 const LOAD_ERROR = "We couldn't load health status. Try again in a moment.";
 
 function StatusPill({ status }: { status: HealthStatus }) {
-  const healthy = status === "healthy";
+  const tone =
+    status === "healthy"
+      ? "bg-success/10 text-success"
+      : status === "degraded"
+        ? "bg-warning/10 text-warning"
+        : "bg-danger/10 text-danger";
+  const label = status === "healthy" ? "Healthy" : status === "degraded" ? "Degraded" : "Unavailable";
   return (
-    <span
-      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-        healthy ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-      }`}
-    >
-      {healthy ? "Healthy" : "Degraded"}
+    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
+      {label}
     </span>
   );
 }
@@ -130,6 +133,60 @@ export function McpHealth() {
               </Card.Content>
             </Card>
           </div>
+          <Card>
+            <Card.Header>
+              <Card.Title>Dependencies</Card.Title>
+              <Card.Description>Last check per dependency, with latency and errors.</Card.Description>
+            </Card.Header>
+            <Card.Content>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-xs text-muted">
+                      <th scope="col" className="py-2 pr-4 font-medium">
+                        Dependency
+                      </th>
+                      <th scope="col" className="py-2 pr-4 font-medium">
+                        Status
+                      </th>
+                      <th scope="col" className="py-2 pr-4 font-medium">
+                        Latency
+                      </th>
+                      <th scope="col" className="py-2 pr-4 font-medium">
+                        Error
+                      </th>
+                      <th scope="col" className="py-2 font-medium">
+                        Checked
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(
+                      Object.entries(health.dependencies) as Array<
+                        [string, { status: HealthStatus; latencyMs: number | null; error: string | null; lastCheckedAt: string }]
+                      >
+                    ).map(([name, dep]) => (
+                      <tr key={name} className="border-b border-border last:border-0">
+                        <td className="py-2 pr-4 font-medium capitalize">{name}</td>
+                        <td className="py-2 pr-4">
+                          <StatusPill status={dep.status} />
+                        </td>
+                        <td className="py-2 pr-4 tabular-nums">
+                          {dep.latencyMs === null ? "-" : `${dep.latencyMs}ms`}
+                        </td>
+                        <td className="max-w-xs truncate py-2 pr-4 text-muted">
+                          {dep.error ?? "-"}
+                        </td>
+                        <td className="py-2 text-xs text-muted tabular-nums">
+                          {formatLogTime(dep.lastCheckedAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card.Content>
+          </Card>
         </>
       )}
     </PageContainer>

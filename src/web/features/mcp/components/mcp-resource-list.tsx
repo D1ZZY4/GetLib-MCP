@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
@@ -45,7 +46,11 @@ export function McpResourceList() {
             <ul className="divide-y divide-border" aria-label="MCP resources">
               {catalog.resources.map((resource) => (
                 <li key={resource.name} className="py-3 first:pt-0 last:pb-0">
-                  <p className="text-sm font-medium">{resource.name}</p>
+                  <p className="text-sm font-medium">
+                    <Link href={`/mcp/resources/${resource.name}`} className="hover:text-accent hover:underline">
+                      {resource.name}
+                    </Link>
+                  </p>
                   <p className="mt-0.5 font-mono text-xs text-accent">{resource.uri}</p>
                   <p className="mt-0.5 text-xs text-muted">{resource.description}</p>
                 </li>

@@ -20,7 +20,14 @@ export interface ClientsSnapshot {
   clients: McpClientSession[];
 }
 
-export type HealthStatus = "healthy" | "degraded";
+export type HealthStatus = "healthy" | "degraded" | "unavailable";
+
+export interface DependencyCheck {
+  status: HealthStatus;
+  latencyMs: number | null;
+  error: string | null;
+  lastCheckedAt: string;
+}
 
 export interface HealthSnapshot {
   status: HealthStatus;
@@ -44,4 +51,11 @@ export interface HealthSnapshot {
   databaseMode: string;
   isMock: boolean;
   auth: { enabled: boolean; fallbackActive: boolean };
+  dependencies: {
+    mcp: DependencyCheck;
+    runtime: DependencyCheck;
+    database: DependencyCheck;
+    cache: DependencyCheck;
+    auth: DependencyCheck;
+  };
 }

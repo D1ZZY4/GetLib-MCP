@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
@@ -51,7 +52,11 @@ export function McpClients() {
               {snapshot.clients.map((client) => (
                 <li key={client.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-sm">{client.id}</p>
+                    <p className="truncate font-mono text-sm">
+                      <Link href={`/mcp/clients/${client.id}`} className="hover:text-accent hover:underline">
+                        {client.id}
+                      </Link>
+                    </p>
                     <p className="text-xs text-muted">
                       {client.transport} · last seen {formatLogTime(client.lastSeenAt)}
                     </p>

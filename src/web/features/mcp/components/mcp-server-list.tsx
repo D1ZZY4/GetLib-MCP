@@ -1,11 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchServers } from "../services/mcp.service";
 
 const LOAD_ERROR = "We couldn't load servers. Try again in a moment.";
+
+function statusTone(status: string): string {
+  if (status === "online") return "bg-success/10 text-success";
+  if (status === "degraded") return "bg-warning/10 text-warning";
+  return "bg-danger/10 text-danger";
+}
 
 export function McpServerList() {
   const { data, loading, error, retry } = useApiData(fetchServers, LOAD_ERROR);
@@ -47,8 +54,12 @@ export function McpServerList() {
             <Card key={server.id}>
               <Card.Header>
                 <div className="flex items-center justify-between gap-2">
-                  <Card.Title className="font-mono text-sm">{server.name}</Card.Title>
-                  <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                  <Card.Title className="font-mono text-sm">
+                    <Link href={`/mcp/servers/${server.id}`} className="hover:text-accent hover:underline">
+                      {server.name}
+                    </Link>
+                  </Card.Title>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusTone(server.status)}`}>
                     {server.status}
                   </span>
                 </div>

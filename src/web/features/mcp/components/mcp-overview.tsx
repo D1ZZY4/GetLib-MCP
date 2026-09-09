@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
+import { useApiData } from "@/web/hooks/use-api-data";
+import { fetchHealth } from "../services/health.service";
+import { fetchClients } from "../services/clients.service";
+import { fetchServers } from "../services/mcp.service";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
 const SECTIONS = [
@@ -16,13 +20,51 @@ const SECTIONS = [
   { href: "/mcp/logs", title: "Logs", description: "Recent tool runs in this process." },
 ] as const;
 
+const LOAD_ERROR = "We couldn't load MCP runtime state. Try again in a moment.";
+
 export function McpOverview() {
-  const { catalog, loading, error } = useMcpCatalog();
+  const { catalog, loading: catalogLoading, error: catalogError, retry: retryCatalog } = useMcpCatalog();
+  const {
+    data: health,
+    loading: healthLoading,
+    error: healthError,
+    retry: retryHealth,
+  } = useApiData(fetchHealth, LOAD_ERROR);
+  const {
+    data: clients,
+    loading: clientsLoading,
+    error: clientsError,
+    retry: retryClients,
+  } = useApiData(fetchClients, LOAD_ERROR);
+  const {
+    data: servers,
+    loading: serversLoading,
+    error: serversError,
+    retry: retryServers,
+  } = useApiData(fetchServers, LOAD_ERROR);
+
+  const loading = catalogLoading || healthLoading || clientsLoading || serversLoading;
+  const error = catalogError ?? healthError ?? clientsError ?? serversError;
+  const retryAll = () => {
+    retryCatalog();
+    retryHealth();
+    retryClients();
+    retryServers();
+  };
+
+  const degraded = health !== null && health.status !== "healthy";
 
   return (
     <PageContainer>
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">MCP</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">MCP</h1>
+          {health !== null && degraded ? (
+            <span className="shrink-0 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
+              Degraded
+            </span>
+          ) : null}
+        </div>
         <p className="mt-1 max-w-xl text-sm text-muted">
           First-class MCP module: one registry feeds the stdio server and these pages.
         </p>
@@ -35,12 +77,17 @@ export function McpOverview() {
           ))}
         </div>
       ) : error !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+          <button type="button" onClick={retryAll} className="text-sm font-medium text-accent underline">
+            Retry
+          </button>
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Card variant="secondary">
               <Card.Content>
                 <p className="text-xs font-medium tracking-wide text-muted uppercase">Tools</p>
@@ -51,17 +98,25 @@ export function McpOverview() {
             </Card>
             <Card variant="secondary">
               <Card.Content>
-                <p className="text-xs font-medium tracking-wide text-muted uppercase">Resources</p>
+                <p className="text-xs font-medium tracking-wide text-muted uppercase">Clients</p>
                 <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">
-                  {catalog.resources.length}
+                  {clients?.total ?? 0}
                 </p>
               </Card.Content>
             </Card>
             <Card variant="secondary">
               <Card.Content>
-                <p className="text-xs font-medium tracking-wide text-muted uppercase">Prompts</p>
+                <p className="text-xs font-medium tracking-wide text-muted uppercase">Servers</p>
                 <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">
-                  {catalog.prompts.length}
+                  {servers?.servers.length ?? 0}
+                </p>
+              </Card.Content>
+            </Card>
+            <Card variant="secondary">
+              <Card.Content>
+                <p className="text-xs font-medium tracking-wide text-muted uppercase">Error rate</p>
+                <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">
+                  {health ? `${(health.telemetry.errorRate * 100).toFixed(1)}%` : "-"}
                 </p>
               </Card.Content>
             </Card>

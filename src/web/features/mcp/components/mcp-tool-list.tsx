@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Button, Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
@@ -18,8 +19,8 @@ export function McpToolList() {
     setRunningTool(name);
     setRunError(null);
     try {
-      const data: unknown = await runTool(name, {});
-      setOutput(JSON.stringify(data, null, 2));
+      const run = await runTool(name, {});
+      setOutput(JSON.stringify(run.result, null, 2));
     } catch {
       setRunError(`We couldn't run ${name}. Try again.`);
       setOutput(null);
@@ -70,7 +71,11 @@ export function McpToolList() {
                   return (
                     <li key={tool.name} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
-                        <p className="truncate font-mono text-sm">{tool.name}</p>
+                        <p className="truncate font-mono text-sm">
+                          <Link href={`/mcp/tools/${tool.name}`} className="hover:text-accent hover:underline">
+                            {tool.name}
+                          </Link>
+                        </p>
                         <p className="truncate text-xs text-muted">{tool.description}</p>
                       </div>
                       <Button

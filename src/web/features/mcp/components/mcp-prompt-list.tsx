@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
@@ -45,7 +46,11 @@ export function McpPromptList() {
             <ul className="divide-y divide-border" aria-label="MCP prompts">
               {catalog.prompts.map((prompt) => (
                 <li key={prompt.name} className="py-3 first:pt-0 last:pb-0">
-                  <p className="font-mono text-sm">{prompt.name}</p>
+                  <p className="font-mono text-sm">
+                    <Link href={`/mcp/prompts/${prompt.name}`} className="hover:text-accent hover:underline">
+                      {prompt.name}
+                    </Link>
+                  </p>
                   <p className="mt-0.5 text-xs text-muted">{prompt.description}</p>
                   {prompt.args !== undefined && prompt.args.length > 0 ? (
                     <ul

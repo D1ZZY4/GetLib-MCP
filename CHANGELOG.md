@@ -161,6 +161,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cases; the MCP tools become thin adapters, the dashboard calls
   the management endpoints instead of protocol routes, and the
   resolve formatter module is removed.
+- Rewire the control center to the management API with detail
+  links, runtime overview cards, dependency table, log search and
+  filters, and playground request correlation.
 - Standardize the management envelope: `X-Request-Id` on success
   and errors, `rate_limited` and `unauthorized` mappings, and a
   `payload_too_large` code; guard every management route with auth

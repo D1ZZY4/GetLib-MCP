@@ -1,8 +1,9 @@
-import { postJson } from "@/web/lib/api-client";
+import { runTool } from "./mcp.service";
 
 export interface PlaygroundResult {
   output: string;
   durationMs: number;
+  requestId: string;
   ok: boolean;
 }
 
@@ -28,14 +29,22 @@ export function exampleArgsFor(tool: string): string {
 }
 
 export async function runToolWithArgs(name: string, argsText: string): Promise<PlaygroundResult> {
-  let args: unknown;
+  let args: Record<string, unknown>;
   try {
-    args = argsText.trim() === "" ? {} : (JSON.parse(argsText) as unknown);
-  } catch {
+    const parsed: unknown = argsText.trim() === "" ? {} : JSON.parse(argsText);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new Error("Arguments must be a JSON object.");
+    }
+    args = parsed as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof Error && error.message === "Arguments must be a JSON object.") throw error;
     throw new Error("Arguments must be valid JSON.");
   }
-  const started = Date.now();
-  const data: unknown = await postJson(`/api/mcp/${name}`, args ?? {});
-  const durationMs = Date.now() - started;
-  return { output: JSON.stringify(data, null, 2), durationMs, ok: true };
+  const run = await runTool(name, args);
+  return {
+    output: JSON.stringify(run.result, null, 2),
+    durationMs: run.durationMs,
+    requestId: run.requestId,
+    ok: true,
+  };
 }
