@@ -59,14 +59,20 @@ MCP server -> registry -> tools -> application -> domain
 
 MCP tools are thin protocol adapters: validate input, run the service,
 return the result. The dashboard reads control-plane data over
-`/api/management/*` and `/api/mcp/*`. Auth is centralized with fallback
-bootstrap credentials, persistence goes through the database repository
-boundary (mock in development, Supabase in production), and the runtime
-environment resolves from `GET_LIB_MODE` with Vercel/Node auto-detect.
+`/api/management/*` only; `/api/mcp/*` is the MCP protocol boundary
+(Streamable HTTP, SSE, tool execution) and never serves browsers. Auth is
+centralized with fallback bootstrap credentials, persistence goes through
+the database repository boundary (mock in development, Supabase in
+production), and the runtime environment auto-detects from Vercel/Node
+metadata (`GET_LIB_MODE` exists only as a debug override).
 
 Repository checks: `bun run lint` also enforces the no-em-dash rule
-(all controlled content must avoid the em dash character; `AGENTS.md`
-is excluded because Next.js tooling regenerates that file). All
+(all controlled content must avoid the em dash character; encoded
+circumventions are additionally rejected in user-facing `src/app` and
+`src/web` output, while backend detection patterns may still match em
+dashes inside untrusted external content. `AGENTS.md` is
+excluded because Next.js tooling regenerates that file, and `bun.lock`
+because it is a generated lockfile). All
 `GETLIB_*` environment variables are validated in
 `src/server/mcp/config.ts`, the single configuration boundary.
 

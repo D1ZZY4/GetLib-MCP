@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "typecheck": "tsc --noEmit",
-    "check:no-em-dash": "rg -lP \"\\x{2014}\" --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!bun.lock' --glob '!AGENTS.md' . && echo 'EM DASH FOUND' && exit 1 || echo 'no-em-dash: clean'",
+    "check:no-em-dash": "rg -lP \"\\x{2014}\" --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!bun.lock' --glob '!AGENTS.md' . && echo 'EM DASH FOUND' && exit 1 || (rg -lP '\\\\u2014|&#8212;|&mdash;' src/app src/web --glob '*.tsx' --glob '*.css' && echo 'EM DASH CIRCUMVENTION FOUND' && exit 1 || echo 'no-em-dash: clean')",
     "lint": "tsc --noEmit && bun run check:no-em-dash",
     "validate": "bun run typecheck && bun run check:no-em-dash && bun test",
     "test": "bun test"

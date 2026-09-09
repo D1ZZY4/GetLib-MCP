@@ -181,6 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Developments to Development.
 - Keep `updated_at` authoritative with a bootstrap trigger and
   document the versioned migration order.
+- Reject encoded em-dash circumventions in user-facing output
+  while still allowing backend matchers on untrusted content.
 
 ## [0.1.0] - 2026-09-08
 
