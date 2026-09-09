@@ -1,4 +1,3 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
 import { requireManagementAuth, UnauthorizedError } from "@/application/auth/session";
@@ -6,93 +5,70 @@ import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "../utils/rate-limit";
 import { generateRequestId } from "../utils/guard";
 import { createServer } from "../server";
 import { assertAllowedOrigin, OriginRejectedError } from "./request-guard";
-import { pruneSessionMap } from "./sessions";
-
-interface SessionEntry {
-  transport: WebStandardStreamableHTTPServerTransport;
-  server: McpServer;
-  connectedAt: number;
-  lastSeenAt: number;
-  userAgent?: string;
-}
 
 export interface ClientSession extends ClientSessionSnapshot {
   transport: "streamable-http";
 }
 
-// In-memory sessions: correct for dev and long-running Node hosts.
-// Serverless deployments need an external session store instead.
-// Eviction policy is shared with the SSE transport (sessions.ts).
-const sessions = new Map<string, SessionEntry>();
+// Stateless Streamable HTTP: every request gets a fresh server and
+// transport (SDK stateless mode, no sessionIdGenerator), so any instance -
+// long-running or serverless - answers identically. Stateful in-memory
+// sessions cannot work here: serverless isolates and parallel instances do
+// not share memory, so a session created by one request is invisible to the
+// next and every post-initialize call fails with "Server not initialized".
+// What the dashboard shows instead is a bounded ring of recently seen
+// clients (user-agent + last-seen), which is honest on every host.
+interface RecentClient {
+  userAgent: string;
+  firstSeenAt: number;
+  lastSeenAt: number;
+  requestCount: number;
+}
 
-function pruneIdleSessions(now: number = Date.now()): void {
-  pruneSessionMap(sessions, now);
+const MAX_RECENT_CLIENTS = 100;
+
+const recentClients = new Map<string, RecentClient>();
+
+function noteHttpClient(userAgent: string | undefined): void {
+  const key = userAgent ?? "unknown";
+  const now = Date.now();
+  const existing = recentClients.get(key);
+  if (existing) {
+    existing.lastSeenAt = now;
+    existing.requestCount += 1;
+    return;
+  }
+  if (recentClients.size >= MAX_RECENT_CLIENTS) {
+    const oldest = recentClients.keys().next().value;
+    if (oldest !== undefined) recentClients.delete(oldest);
+  }
+  recentClients.set(key, { userAgent: key, firstSeenAt: now, lastSeenAt: now, requestCount: 1 });
 }
 
 export function listSessions(): ClientSession[] {
-  pruneIdleSessions();
-  return [...sessions.entries()].map(([id, entry]) => ({
-    id,
+  return [...recentClients.values()].map((entry) => ({
+    id: entry.userAgent,
     transport: "streamable-http" as const,
-    connectedAt: new Date(entry.connectedAt).toISOString(),
+    connectedAt: new Date(entry.firstSeenAt).toISOString(),
     lastSeenAt: new Date(entry.lastSeenAt).toISOString(),
-    ...(entry.userAgent !== undefined ? { userAgent: entry.userAgent } : {}),
+    ...(entry.userAgent !== "unknown" ? { userAgent: entry.userAgent } : {}),
   }));
 }
 
-/** Closes every live Streamable HTTP session. Shutdown path only. */
+/** Clears the recent-clients ring. Shutdown path only. */
 export async function closeAllHttpSessions(): Promise<void> {
-  const entries = [...sessions.values()];
-  sessions.clear();
-  await Promise.allSettled(
-    entries.map(async (entry) => {
-      try {
-        await entry.transport.close?.();
-      } catch {
-        // Best-effort cleanup during shutdown.
-      }
-    }),
-  );
+  recentClients.clear();
 }
 
-async function getTransport(req: Request): Promise<WebStandardStreamableHTTPServerTransport> {
-  pruneIdleSessions();
-  const sessionId = req.headers.get("mcp-session-id");
-  if (sessionId !== null) {
-    const existing = sessions.get(sessionId);
-    if (existing) {
-      existing.lastSeenAt = Date.now();
-      return existing.transport;
-    }
-  }
-
+async function getTransport(): Promise<WebStandardStreamableHTTPServerTransport> {
   const server = createServer();
-  const now = Date.now();
-  // Best-effort client hint from headers. The MCP handshake does not expose
-  // the client name to the transport, so this stays an observed hint, never
-  // a verified identity.
-  const userAgent = req.headers.get("user-agent") ?? undefined;
   const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: () => crypto.randomUUID(),
+    // No sessionIdGenerator: stateless mode. Each request carries exactly
+    // one message and is answered on the same request - no session lookup,
+    // no cross-request memory, identical behavior on every instance.
+    sessionIdGenerator: undefined,
     enableJsonResponse: true,
-    onsessioninitialized: (id) => {
-      sessions.set(id, {
-        transport,
-        server,
-        connectedAt: now,
-        lastSeenAt: now,
-        ...(userAgent !== undefined ? { userAgent } : {}),
-      });
-    },
-    onsessionclosed: (id) => {
-      sessions.delete(id);
-    },
   });
-  transport.onclose = () => {
-    if (transport.sessionId) {
-      sessions.delete(transport.sessionId);
-    }
-  };
   await server.connect(transport);
   return transport;
 }
@@ -123,6 +99,7 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
     }
     throw error;
   }
-  const transport = await getTransport(req);
+  const transport = await getTransport();
+  noteHttpClient(req.headers.get("user-agent") ?? undefined);
   return transport.handleRequest(req);
 }

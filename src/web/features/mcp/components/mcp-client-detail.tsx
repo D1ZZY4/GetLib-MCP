@@ -40,7 +40,7 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
         <Card>
           <Card.Content>
             <p className="text-sm text-muted">
-              No connected client with this id. Sessions end when the client disconnects.
+              No recently seen client with this id. Entries expire as new clients arrive.
             </p>
           </Card.Content>
         </Card>
@@ -52,17 +52,18 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
                 {client.id}
               </h1>
               <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
-                Connected
+                Seen
               </span>
             </div>
             <p className="mt-1 max-w-xl text-sm text-muted">
-              Negotiated connection state for this session.
+              Recently observed client. Streamable HTTP is stateless, so this is a
+              sighting record, not a live session.
             </p>
           </header>
           <Card>
             <Card.Header>
               <Card.Title>Connection</Card.Title>
-              <Card.Description>Metadata and connection state, tracked per session.</Card.Description>
+              <Card.Description>Metadata tracked per sighting.</Card.Description>
             </Card.Header>
             <Card.Content>
               <dl className="flex flex-col gap-2 text-sm">

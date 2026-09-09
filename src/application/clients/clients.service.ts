@@ -10,9 +10,9 @@ export interface ClientsSnapshot {
 }
 
 /**
- * Connected MCP clients for the control plane. Sessions live in the
- * Streamable HTTP and SSE transports of this process; stdio connections
- * are local and not tracked here.
+ * Recently seen MCP clients for the control plane. Streamable HTTP is
+ * stateless (recent-sightings ring); SSE keeps live sessions on hosts with
+ * sticky connections. stdio connections are local and not tracked here.
  */
 export function listClients(): ClientsSnapshot {
   const clients: ConnectedClient[] = [...listSessions(), ...listSseSessions()];

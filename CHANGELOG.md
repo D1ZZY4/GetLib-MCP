@@ -192,6 +192,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   while still allowing backend matchers on untrusted content.
 - Extend the SSE function timeout and send baseline security
   headers on every response.
+- Run Streamable HTTP stateless so serverless isolates answer
+  every request identically; the clients view lists recently seen
+  clients instead of live sessions.
 
 </details>
 

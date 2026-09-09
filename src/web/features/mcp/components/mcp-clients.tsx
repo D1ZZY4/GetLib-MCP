@@ -17,8 +17,9 @@ export function McpClients() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Clients</h1>
         <p className="mt-1 max-w-xl text-sm text-muted">
-          AI agents connected to this server over Streamable HTTP. Only sessions in this
-          process are visible. Agents using stdio run their own server process.
+          AI agents recently seen on this server over Streamable HTTP. The transport is
+          stateless, so this lists recently observed clients rather than live sessions.
+          Agents using stdio run their own server process.
         </p>
       </header>
 
@@ -40,7 +41,7 @@ export function McpClients() {
         <Card>
           <Card.Content>
             <p className="text-sm text-muted">
-              No agents connected right now. Connect an AI agent over Streamable HTTP and it
+              No agents seen recently. Connect an AI agent over Streamable HTTP and it
               will appear here.
             </p>
           </Card.Content>
@@ -48,7 +49,7 @@ export function McpClients() {
       ) : (
         <Card>
           <Card.Content>
-            <ul className="divide-y divide-border" aria-label="Connected clients">
+            <ul className="divide-y divide-border" aria-label="Recently seen clients">
               {snapshot.clients.map((client) => (
                 <li key={client.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
@@ -65,7 +66,7 @@ export function McpClients() {
                     ) : null}
                   </div>
                   <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
-                    Connected
+                    Seen
                   </span>
                 </li>
               ))}
