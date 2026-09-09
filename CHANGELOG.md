@@ -112,6 +112,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transport barrel re-export; `runTool` accepts a caller request ID
   so logs correlate, and catalog tests derive counts from the live
   catalog instead of a constant.
+- Order startup as detect environment, validate production policy,
+  resolve database mode, load registry, check database health,
+  bootstrap account, then ready; bootstrap failure fails fast in
+  production and warns in development.
 
 ## [0.1.0] - 2026-09-08
 

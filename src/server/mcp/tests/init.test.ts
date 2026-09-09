@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, test } from "bun:test";
 import { resetBootstrapCache } from "@/application/auth/auth.service";
 import { resetDatabaseCache } from "../infrastructure/database";
 import { initializeApplication, resetInitialization } from "../init";
