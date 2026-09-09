@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/react";
-import { SearchIcon } from "../../../components/ui/icons";
+import { SearchIcon } from "@/web/components/ui/icons";
 
 interface SearchFieldProps {
   query: string;
@@ -21,7 +21,7 @@ export function SearchField({ query, loading, onQueryChange, onSearch }: SearchF
         onSearch(query);
       }}
     >
-      <div className="flex w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent">
+      <div className="flex w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
         <SearchIcon className="size-4 shrink-0 text-muted" />
         <label htmlFor="discover-search" className="sr-only">
           Search documentation

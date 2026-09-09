@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Key } from "@heroui/react";
-import { Card, Label, ListBox, Select, Skeleton } from "@heroui/react";
+import { Card, ListBox, Select, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
 import { fetchLogs } from "../services/mcp.service";
-import { SearchIcon } from "../../../components/ui/icons";
+import { SearchIcon } from "@/web/components/ui/icons";
 
 const LOAD_ERROR = "We couldn't load recent logs. Check your connection and try again.";
 
@@ -47,7 +47,7 @@ export function McpLogViewer() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent">
+        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
           <SearchIcon className="size-4 shrink-0 text-muted" />
           <label htmlFor="logs-search" className="sr-only">
             Filter logs by tool or request id
@@ -64,12 +64,12 @@ export function McpLogViewer() {
         </div>
         <div className="flex gap-3">
           <div className="flex items-center gap-2">
-            <Label htmlFor="logs-status" className="text-xs text-muted">
+            <span id="logs-status-label" className="text-xs text-muted">
               Status
-            </Label>
+            </span>
             <Select
               className="w-28"
-              aria-label="Status filter"
+              aria-labelledby="logs-status-label"
               value={status as Key}
               onChange={(key) => {
                 if (key === "ok" || key === "fail" || key === "all") setStatus(key);
@@ -98,12 +98,12 @@ export function McpLogViewer() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label htmlFor="logs-limit" className="text-xs text-muted">
+            <span id="logs-limit-label" className="text-xs text-muted">
               Show
-            </Label>
+            </span>
             <Select
               className="w-24"
-              aria-label="Log limit"
+              aria-labelledby="logs-limit-label"
               value={String(limit) as Key}
               onChange={(key) => {
                 const next = Number(key);

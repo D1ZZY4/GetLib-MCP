@@ -24,17 +24,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Harden auth edge cases: trim secrets, hash-compare passwords,
   mirror cookie attributes on sign-out, drop the anon client, and
   run tests hermetic to the operator environment.
+- Relax sign-in password rules to non-empty and route auth calls
+  through the shared API client.
+- Strengthen search field focus visibility and label select
+  controls by labelledby reference.
+- Cover prompt listing and rendering over both transports and
+  fix undefined prompt args crashing the callback.
+
+### Changed
+
 - Consolidate origin rejection into one route helper and simplify
   every transport route to use it.
 - Centralize fetch ranking and its bar list so dashboard and
   statistics cannot drift apart.
-- Relax sign-in password rules to non-empty and route auth calls
-  through the shared API client.
 - Keep one request-id implementation, dedupe the fallback
   warning, harden prompt arg checks, and match dash punctuation
   in nav patterns.
-- Cover prompt listing and rendering over both transports and
-  fix undefined prompt args crashing the callback.
 - Share one pipeline budget with memoization and singleflight so
   parallel search and snippet work resolves identically, with a
   memory mirror and days-long snippet persistence.
