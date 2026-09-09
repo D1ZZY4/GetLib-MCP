@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   disagreeing with it.
 - Extract pure durable-log mappers so production reads stay
   unit-testable without a database.
+- Centralize the evidence verdict tone mapping used by
+  discovery surfaces.
 
 ### Changed
 
