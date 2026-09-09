@@ -29,15 +29,20 @@ function loadRuntime(): Promise<RuntimeInfo> {
  */
 export function useEnvironment() {
   const [environment, setEnvironment] = useState<Environment | null>(null);
+  const [version, setVersion] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     loadRuntime().then(
       (runtime) => {
-        if (!cancelled) setEnvironment(runtime.environment);
+        if (cancelled) return;
+        setEnvironment(runtime.environment);
+        setVersion(runtime.health.version);
       },
       () => {
-        if (!cancelled) setEnvironment(null);
+        if (cancelled) return;
+        setEnvironment(null);
+        setVersion(null);
       },
     );
     return () => {
@@ -50,5 +55,6 @@ export function useEnvironment() {
     isDevelopment: environment === "development",
     isProduction: environment === "production",
     loading: environment === null,
+    version,
   };
 }

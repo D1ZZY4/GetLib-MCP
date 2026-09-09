@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "@/web/providers/auth-provider";
+import { useEnvironment } from "@/web/features/development/hooks/use-environment";
 import { ProfileMenu } from "./profile-menu";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeControls } from "./theme-controls";
@@ -13,6 +14,10 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { session } = useSession();
+  // Live server version from the shared cached runtime probe - the sidebar
+  // never hardcodes a version string, so display cannot drift from the
+  // running server.
+  const { version } = useEnvironment();
 
   return (
     <aside
@@ -30,7 +35,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {!collapsed && (
           <div className="leading-tight">
             <p className="text-sm font-semibold">GetLib MCP</p>
-            <p className="font-mono text-xs text-muted tabular-nums">v0.1.0</p>
+            <p className="min-h-4 font-mono text-xs text-muted tabular-nums">
+              {version === null ? "" : `v${version}`}
+            </p>
           </div>
         )}
       </div>

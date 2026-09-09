@@ -1,7 +1,7 @@
 import { config } from "./config";
 
 export const SERVER_NAME = "getlib-mcp";
-export const SERVER_VERSION = "0.1.0";
+export const SERVER_VERSION = "1.1.2";
 
 // Tool counts are always derived from the registry (listTools().length)
 // so they cannot silently drift when a tool is added or removed.

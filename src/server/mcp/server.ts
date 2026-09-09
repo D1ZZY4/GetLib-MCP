@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import { z } from "zod";
+import { SERVER_NAME, SERVER_VERSION } from "./constants";
 import { getPrompt, listPrompts, renderPrompt, type GlPromptArg } from "./registry/prompt-registry";
 import { listResources, readResource } from "./registry/resource-registry";
 import { listTools, getTool, runTool } from "./registry/tool-registry";
@@ -10,7 +11,7 @@ export function createServer(): McpServer {
   ensureRegistryLoaded();
 
   const server = new McpServer(
-    { name: "getlib-mcp", version: "0.1.0" },
+    { name: SERVER_NAME, version: SERVER_VERSION },
     { capabilities: { tools: {}, resources: {}, prompts: {} } },
   );
 
