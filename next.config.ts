@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+// Development-only origins for cloud workspaces. Next.js consumes
+// allowedDevOrigins in development mode only; production is unaffected.
 const allowedDevOrigins = [
   "**.replit.dev",
   "**.repl.co",

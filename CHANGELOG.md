@@ -205,6 +205,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   across the control center with stronger focus states.
 - Reject empty arrays and strings in tool inputs instead of
   silently accepting them.
+- Harden the toolchain: stricter TypeScript flags, frozen
+  lockfile installs, pinned bun manager, dropped shadcn dev
+  dependency, and production build inside validation.
 - Require the session secret in production with auth enabled,
   fail startup on invalid production database policy, log
   unconfigured persistence loudly, share Supabase key lists

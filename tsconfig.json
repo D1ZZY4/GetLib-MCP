@@ -25,6 +25,8 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "noUncheckedIndexedAccess": true,
+    "useUnknownInCatchVariables": true,
     "plugins": [
       {
         "name": "next"
@@ -35,7 +37,7 @@
         "./src/*"
       ]
     },
-    "allowJs": true,
+    "allowJs": false,
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
