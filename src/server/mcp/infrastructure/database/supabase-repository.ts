@@ -1,6 +1,6 @@
 import type { DatabaseMode } from "../../runtime";
 import { log } from "../../utils/logger";
-import { getSupabaseClient, getSupabaseServiceClient } from "../supabase/client";
+import { getSupabaseServiceClient } from "../supabase/client";
 import type {
   BootstrapRecord,
   DatabaseRepository,
@@ -23,16 +23,21 @@ interface BootstrapRow {
   updated_at: string;
 }
 
-/** Service-role first (bypasses RLS), anon as fallback, null when unconfigured. */
+/** Service-role only. The anon client can never satisfy RLS on these
+ * tables (no public policies), so falling back to it only masks a
+ * misconfigured service key as silent no-ops. Null means unconfigured. */
 function privilegedClient() {
-  return getSupabaseServiceClient() ?? getSupabaseClient();
+  return getSupabaseServiceClient();
 }
 
 function withTimeout<T>(work: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error(message)), ms);
+    timer = setTimeout(() => reject(new Error(message)), ms);
   });
-  return Promise.race([work, timeout]);
+  return Promise.race([work, timeout]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
 }
 
 export class SupabaseDatabaseRepository implements DatabaseRepository {
@@ -74,7 +79,9 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
         health: "degraded",
         configured: true,
         latencyMs: Date.now() - started,
-        error: message,
+        // Fixed string at the boundary: provider internals stay in the
+        // redacted server log, never in API payloads.
+        error: "Supabase is degraded.",
         checkedAt: new Date().toISOString(),
       };
     }

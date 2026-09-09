@@ -65,6 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-process fallback, documented in `.env.example`.
 - Contract test locking the exact `GETLIB_AUTHENTICATICATION_ENABLE`,
   `GETLIB_DEFAULT_ACCOUNT`, and `GETLIB_DEFAULT_PASS` spelling.
+- Database production-guard test proving production never resolves
+  the mock repository.
 
 ### Changed
 
@@ -96,6 +98,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   database-mode and lib-mode fields from the frozen config so runtime
   stays the single live reader, and clarify `GET_LIB_MODE` as a
   debug-only override.
+- Fail fast when production requests the mock repository; restrict
+  Supabase to the service-role client, clear timeout timers, and
+  return a fixed degraded status string so provider internals stay
+  in server logs.
 
 ## [0.1.0] - 2026-09-08
 
