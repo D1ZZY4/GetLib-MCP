@@ -3,10 +3,8 @@ import { config } from "./config";
 export const SERVER_NAME = "getlib-mcp";
 export const SERVER_VERSION = "0.1.0";
 
-// Number of MCP tools registered in server.ts - single source of truth for the
-// `/api/mcp/servers` payloads and the server startup log, so the count
-// cannot silently drift when a tool is added/removed.
-export const TOOL_COUNT = 14;
+// Tool counts are always derived from the registry (listTools().length)
+// so they cannot silently drift when a tool is added or removed.
 
 export const CHARS_PER_TOKEN = 3.8;
 

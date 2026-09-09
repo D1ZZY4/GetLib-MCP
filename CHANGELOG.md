@@ -102,6 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Supabase to the service-role client, clear timeout timers, and
   return a fixed degraded status string so provider internals stay
   in server logs.
+- Derive MCP tool counts from the registry instead of a duplicated
+  `TOOL_COUNT` constant; server instructions take the count as a
+  parameter so counts cannot drift.
 
 ## [0.1.0] - 2026-09-08
 

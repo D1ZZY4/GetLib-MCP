@@ -1,8 +1,8 @@
 /**
  * Server instructions string rendered into the MCP server.instructions field.
  * Extracted from index.ts (MX-004) so it can be unit-tested and edited in
- * isolation. toolCount is passed in so the tool count stays the single source
- * of truth in constants.ts (TOOL_COUNT).
+ * isolation. toolCount is passed in so the count always derives from the
+ * registry instead of a duplicated constant.
  *
  * BUDGET: Claude Code truncates server instructions around 2 KB. The previous
  * version was 5.3 KB, so the routing table - the part that actually changes
