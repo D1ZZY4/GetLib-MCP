@@ -211,6 +211,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Collapse the token file to layering plus a11y defaults on the
   Tailwind scale, drop the unused container variant and demo
   components, and use scale sizes in the shell.
+- Share form validation with the auth form and drop the leftover
+  social provider list.
 - Require the session secret in production with auth enabled,
   fail startup on invalid production database policy, log
   unconfigured persistence loudly, share Supabase key lists

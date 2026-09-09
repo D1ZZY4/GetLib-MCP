@@ -9,5 +9,3 @@ export const mockSession: MockSession = {
   name: "Demo User",
   email: "demo@getlibmcp.com",
 };
-
-export const mockProviders: string[] = ["Google", "GitHub"];

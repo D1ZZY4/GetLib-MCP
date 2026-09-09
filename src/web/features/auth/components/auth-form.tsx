@@ -13,6 +13,7 @@ import {
   TextField,
 } from "@heroui/react";
 import { mockSession } from "../services/auth.service";
+import { validateEmail, validatePassword } from "@/web/lib/validation";
 import { useEnvironment } from "@/web/features/development/hooks/use-environment";
 import type { MockSession } from "../../../types/library";
 
@@ -22,20 +23,6 @@ interface AuthFormProps {
   mode: AuthMode;
   onAuthenticated: (session: MockSession) => void;
   verifyCredentials?: (email: string, password: string) => Promise<string | null>;
-}
-
-function validateEmail(value: string): string | null {
-  if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
-    return "That email address doesn't look right";
-  }
-  return null;
-}
-
-function validatePassword(value: string): string | null {
-  if (value.length < 8) {
-    return "Use at least 8 characters";
-  }
-  return null;
 }
 
 const COPY = {
