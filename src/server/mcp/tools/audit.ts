@@ -3,6 +3,7 @@ import { z } from "zod";
 import { safeguardPath, withToolTimeout } from "../utils/guard";
 import { withTelemetry } from "../services/telemetry";
 import { readProjectFiles, runPatterns, groupIssues, type SourceFile } from "./audit-scan";
+import { detectDependencies } from "../utils/deps/manifest";
 import { fetchBestPractice } from "./audit-fixes";
 import { renderAuditReport } from "./audit-report";
 
@@ -94,7 +95,17 @@ If doc fetches fail with empty results, the user likely needs to set GETLIB_GITH
         }
 
         if (files.length === 0) {
-          return { content: [{ type: "text", text: `No source files found in: ${resolvedPath}` }] };
+          // Reconcile with gl_auto_scan: manifests are not source files, so
+          // a directory with only package.json/lockfiles yields zero files
+          // here while auto_scan still detects dependencies. Say so plainly
+          // instead of disagreeing with the sibling tool.
+          const depSources = await detectDependencies(resolvedPath);
+          const depCount = depSources.reduce((total, source) => total + source.dependencies.length, 0);
+          const hint =
+            depCount > 0
+              ? ` Found ${depCount} declared dependencies but no scannable source files - this looks like a build output or install directory. Run gl_auto_scan for dependency guidance, or point projectPath at the source checkout to audit your own code.`
+              : "";
+          return { content: [{ type: "text", text: `No source files found in: ${resolvedPath}${hint}` }] };
         }
 
         const allIssues = runPatterns(files, categories);

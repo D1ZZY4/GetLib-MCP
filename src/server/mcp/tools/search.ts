@@ -8,6 +8,7 @@ import {
   searchLibrariesUseCase,
 } from "@/application/library/search.service";
 import { withToolTimeout } from "../utils/guard";
+import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
 
 // Re-exported so callers that reason about search sourcing (gl_compat, gl_migration)
@@ -17,10 +18,7 @@ export { searchMDN, webSearch } from "../services/search/engines";
 export { isAuthoritativeUrl } from "../services/search/url-rank";
 
 const InputSchema = z.object({
-  query: z
-    .string()
-    .min(1)
-    .max(SEARCH_QUERY_MAX)
+  query: nonBlankString(SEARCH_QUERY_MAX)
     .describe(
       "What you want to know. Can be anything: 'latest React best practices', 'WCAG 2.2 focus indicators', 'OWASP SQL injection prevention', 'CSS container queries browser support', 'JWT security', 'HTTP/3 vs HTTP/2', 'Web Workers API'. No library name required.",
     ),

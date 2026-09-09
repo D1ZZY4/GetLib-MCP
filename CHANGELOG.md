@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Reject whitespace-only tool inputs with clean validation errors
+  through one shared schema helper.
+- Gate fuzzy-resolved best practices and compat evidence on
+  distinctive subject tokens so unrelated guides never pass.
+- Point manifest-only audit directories at auto scan instead of
+  disagreeing with it.
+
 </details>
 
 ## [1.1.3] - 2026-09-09

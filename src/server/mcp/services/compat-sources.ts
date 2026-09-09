@@ -1,7 +1,8 @@
 import { fetchAsMarkdownRace } from "./fetcher";
 import { fetchMdnDocMeta, renderBcdTable, formatBaseline } from "./mdn-bcd";
 import { extractRelevantContent } from "../utils/extract";
-import { checkEvidence } from "../utils/evidence";
+import { checkEvidence, countTokenHits, normalizeForMatching, stripUrlNoise } from "../utils/evidence";
+import { substantiveTokens, tokenVariants } from "../utils/tokenize";
 import { sanitizeContent } from "../utils/sanitize";
 import { findTopicUrls } from "./search/topic-match";
 import { searchMDN } from "./search/engines";
@@ -10,6 +11,24 @@ export interface CompatSection {
   text: string;
   url: string;
   sourceType: string;
+}
+
+/**
+ * Relevance gate for candidate compat content. matchRatio alone is not
+ * enough: a garbage feature like "asdasdasdxyz nonexistent feature 123"
+ * still matches the generic word "feature" on an unrelated FeaturePolicy
+ * page (1/4 coverage) and would sail through as a false positive.
+ * The feature's longest substantive token is its distinctive subject -
+ * real evidence for the feature must mention it at a word start.
+ */
+export function passesFeatureGate(text: string, feature: string): boolean {
+  if (checkEvidence(text, feature).matchRatio === 0) return false;
+  const distinctive = substantiveTokens(feature)
+    .filter((token) => token.length >= 4)
+    .sort((a, b) => b.length - a.length)[0];
+  if (!distinctive) return true;
+  const prose = normalizeForMatching(stripUrlNoise(text));
+  return tokenVariants(distinctive).some((variant) => countTokenHits(prose, variant) > 0);
 }
 
 /**
@@ -52,7 +71,7 @@ export async function fetchBcdSection(
     const meta = metas[i];
     if (!meta || meta.browserCompat.length === 0) continue;
     // Relevance gate: the resolved doc must actually be about the feature.
-    if (checkEvidence(`${meta.title}\n${meta.summary}`, feature).matchRatio === 0) continue;
+    if (!passesFeatureGate(`${meta.title}\n${meta.summary}`, feature)) continue;
 
     const tables = (
       await Promise.all(meta.browserCompat.slice(0, 3).map((p) => renderBcdTable(p, environments)))
@@ -77,6 +96,15 @@ export async function fetchBcdSection(
   return null;
 }
 
+/**
+ * Explicit no-result signals from search fallbacks: a search page that
+ * echoes the query ("0 results found") mentions every token without
+ * evidencing anything. Never serve that as compat data.
+ */
+export function hasNoResultSignal(content: string): boolean {
+  return /0 results found|no results found|nothing found/i.test(content);
+}
+
 /** Fetch one page, extract against a topic, and keep it only if it covers the feature. */
 async function fetchGatedSection(
   url: string,
@@ -88,8 +116,9 @@ async function fetchGatedSection(
 ): Promise<CompatSection | null> {
   const content = await fetchAsMarkdownRace(url);
   if (!content || content.length <= 200) return null;
+  if (hasNoResultSignal(content)) return null;
   const { text } = extractRelevantContent(sanitizeContent(content), topic, tokens);
-  if (text.length <= 100 || checkEvidence(text, feature).matchRatio === 0) return null;
+  if (text.length <= 100 || !passesFeatureGate(text, feature)) return null;
   return { text: `${heading}\n\n${text}`, url, sourceType };
 }
 

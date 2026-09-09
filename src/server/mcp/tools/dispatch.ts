@@ -22,14 +22,12 @@ import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { detectIntent, renderRoutingTable } from "../services/intent-router";
 import { withNotice, safeguardPath, withToolTimeout } from "../utils/guard";
+import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
 import { ROUTING_RATIONALE, ROUTING_FALLBACK } from "../sources/routing-rationale";
 
 const InputSchema = z.object({
-  query: z
-    .string()
-    .min(1)
-    .max(2000)
+  query: nonBlankString(2000)
     .describe(
       "Plain-text user intent. Examples: 'use getlib for react', 'find issues', 'migrate next from 14 to 15', 'best practices for fastapi'.",
     ),

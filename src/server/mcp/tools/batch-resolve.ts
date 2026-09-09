@@ -4,10 +4,11 @@ import { withTelemetry } from "../services/telemetry";
 import { fuzzySearch, lookupByAlias } from "../sources/registry";
 import { isLibraryBlocked, isSourceEnabled } from "../services/source-settings";
 import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL, withToolTimeout } from "../utils/guard";
+import { nonBlankString } from "../utils/schemas";
 
 const InputSchema = z.object({
   libraryNames: z
-    .array(z.string().min(1).max(200))
+    .array(nonBlankString(200))
     .min(1)
     .max(20)
     .describe("Array of library names to resolve (max 20). Example: ['react', 'next', 'tailwind']"),

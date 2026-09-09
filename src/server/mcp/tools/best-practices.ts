@@ -1,6 +1,8 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
+import { lookupByAlias, lookupById } from "../sources/registry";
 import { isExtractionAttempt, withToolTimeout, EXTRACTION_REFUSAL } from "../utils/guard";
+import { checkEvidence } from "../utils/evidence";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import { resolveBestPracticesTarget } from "../services/best-practices/target";
@@ -51,6 +53,44 @@ const InputSchema = z.object({
 });
 
 // Known best practices / guide URLs per library - 363+ entries
+
+function isRegistryIdentifier(libraryId: string): boolean {
+  return (lookupById(libraryId) ?? lookupByAlias(libraryId)) !== undefined;
+}
+
+/**
+ * Explicitly-scoped targets the user deliberately addressed: registry
+ * prefixes, direct docs URLs, and bare hostnames. These skip the
+ * fuzzy-identity gate below because the user - not fuzzy search -
+ * chose the target.
+ */
+function isExplicitTarget(libraryId: string): boolean {
+  const normalized = libraryId.trim();
+  if (
+    normalized.startsWith("npm:") ||
+    normalized.startsWith("pypi:") ||
+    normalized.startsWith("crates:") ||
+    normalized.startsWith("go:") ||
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://")
+  ) {
+    return true;
+  }
+  return normalized.includes(".") && !normalized.includes(" ");
+}
+
+/**
+ * Fuzzy-identity gate for bare non-registry identifiers. resolveDynamic
+ * falls back to npm/GitHub fuzzy search, which can latch onto an
+ * unrelated repo for garbage input. Unless the fetched content actually
+ * mentions what the user asked for (or the resolved library name), the
+ * identifier is a miss - unrelated guides must never pass as best
+ * practices. Pure and network-free so the rule itself is unit-testable.
+ */
+export function passesIdentityGate(text: string, libraryId: string, displayName: string): boolean {
+  if (isRegistryIdentifier(libraryId) || isExplicitTarget(libraryId)) return true;
+  return checkEvidence(text, libraryId).ok || checkEvidence(text, displayName).ok;
+}
 
 export function registerBestPracticesTools(): void {
   defineTool({
@@ -121,6 +161,20 @@ Do not call this tool more than 3 times per question.`,
           bestPracticesPaths,
         });
         if (escalation.extraSource) sourcesTried.push(escalation.extraSource);
+
+        // Identity gate for fuzzy-resolved identifiers: a bare name that
+        // missed the registry only survives on npm/pypi/URL prefixes or an
+        // explicit docs URL via resolveDynamic's fuzzy search, which can
+        // latch onto an unrelated repo for garbage input. Unless the
+        // fetched content actually mentions what the user asked for (or
+        // the resolved library name), that is a miss - never serve
+        // unrelated guides as best practices.
+        if (!passesIdentityGate(escalation.text, libraryId, target.displayName)) {
+          ctx.resolved = false;
+          return {
+            content: [{ type: "text", text: `Could not resolve "${libraryId}".\n\n${UNRESOLVED_HELP}` }],
+          };
+        }
 
         ctx.resolved = effectiveTopic && escalation.evidence.matchRatio === 0
           ? false

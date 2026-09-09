@@ -6,13 +6,11 @@ import {
   resolveLibraryUseCase,
 } from "@/application/library/resolve.service";
 import { withToolTimeout } from "../utils/guard";
+import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
 
 const InputSchema = z.object({
-  libraryName: z
-    .string()
-    .min(1)
-    .max(RESOLVE_NAME_MAX)
+  libraryName: nonBlankString(RESOLVE_NAME_MAX)
     .describe(
       "Library or framework name to look up. Examples: 'nextjs', 'react', 'tailwind', 'fastapi', 'drizzle'",
     ),

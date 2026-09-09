@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withTelemetry } from "../services/telemetry";
 import { checkEvidence, buildEvidenceBlock } from "../utils/evidence";
 import { withNotice, withToolTimeout } from "../utils/guard";
+import { nonBlankString } from "../utils/schemas";
 import { docCache } from "../services/cache";
 import {
   resolveMdnCandidates,
@@ -15,10 +16,7 @@ import {
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 
 const InputSchema = z.object({
-  feature: z
-    .string()
-    .min(1)
-    .max(300)
+  feature: nonBlankString(300)
     .describe(
       "Feature to check: 'CSS container queries', 'Array.at()', 'fetch() browser support', 'WebAssembly'",
     ),
