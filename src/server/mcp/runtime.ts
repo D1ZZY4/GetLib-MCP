@@ -71,15 +71,40 @@ function hasSupabaseConfig(): boolean {
   // Direct reads here are intentional: runtime detection must stay free of
   // config-module import cycles in edge/test runtimes. The canonical parsed
   // values live in config.ts; this is only a presence check for policy.
-  const url = readEnv("GETLIB_SUPABASE_URL") ?? readEnv("SUPABASE_URL");
-  const anon =
-    readEnv("GETLIB_SUPABASE_ANON_KEY") ??
-    readEnv("GETLIB_SUPABASE_PUBLISHABLE_KEY") ??
-    readEnv("SUPABASE_ANON_KEY") ??
-    readEnv("SUPABASE_PUBLISHABLE_KEY") ??
-    readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  // Both modules share the key lists below so a new variable name cannot
+  // silently diverge policy from parsing.
+  const url = firstPresent(SUPABASE_URL_KEYS);
+  const anon = firstPresent(SUPABASE_ANON_KEYS);
   return url !== undefined && anon !== undefined;
 }
+
+function firstPresent(names: string[]): string | undefined {
+  for (const name of names) {
+    const value = readEnv(name);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+/**
+ * Canonical Supabase variable names, shared by runtime policy
+ * (presence checks here) and config parsing (config.ts firstEnv).
+ * Add new accepted names in exactly one place: these lists.
+ */
+export const SUPABASE_URL_KEYS: string[] = ["GETLIB_SUPABASE_URL", "SUPABASE_URL"];
+
+export const SUPABASE_ANON_KEYS: string[] = [
+  "GETLIB_SUPABASE_ANON_KEY",
+  "GETLIB_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_PUBLISHABLE_KEY",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+];
+
+export const SUPABASE_SERVICE_KEYS: string[] = [
+  "GETLIB_SUPABASE_SERVICE_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+];
 
 /**
  * Realtime database-mode selection for the Developments page. Development

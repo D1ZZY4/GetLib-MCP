@@ -14,13 +14,16 @@ let initialized = false;
  * account, ready). Idempotent and safe to call from stdio entry, web
  * instrumentation, tests, or first-request adapters.
  *
- * Degraded-startup contract: no tool path requires the database
- * (bootstrap falls back to env credentials plus memory, logs fall back
- * to the in-memory ring, settings are file-based), so a failed
- * production database precondition is a loud error log plus degraded
- * mode - never a startup crash. Hosted web deployments that must refuse
- * to serve without a database should gate on validateProductionPolicy
- * explicitly instead of using this entrypoint.
+ * Startup contract: a failed production policy (mock database selected
+ * for production, or Supabase unconfigured in production) is fatal -
+ * fail fast instead of serving traffic on an invalid database policy.
+ * A failed production database *connection* or bootstrap write is a loud
+ * error log plus degraded mode, never a startup crash: no tool path
+ * requires the database (bootstrap falls back to env credentials plus
+ * memory, logs fall back to the in-memory ring, settings are
+ * file-based), so transient outages degrade instead of taking the whole
+ * server down. Hosted web deployments that must refuse to serve without
+ * a live database should additionally gate on the health endpoint.
  */
 export async function initializeApplication(): Promise<void> {
   if (initialized) return;
@@ -30,6 +33,9 @@ export async function initializeApplication(): Promise<void> {
     validateProductionPolicy();
   } catch (error) {
     log({ level: "error", msg: "init.production-policy-failed", error: String(error) });
+    if (environment === "production") {
+      throw error;
+    }
   }
   const databaseMode = resolveDatabaseMode(environment);
   ensureRegistryLoaded();

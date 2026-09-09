@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { safeguardPath } from "../guard";
 import { parsePackageJson, parseComposerJson, parseDenoJson, parseGemfile } from "./parsers-js";
 import { parseRequirementsTxt, parsePyproject } from "./parsers-python";
 import { parseCargoToml, parseGoMod, parsePomXml, parseGradle, parsePubspec } from "./parsers-native";
@@ -45,12 +46,15 @@ async function readFileIfExists(filePath: string): Promise<string | null> {
  * names each declares. Unreadable or malformed files are skipped, never thrown.
  */
 export async function detectDependencies(projectPath: string): Promise<DependencySource[]> {
+  // Defense in depth: the tool entry point already guards, but this stays
+  // safe for any future caller that forgets to.
+  const guarded = safeguardPath(projectPath);
   const sources: DependencySource[] = [];
   const satisfiedGroups = new Set<string>();
 
   for (const manifest of MANIFESTS) {
     if (manifest.group && satisfiedGroups.has(manifest.group)) continue;
-    const content = await readFileIfExists(join(projectPath, manifest.file));
+    const content = await readFileIfExists(join(guarded, manifest.file));
     if (!content) continue;
     const dependencies = manifest.parse(content);
     if (dependencies.length === 0) continue;

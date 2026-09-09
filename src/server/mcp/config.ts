@@ -1,3 +1,7 @@
+// Shared with runtime policy (hasSupabaseConfig) so a new accepted
+// variable name cannot silently diverge parsing from policy.
+import { SUPABASE_ANON_KEYS, SUPABASE_SERVICE_KEYS, SUPABASE_URL_KEYS } from "./runtime";
+
 export interface GetLibConfig {
   tokenLimit: number;
   maxTokenLimit: number;
@@ -131,15 +135,9 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
   defaultAccount: stringEnv("GETLIB_DEFAULT_ACCOUNT"),
   defaultPass: stringEnv("GETLIB_DEFAULT_PASS"),
   sessionSecret: stringEnv("GETLIB_SESSION_SECRET"),
-  supabaseUrl: firstEnv("GETLIB_SUPABASE_URL", "SUPABASE_URL"),
-  supabaseAnonKey: firstEnv(
-    "GETLIB_SUPABASE_ANON_KEY",
-    "GETLIB_SUPABASE_PUBLISHABLE_KEY",
-    "SUPABASE_ANON_KEY",
-    "SUPABASE_PUBLISHABLE_KEY",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  ),
-  supabaseServiceKey: firstEnv("GETLIB_SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY"),
+  supabaseUrl: firstEnv(...SUPABASE_URL_KEYS),
+  supabaseAnonKey: firstEnv(...SUPABASE_ANON_KEYS),
+  supabaseServiceKey: firstEnv(...SUPABASE_SERVICE_KEYS),
   vercelUrl: firstEnv("VERCEL_URL"),
   allowedHosts: allowedHostsEnv(),
 });

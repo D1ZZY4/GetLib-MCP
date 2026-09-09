@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateRequestId } from "@/server/mcp/utils/guard";
-import { UnauthorizedError } from "@/application/auth/session";
+import { SessionSecretMissingError, UnauthorizedError } from "@/application/auth/session";
 import { DevelopmentForbiddenError } from "@/application/development/development.service";
 import { ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
 import { SourceSettingsValidationError } from "@/server/mcp/services/source-settings";
@@ -45,6 +45,10 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
   }
   if (error instanceof UnauthorizedError) {
     return jsonError("unauthorized", "Authentication is required for this endpoint.", 401, id);
+  }
+  if (error instanceof SessionSecretMissingError) {
+    // Fail closed without leaking configuration detail to the client.
+    return jsonError("internal_error", "Session signing is not configured.", 500, id);
   }
   if (error instanceof UnknownToolError) {
     return jsonError("unknown_tool", error.message, 404, id);

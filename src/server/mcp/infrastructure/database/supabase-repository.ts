@@ -30,6 +30,20 @@ function privilegedClient() {
   return getSupabaseServiceClient();
 }
 
+/**
+ * Unconfigured persistence must be loud, never silent. Production reports
+ * at error level so a missing service key cannot masquerade as a working
+ * database; development and tests stay quiet because unconfigured is the
+ * normal local state there.
+ */
+function reportUnconfigured(msg: string, mode: DatabaseMode): void {
+  log({
+    level: mode === "supabase-production" ? "error" : "debug",
+    msg,
+    detail: "Supabase service client is not configured - persistence is skipped.",
+  });
+}
+
 function withTimeout<T>(work: PromiseLike<T>, ms: number, message: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
@@ -89,7 +103,10 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
 
   async getBootstrap(): Promise<BootstrapRecord | null> {
     const client = privilegedClient();
-    if (!client) return null;
+    if (!client) {
+      reportUnconfigured("supabase.bootstrap.unconfigured", this.mode);
+      return null;
+    }
     try {
       const { data, error } = await client
         .from("app_bootstrap")
@@ -110,7 +127,10 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
 
   async saveBootstrap(record: BootstrapRecord): Promise<void> {
     const client = privilegedClient();
-    if (!client) return;
+    if (!client) {
+      reportUnconfigured("supabase.bootstrap.unconfigured", this.mode);
+      return;
+    }
     try {
       await client.from("app_bootstrap").upsert(
         {
@@ -128,7 +148,10 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
 
   async saveLog(entry: PersistedLogEntry): Promise<void> {
     const client = privilegedClient();
-    if (!client) return;
+    if (!client) {
+      reportUnconfigured("supabase.logs.unconfigured", this.mode);
+      return;
+    }
     try {
       const insert = client.from("mcp_logs").insert({
         ...(entry.requestId !== undefined ? { request_id: entry.requestId } : {}),

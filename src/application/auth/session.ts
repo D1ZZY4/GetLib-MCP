@@ -27,8 +27,18 @@ export class UnauthorizedError extends Error {
 
 let fallbackSecret: Buffer | null = null;
 
+export class SessionSecretMissingError extends Error {
+  constructor() {
+    super("GETLIB_SESSION_SECRET is required in production when authentication is enabled.");
+    this.name = "SessionSecretMissingError";
+  }
+}
+
 function signingSecret(): Buffer {
   if (config.sessionSecret) return Buffer.from(config.sessionSecret, "utf-8");
+  if (detectEnvironment() === "production" && config.authEnabled) {
+    throw new SessionSecretMissingError();
+  }
   if (!fallbackSecret) {
     fallbackSecret = randomBytes(32);
     log({

@@ -59,8 +59,3 @@ export function ensureRegistryLoaded(): void {
 export function isRegistryLoaded(): boolean {
   return loaded;
 }
-
-// Kept for backward compatibility: importing this module still loads the
-// registry once, but new code should call ensureRegistryLoaded() explicitly
-// so initialization order stays deterministic.
-ensureRegistryLoaded();
