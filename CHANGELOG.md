@@ -202,6 +202,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unconfigured persistence loudly, share Supabase key lists
   between policy and parsing, guard manifest reads, and load the
   registry only on explicit call.
+- Guard the audit file walk, drop tool barrel re-exports, and
+  load the registry explicitly in tests.
 - Remove dead fetch barrel re-exports and the superseded result
   guarantee and server instructions modules.
 

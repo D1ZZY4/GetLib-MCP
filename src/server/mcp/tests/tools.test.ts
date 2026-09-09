@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { listTools, runTool } from "../registry/tool-registry";
-import "../registry/registry-loader";
+import { ensureRegistryLoaded } from "../registry/registry-loader";
+
+ensureRegistryLoaded();
 
 describe("tool registry", () => {
   test("registers tools without drift", () => {

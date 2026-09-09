@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "fs/promises";
 import { join, extname, relative } from "path";
 import { AUDIT_PATTERNS, type Issue } from "../sources/audit-patterns";
+import { safeguardPath } from "../utils/guard";
 import { isSourceEnabled } from "../services/source-settings";
 import { buildCommentMap, SKIP_FILE_RE } from "../utils/comment-map";
 
@@ -13,6 +14,9 @@ export async function readProjectFiles(
   projectPath: string,
   maxFiles: number,
 ): Promise<SourceFile[]> {
+  // Defense in depth: the tool entry point already guards, but the walk
+  // stays safe for any future caller that forgets to.
+  const guardedRoot = safeguardPath(projectPath);
   const SOURCE_EXT = new Set([".ts", ".tsx", ".js", ".jsx", ".css", ".scss", ".html", ".mjs", ".py", ".vue", ".svelte"]);
   const SKIP_DIRS = new Set([
     "node_modules", ".git", ".next", "dist", "build", ".turbo",
@@ -36,7 +40,7 @@ export async function readProjectFiles(
             const s = await stat(fullPath);
             if (s.size > 200_000) continue;
             const content = await readFile(fullPath, "utf-8");
-            files.push({ path: relative(projectPath, fullPath), content });
+            files.push({ path: relative(guardedRoot, fullPath), content });
           } catch {
             // unreadable - skip
           }
@@ -47,7 +51,7 @@ export async function readProjectFiles(
     }
   }
 
-  await walk(projectPath);
+  await walk(guardedRoot);
   return files;
 }
 export function runPatterns(

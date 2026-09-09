@@ -6,10 +6,6 @@ import { readProjectFiles, runPatterns, groupIssues, type SourceFile } from "./a
 import { fetchBestPractice } from "./audit-fixes";
 import { renderAuditReport } from "./audit-report";
 
-// Re-exported so existing callers and tests keep one stable import path.
-export { AUDIT_PATTERNS } from "../sources/audit-patterns";
-export { buildCommentMap } from "../utils/comment-map";
-
 const InputSchema = z.object({
   projectPath: z
     .string()

@@ -17,9 +17,6 @@ import {
   type MigrationSection,
 } from "../services/migration-sources";
 
-// Re-exported so the existing test import path stays valid.
-export { filterReleasesByVersion } from "../utils/release-filter";
-
 const InputSchema = z.object({
   libraryId: z
     .string()

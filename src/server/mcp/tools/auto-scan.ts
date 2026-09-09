@@ -9,10 +9,6 @@ import { SKIP_DEPS } from "../sources/skip-deps";
 import { matchDepToRegistry, fetchLibraryBatches, type LibraryResult } from "./auto-scan-fetch";
 import { renderScanReport } from "./auto-scan-report";
 
-// Re-exported so the existing test import path stays valid.
-export { detectDependencies, type DependencySource } from "../utils/deps/manifest";
-
-
 const InputSchema = z.object({
   projectPath: z
     .string()
