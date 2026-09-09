@@ -70,7 +70,7 @@ export function LibraryListEditor({
             placeholder={searchPlaceholder}
             aria-label={`Search ${title.toLowerCase()}`}
             autoComplete="off"
-            className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent"
+            className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
           />
           <Button variant="secondary" size="sm" onPress={handleAdd} aria-label={`Add to ${title}`}>
             Add entry
@@ -85,7 +85,7 @@ export function LibraryListEditor({
                 key={entry}
                 className="flex items-center justify-between gap-2 rounded-lg bg-surface-secondary px-3 py-1.5"
               >
-                <span className="truncate font-mono text-[13px]">{entry}</span>
+                <span className="truncate font-mono text-sm">{entry}</span>
                 <button
                   type="button"
                   onClick={() => onRemove(entry)}

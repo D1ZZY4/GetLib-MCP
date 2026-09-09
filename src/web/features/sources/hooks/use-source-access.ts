@@ -1,19 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApiData } from "@/web/hooks/use-api-data";
-import { fetchSources, saveSources, type SourcesSnapshot } from "../services/sources.service";
+import { buildSourcesBody, fetchSources, saveSources } from "../services/sources.service";
 
 const LOAD_ERROR = "We couldn't load sources. Try again in a moment.";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
-
-function snapshotToBody(snapshot: SourcesSnapshot, toggles: Record<string, boolean>) {
-  return {
-    disabled: snapshot.groups
-      .flatMap((group) => group.items)
-      .filter((source) => !(toggles[source.id] ?? source.enabled))
-      .map((source) => source.id),
-  };
-}
 
 /**
  * Sources settings state. Groups, entry counts, and the stored blocked /
@@ -46,11 +37,7 @@ export function useSourceAccess() {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       setSaveStatus("saving");
-      saveSources({
-        ...snapshotToBody(data, toggles),
-        blocked,
-        wildcards,
-      })
+      saveSources(buildSourcesBody(data, toggles, blocked, wildcards))
         .then(() => setSaveStatus("saved"))
         .catch(() => setSaveStatus("error"));
     }, 400);
