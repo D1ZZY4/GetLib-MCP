@@ -24,17 +24,40 @@ export function AuthGate({ mode }: { mode: AuthMode }) {
     }
   }, [mounted, session, router]);
 
-  if (!mounted) {
-    // Must match the server render (no session server-side).
-    return (
-      <AuthLayout>
-        <AuthForm mode={mode} onAuthenticated={signIn} />
-      </AuthLayout>
-    );
+  if (!mounted || authEnabled === null) {
+    // Must match the server render (no session server-side). Also waits
+    // for the auth-mode probe so a loading flash never shows a form that
+    // does not apply to the resolved mode.
+    return <GateLoader label="Loading" />;
   }
 
   if (session !== null) {
     return <GateLoader label="Opening dashboard" />;
+  }
+
+  // Authentication is disabled: no login wall. One explicit action enters
+  // the dashboard with the anonymous context (rules #66).
+  if (authEnabled === false) {
+    return (
+      <AuthLayout>
+        <Card className="w-full max-w-md">
+          <Card.Header>
+            <Card.Title>Authentication is disabled</Card.Title>
+            <Card.Description>
+              This server does not require sign-in. Continue to the dashboard as a guest.
+            </Card.Description>
+          </Card.Header>
+          <Card.Footer>
+            <Link
+              href="/"
+              className="inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+            >
+              Continue to dashboard
+            </Link>
+          </Card.Footer>
+        </Card>
+      </AuthLayout>
+    );
   }
 
   // Server authentication is on: accounts are verified server-side, so
@@ -69,7 +92,6 @@ export function AuthGate({ mode }: { mode: AuthMode }) {
         mode={mode}
         onAuthenticated={signIn}
         verifyCredentials={authEnabled === true ? signInWithCredentials : undefined}
-        socialAllowed={authEnabled !== true}
       />
     </AuthLayout>
   );

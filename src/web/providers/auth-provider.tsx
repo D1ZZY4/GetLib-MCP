@@ -81,6 +81,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     clearSession();
     setSession(null);
+    // Best-effort server sign-out: clears the HttpOnly session cookie.
+    // Local state clears regardless so a failed request never traps the UI.
+    void fetch("/api/management/auth/signout", { method: "POST" }).catch(() => {});
   }, []);
 
   // Guest session while server authentication is off: no sign-in wall and

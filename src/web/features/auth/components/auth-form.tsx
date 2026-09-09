@@ -10,10 +10,10 @@ import {
   Form,
   Input,
   Label,
-  Separator,
   TextField,
 } from "@heroui/react";
-import { mockProviders, mockSession } from "../services/auth.service";
+import { mockSession } from "../services/auth.service";
+import { useEnvironment } from "@/web/features/development/hooks/use-environment";
 import type { MockSession } from "../../../types/library";
 
 export type AuthMode = "sign-in" | "sign-up";
@@ -22,7 +22,6 @@ interface AuthFormProps {
   mode: AuthMode;
   onAuthenticated: (session: MockSession) => void;
   verifyCredentials?: (email: string, password: string) => Promise<string | null>;
-  socialAllowed?: boolean;
 }
 
 function validateEmail(value: string): string | null {
@@ -58,8 +57,13 @@ const COPY = {
   },
 } as const;
 
-export function AuthForm({ mode, onAuthenticated, verifyCredentials, socialAllowed = true }: AuthFormProps) {
+export function AuthForm({ mode, onAuthenticated, verifyCredentials }: AuthFormProps) {
   const copy = COPY[mode];
+  const { isDevelopment } = useEnvironment();
+  // Demo identity prefill is a development convenience only - production
+  // forms always start empty.
+  const demoEmail = isDevelopment ? mockSession.email : "";
+  const demoName = isDevelopment ? mockSession.name : "";
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -119,7 +123,7 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials, socialAllow
             </p>
           ) : null}
           {mode === "sign-up" ? (
-            <TextField name="name" defaultValue={mockSession.name}>
+            <TextField name="name" defaultValue={demoName}>
               <Label>Name</Label>
               <Input placeholder="Ada Lovelace" variant="secondary" />
             </TextField>
@@ -128,7 +132,7 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials, socialAllow
             isRequired
             name="email"
             type="email"
-            defaultValue={mockSession.email}
+            defaultValue={demoEmail}
             validate={validateEmail}
           >
             <Label>Email</Label>
@@ -151,28 +155,6 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials, socialAllow
             {submitting ? "Checking..." : copy.submit}
           </Button>
         </Form>
-        {socialAllowed ? (
-          <>
-            <div className="mt-4 flex items-center gap-3" aria-hidden="true">
-              <Separator className="flex-1" />
-              <span className="text-xs text-muted">or</span>
-              <Separator className="flex-1" />
-            </div>
-            <div className="mt-4 flex flex-col gap-2">
-              {mockProviders.map((provider) => (
-                <Button
-                  key={provider}
-                  type="button"
-                  variant="secondary"
-                  fullWidth
-                  onPress={() => onAuthenticated(mockSession)}
-                >
-                  Continue with {provider}
-                </Button>
-              ))}
-            </div>
-          </>
-        ) : null}
       </Card.Content>
       <Card.Footer>
         <p className="w-full text-center text-sm text-muted">

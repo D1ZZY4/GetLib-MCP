@@ -173,6 +173,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   database latency on the dashboard; live mode drops the mock
   library inventory for real telemetry, and health tests derive
   counts from the live catalog.
+- Gate the auth UI on the probed server mode with a guest entry
+  card, remove social sign-in, keep demo prefill development-only,
+  and clear the server cookie on sign-out.
 
 ## [0.1.0] - 2026-09-08
 
