@@ -17,14 +17,20 @@ export interface GetLibConfig {
   cacheDir: string;
   concurrency: number;
   watermarkDisabled: boolean;
+  // Exact contract spelling per environment rules (section 24):
+  // GETLIB_AUTHENTICATICATION_ENABLE. Keep it byte-identical - deployment
+  // manifests and clients depend on the exact name.
   authEnabled: boolean;
   defaultAccount: string | undefined;
   defaultPass: string | undefined;
+  sessionSecret: string | undefined;
   supabaseUrl: string | undefined;
   supabaseAnonKey: string | undefined;
   supabaseServiceKey: string | undefined;
-  databaseModeOverride: string | undefined;
-  libMode: string | undefined;
+  // VERCEL_URL (deployment hostname) is owned here for the origin
+  // allowlist. VERCEL_ENV/NODE_ENV environment signals are owned by
+  // runtime.ts, which stays the single live reader so tests can inject
+  // signals without fighting this frozen module-level config.
   vercelUrl: string | undefined;
   allowedHosts: string[];
 }
@@ -120,10 +126,11 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
   githubToken: stringEnv("GETLIB_GITHUB_TOKEN"),
   cacheDir: cacheDirEnv(),
   concurrency: intEnv("GETLIB_CONCURRENCY", 8, 1),
-  watermarkDisabled: process.env.GETLIB_NO_WATERMARK === "1",
-  authEnabled: boolEnv("GETLIB_AUTHENTICATION_ENABLE", false),
+  watermarkDisabled: boolEnv("GETLIB_NO_WATERMARK", false),
+  authEnabled: boolEnv("GETLIB_AUTHENTICATICATION_ENABLE", false),
   defaultAccount: stringEnv("GETLIB_DEFAULT_ACCOUNT"),
   defaultPass: stringEnv("GETLIB_DEFAULT_PASS"),
+  sessionSecret: stringEnv("GETLIB_SESSION_SECRET"),
   supabaseUrl: firstEnv("GETLIB_SUPABASE_URL", "SUPABASE_URL"),
   supabaseAnonKey: firstEnv(
     "GETLIB_SUPABASE_ANON_KEY",
@@ -133,8 +140,6 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   ),
   supabaseServiceKey: firstEnv("GETLIB_SUPABASE_SERVICE_KEY", "SUPABASE_SERVICE_ROLE_KEY"),
-  databaseModeOverride: firstEnv("GETLIB_DATABASE_MODE"),
-  libMode: stringEnv("GET_LIB_MODE"),
   vercelUrl: firstEnv("VERCEL_URL"),
   allowedHosts: allowedHostsEnv(),
 });

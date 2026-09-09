@@ -61,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   authoritative backend snapshots.
 - Enforce origin validation on both SSE routes, rejecting
   forged cross-site origins with 403.
+- `GETLIB_SESSION_SECRET` session signing secret with a
+  per-process fallback, documented in `.env.example`.
+- Contract test locking the exact `GETLIB_AUTHENTICATICATION_ENABLE`,
+  `GETLIB_DEFAULT_ACCOUNT`, and `GETLIB_DEFAULT_PASS` spelling.
 
 ### Changed
 
@@ -87,6 +91,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   database, environment, deployment, and auth flows.
 - Standardize error mapping with forbidden, conflict, rate
   limiting, and unavailable codes plus partial-result envelopes.
+- Align the auth flag to contract-exact `GETLIB_AUTHENTICATICATION_ENABLE`
+  and parse `GETLIB_NO_WATERMARK` as a boolean; drop the duplicated
+  database-mode and lib-mode fields from the frozen config so runtime
+  stays the single live reader, and clarify `GET_LIB_MODE` as a
+  debug-only override.
 
 ## [0.1.0] - 2026-09-08
 

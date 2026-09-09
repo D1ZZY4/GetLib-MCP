@@ -5,8 +5,10 @@
  * which database policy applies. No feature code may read NODE_ENV,
  * VERCEL_ENV, or database-mode variables directly - import from here.
  *
- * Environment model (manual switch wins, auto-detect otherwise):
+ * Environment model (debug override wins, auto-detect otherwise):
  * 1. GET_LIB_MODE=development or production forces that environment.
+ *    Only set it to debug or force an environment - normal startups leave
+ *    it empty and auto-detect from deployment metadata.
  * 2. GET_LIB_MODE unset or empty auto-detects from deployment metadata:
  *    VERCEL_ENV or NODE_ENV signaling production yields production;
  *    an explicit development/test signal yields development.
