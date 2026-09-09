@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   storage with ring fallback instead of process memory.
 - Treat blank resolve queries as absent so they never trip the
   extraction guard.
+- Refresh live views silently in the background, pausing while
+  the tab is hidden and never clearing loaded data on a failed
+  poll.
 
 </details>
 

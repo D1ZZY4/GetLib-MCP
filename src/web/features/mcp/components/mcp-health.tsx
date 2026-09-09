@@ -23,7 +23,9 @@ function StatusPill({ status }: { status: HealthStatus }) {
 }
 
 export function McpHealth() {
-  const { data: health, loading, error, retry } = useApiData(fetchHealth, LOAD_ERROR);
+  const { data: health, loading, error, retry } = useApiData(fetchHealth, LOAD_ERROR, {
+    refreshIntervalMs: 10_000,
+  });
 
   return (
     <PageContainer>

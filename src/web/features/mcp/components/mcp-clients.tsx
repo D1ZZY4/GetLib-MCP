@@ -12,7 +12,9 @@ import { fetchClients } from "../services/clients.service";
 const LOAD_ERROR = "We couldn't load connected clients. Try again in a moment.";
 
 export function McpClients() {
-  const { data: snapshot, loading, error, retry } = useApiData(fetchClients, LOAD_ERROR);
+  const { data: snapshot, loading, error, retry } = useApiData(fetchClients, LOAD_ERROR, {
+    refreshIntervalMs: 10_000,
+  });
 
   return (
     <PageContainer>

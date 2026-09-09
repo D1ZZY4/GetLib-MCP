@@ -80,7 +80,7 @@ export function McpPlayground() {
                   }}
                 >
                   <Label>Tool</Label>
-                  <Select.Trigger>
+                  <Select.Trigger className="border-border bg-surface-secondary">
                     <Select.Value />
                     <Select.Indicator />
                   </Select.Trigger>

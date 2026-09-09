@@ -22,7 +22,10 @@ export function McpLogViewer() {
   const [limit, setLimit] = useState<number>(100);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
-  const { data, loading, error, retry } = useApiData(() => fetchLogs(limit), LOAD_ERROR);
+  const { data, loading, error, retry } = useApiData(() => fetchLogs(limit), LOAD_ERROR, {
+    // Request log is a live tail: new tool runs stream in without interaction.
+    refreshIntervalMs: 5_000,
+  });
   const logs = data?.logs ?? [];
 
   const filtered = useMemo(() => {

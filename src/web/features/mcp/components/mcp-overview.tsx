@@ -31,19 +31,19 @@ export function McpOverview() {
     loading: healthLoading,
     error: healthError,
     retry: retryHealth,
-  } = useApiData(fetchHealth, LOAD_ERROR);
+  } = useApiData(fetchHealth, LOAD_ERROR, { refreshIntervalMs: 10_000 });
   const {
     data: clients,
     loading: clientsLoading,
     error: clientsError,
     retry: retryClients,
-  } = useApiData(fetchClients, LOAD_ERROR);
+  } = useApiData(fetchClients, LOAD_ERROR, { refreshIntervalMs: 10_000 });
   const {
     data: servers,
     loading: serversLoading,
     error: serversError,
     retry: retryServers,
-  } = useApiData(fetchServers, LOAD_ERROR);
+  } = useApiData(fetchServers, LOAD_ERROR, { refreshIntervalMs: 10_000 });
 
   const loading = catalogLoading || healthLoading || clientsLoading || serversLoading;
   const error = catalogError ?? healthError ?? clientsError ?? serversError;
