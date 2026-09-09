@@ -23,7 +23,8 @@ const InputSchema = z.object({
       "Feature to check: 'CSS container queries', 'Array.at()', 'fetch() browser support', 'WebAssembly'",
     ),
   environments: z
-    .array(z.string().max(50))
+    .array(z.string().min(1).max(50))
+    .min(1)
     .max(10)
     .optional()
     .describe("Environments to focus on, e.g. ['chrome', 'firefox', 'safari', 'node', 'deno']"),

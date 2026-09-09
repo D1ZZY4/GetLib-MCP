@@ -40,6 +40,7 @@ const InputSchema = z.object({
         "all",
       ]),
     )
+    .min(1)
     .default(["all"])
     .describe('Issue categories to audit. Use "all" for broad questions. Default: all. Available: layout, performance, accessibility, security, react, nextjs, typescript, node, python, vue, svelte, angular, testing, mobile, api, css, seo, i18n.'),
   tokens: z

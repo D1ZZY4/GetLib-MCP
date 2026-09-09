@@ -195,6 +195,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Run Streamable HTTP stateless so serverless isolates answer
   every request identically; the clients view lists recently seen
   clients instead of live sessions.
+- Reject empty arrays and strings in tool inputs instead of
+  silently accepting them.
 
 </details>
 

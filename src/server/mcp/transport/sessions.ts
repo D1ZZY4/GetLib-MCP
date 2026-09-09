@@ -1,7 +1,9 @@
 /**
- * Shared session-housekeeping for MCP transports.
+ * Shared session-housekeeping for stateful MCP transports.
  *
- * Both Streamable HTTP and SSE keep per-connection sessions in memory.
+ * SSE keeps per-connection sessions in memory. Streamable HTTP is
+ * stateless and keeps only a bounded ring of recently seen clients
+ * (see transport/http.ts), so it does not use this helper.
  * Sessions whose close hook never fired (crashed clients, lost
  * connections) are evicted here so the maps stay bounded without a
  * background timer.

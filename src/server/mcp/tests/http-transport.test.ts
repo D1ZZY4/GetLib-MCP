@@ -87,4 +87,40 @@ describe("Streamable HTTP stateless transport", () => {
     const sessions = listSessions();
     expect(Array.isArray(sessions)).toBe(true);
   });
+
+  test("resources/list and prompts/list work on a fresh transport", async () => {
+    const res = await handleHttpRequest(
+      post({ jsonrpc: "2.0", id: 10, method: "resources/list", params: {} }),
+    );
+    expect(res.status).toBe(200);
+    const resBody = (await res.json()) as { result?: { resources?: Array<{ uri: string }> } };
+    const uris = resBody.result?.resources?.map((r) => r.uri) ?? [];
+    expect(uris).toContain("getlib://libraries");
+    expect(uris).toContain("getlib://stats");
+
+    const prompts = await handleHttpRequest(
+      post({ jsonrpc: "2.0", id: 11, method: "prompts/list", params: {} }),
+    );
+    expect(prompts.status).toBe(200);
+    const promptsBody = (await prompts.json()) as { result?: { prompts?: Array<{ name: string }> } };
+    expect((promptsBody.result?.prompts ?? []).length).toBeGreaterThan(0);
+  });
+
+  test("invalid tool args return a tool error, not a transport error", async () => {
+    const res = await handleHttpRequest(
+      post({
+        jsonrpc: "2.0",
+        id: 12,
+        method: "tools/call",
+        params: { name: "gl_search", arguments: { query: "" } },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      result?: { isError?: boolean; content?: Array<{ text?: string }> };
+    };
+    expect(body.result?.isError).toBe(true);
+    const text = JSON.stringify(body.result?.content ?? "");
+    expect(text).not.toContain("not initialized");
+  });
 });

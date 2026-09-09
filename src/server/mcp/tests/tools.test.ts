@@ -21,4 +21,12 @@ describe("tool registry", () => {
   test("tools validate their input", async () => {
     await expect(runTool("gl_resolve_library", undefined)).rejects.toThrow();
   });
+
+  test("empty arrays are rejected, not silently accepted", async () => {
+    await expect(
+      runTool("gl_compat", { feature: "CSS container queries", environments: [] }),
+    ).rejects.toThrow();
+    await expect(runTool("gl_audit", { categories: [] })).rejects.toThrow();
+    await expect(runTool("gl_batch_resolve", { libraryNames: [] })).rejects.toThrow();
+  });
 });
