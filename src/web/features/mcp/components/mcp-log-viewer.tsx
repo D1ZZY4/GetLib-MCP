@@ -44,7 +44,7 @@ export function McpLogViewer() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
+        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent">
           <SearchIcon className="size-4 shrink-0 text-muted" />
           <label htmlFor="logs-search" className="sr-only">
             Filter logs by tool or request id
