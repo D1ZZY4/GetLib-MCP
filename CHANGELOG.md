@@ -102,6 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `dist/mcp.js` on prepublish.
 - Canonical Streamable HTTP protocol route with a serverless
   warning for SSE sessions and shutdown lifecycle tests.
+- Credential contract tests locking fallback and demo identities
+  plus email normalization rules.
 
 ### Changed
 
