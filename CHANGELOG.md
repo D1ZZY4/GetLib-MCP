@@ -72,6 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   annotations and executions returning request IDs and durations.
 - Logger redaction tests proving sensitive fields and bearer
   credentials never reach log output in readable form.
+- In-memory sliding-window rate limiter with strict, execution,
+  and read tiers plus tests for budget, expiry, and scope
+  isolation.
 
 ### Changed
 
