@@ -12,6 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 </details>
 
+## [1.1.3] - 2026-09-09
+
+<details>
+<summary>1.1.3 changes (click to expand)</summary>
+
+### Fixed
+
+- Drop focus rings on search inputs; the border highlight alone
+  carries focus.
+
+### Changed
+
+- Scope the global focus outline to the base layer so wrapped
+  inputs can opt out without double rings.
+
+</details>
+
 ## [1.1.2] - 2026-09-09
 
 <details>
@@ -252,8 +269,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   registry only on explicit call.
 - Guard the audit file walk, drop tool barrel re-exports, and
   load the registry explicitly in tests.
-- Scope the global focus outline to the base layer so wrapped
-  inputs can opt out without double rings.
 
 ### Removed
 
