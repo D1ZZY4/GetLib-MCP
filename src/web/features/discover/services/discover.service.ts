@@ -29,8 +29,19 @@ export interface DocDetail {
   verdict: "strong" | "weak" | "miss" | "untargeted";
 }
 
-interface ToolEnvelope {
-  tool: string;
+interface ManagementSearchEnvelope {
+  query: string;
+  resolved: boolean;
+  durationMs: number;
+  result: {
+    content: Array<{ text: string }>;
+    structuredContent?: Record<string, unknown>;
+  };
+}
+
+interface ManagementDocsEnvelope {
+  resolved: boolean;
+  durationMs: number;
   result: {
     content: Array<{ text: string }>;
     structuredContent?: Record<string, unknown>;
@@ -61,11 +72,12 @@ function parseEvidence(value: unknown): SearchEvidence {
 }
 
 /**
- * Live documentation search through the shared search pipeline
- * (gl_search): the same capability MCP clients call, not a mock catalog.
+ * Live documentation search through the shared search pipeline: the same
+ * application capability the gl_search MCP tool calls, served over the
+ * management API. Browsers never touch the MCP protocol endpoints.
  */
 export async function searchLibraries(query: string): Promise<DiscoverResult> {
-  const envelope = await postJson<ToolEnvelope>("/api/mcp/gl_search", { query });
+  const envelope = await postJson<ManagementSearchEnvelope>("/api/management/discover", { query });
   const structured = envelope.result?.structuredContent;
   const sources = Array.isArray(structured?.sources)
     ? structured.sources.filter(isSearchSource)
@@ -83,7 +95,7 @@ export async function searchLibraries(query: string): Promise<DiscoverResult> {
  * without a second resolve round-trip.
  */
 export async function fetchDocDetail(sourceUrl: string, topic: string): Promise<DocDetail> {
-  const envelope = await postJson<ToolEnvelope>("/api/mcp/gl_get_docs", {
+  const envelope = await postJson<ManagementDocsEnvelope>("/api/management/docs", {
     libraryId: sourceUrl,
     ...(topic.trim() === "" ? {} : { topic }),
   });

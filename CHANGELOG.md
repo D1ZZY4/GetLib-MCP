@@ -84,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and a no-secrets test; display identity comes from the session.
 - Graceful shutdown lifecycle draining MCP sessions and cached
   repository handles, wired to stdio process signals.
+- Library search, resolve, and docs use cases shared by tools,
+  dashboard discover/docs endpoints, and future consumers.
 
 ### Changed
 
@@ -148,6 +150,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require auth and tiered rate limits on Streamable HTTP and both
   SSE routes; align HTTP/SSE session snapshots with the domain
   contract and derive stdio health counts from the live registry.
+- Move search, resolve, and docs pipelines into application use
+  cases; the MCP tools become thin adapters, the dashboard calls
+  the management endpoints instead of protocol routes, and the
+  resolve formatter module is removed.
 
 ## [0.1.0] - 2026-09-08
 

@@ -1,12 +1,14 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { normalizeQueryYear } from "../utils/extract";
-import { checkEvidence, buildEvidenceBlock } from "../utils/evidence";
-import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
+import {
+  SEARCH_QUERY_MAX,
+  SEARCH_TOKENS_DEFAULT,
+  SEARCH_TOKENS_MAX,
+  SEARCH_TOKENS_MIN,
+  searchLibrariesUseCase,
+} from "@/application/library/search.service";
 import { withToolTimeout } from "../utils/guard";
 import { withTelemetry } from "../services/telemetry";
-import { collectSearchSources } from "../services/search/collect";
-import { addWebSearchSources } from "../services/search/fetch-topic";
 
 // Re-exported so callers that reason about search sourcing (gl_compat, gl_migration)
 // and the existing test mocks keep a single stable import path.
@@ -18,26 +20,18 @@ const InputSchema = z.object({
   query: z
     .string()
     .min(1)
-    .max(500)
+    .max(SEARCH_QUERY_MAX)
     .describe(
       "What you want to know. Can be anything: 'latest React best practices', 'WCAG 2.2 focus indicators', 'OWASP SQL injection prevention', 'CSS container queries browser support', 'JWT security', 'HTTP/3 vs HTTP/2', 'Web Workers API'. No library name required.",
     ),
   tokens: z
     .number()
     .int()
-    .min(1000)
-    .max(MAX_TOKEN_LIMIT)
-    .default(DEFAULT_TOKEN_LIMIT)
-    .describe(`Max tokens to return (default: ${DEFAULT_TOKEN_LIMIT}, max: ${MAX_TOKEN_LIMIT})`),
+    .min(SEARCH_TOKENS_MIN)
+    .max(SEARCH_TOKENS_MAX)
+    .default(SEARCH_TOKENS_DEFAULT)
+    .describe(`Max tokens to return (default: ${SEARCH_TOKENS_DEFAULT}, max: ${SEARCH_TOKENS_MAX})`),
 });
-
-const NO_RESULTS_HELP = [
-  "**What to try next:**",
-  "- Be more specific (e.g. 'React hooks best practices' instead of 'React')",
-  "- Include the library name + topic (e.g. 'Next.js middleware authentication')",
-  "- Try gl_resolve_library to find a specific library, then gl_get_docs",
-  "- Try gl_get_docs with a direct URL as the libraryId",
-].join("\n");
 
 const TIMEOUT_RESPONSE = {
   content: [{ type: "text" as const, text: "Search timed out. Retry with a narrower query." }],
@@ -87,56 +81,12 @@ Examples:
         openWorldHint: true,
       },
     run: async (rawArgs: unknown) => {
-      const { query: rawQuery, tokens } = InputSchema.parse(rawArgs);
+      const { query, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_search", async (ctx) => {
         return withToolTimeout(async () => {
-        const query = normalizeQueryYear(rawQuery);
-        const { results, webSearched } = await collectSearchSources(query, tokens);
-
-        if (results.length === 0) {
-          return {
-            content: [{ type: "text", text: `No results found for: "${query}"\n\n${NO_RESULTS_HELP}` }],
-          };
-        }
-
-        // Evidence-driven escalation - sources exist but combined coverage is weak:
-        // add authoritative web sources once instead of shipping a thin answer.
-        let combinedCheck = checkEvidence(results.map((r) => r.content).join("\n\n"), query);
-        if (!combinedCheck.ok && !webSearched && results.length < 3) {
-          await addWebSearchSources(query, results, Math.floor(tokens / 3), 2);
-          combinedCheck = checkEvidence(results.map((r) => r.content).join("\n\n"), query);
-        }
-
-        const header = [
-          `# Search: ${query}`,
-          `> Found ${results.length} source${results.length > 1 ? "s" : ""}`,
-          "",
-          "---",
-          "",
-        ].join("\n");
-        const body = results
-          .map((r) => `## ${r.source}\n> Source: ${r.url}\n\n${r.content}\n\n---\n`)
-          .join("\n");
-        const evidenceBlock = buildEvidenceBlock({
-          sources: results.map((r) => ({ url: r.url })),
-          topic: query,
-          check: combinedCheck,
-        });
-
-        ctx.resolved = results.length > 0;
-        return {
-          content: [{ type: "text", text: header + body + evidenceBlock }],
-          structuredContent: {
-            query,
-            sources: results.map((r) => ({ name: r.source, url: r.url, content: r.content })),
-            evidence: {
-              ok: combinedCheck.ok,
-              matchRatio: combinedCheck.matchRatio,
-              occurrences: combinedCheck.occurrences,
-              verdict: combinedCheck.ok ? "strong" : combinedCheck.matchRatio > 0 ? "weak" : "miss",
-            },
-          },
-        };
+          const { response, resolved } = await searchLibrariesUseCase({ query, tokens });
+          ctx.resolved = resolved;
+          return response;
         }, TIMEOUT_RESPONSE);
       });
     },
