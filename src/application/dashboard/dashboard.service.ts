@@ -3,6 +3,7 @@ import { listClients } from "@/application/clients/clients.service";
 import { getHealthSnapshot } from "@/application/health/health.service";
 import { getMcpCatalog, getMcpServers } from "@/application/mcp/mcp-catalog.service";
 import { getDatabaseStatus, getDatabase } from "@/server/mcp/infrastructure/database";
+import type { StoredLogEntry } from "@/server/mcp/infrastructure/database";
 import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
 import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry-outcomes";
 import { listLogs } from "@/server/mcp/middleware/logging";
@@ -197,6 +198,20 @@ function kindForTool(tool: string): DashboardActivity["kind"] {
   return "docs";
 }
 
+/**
+ * Maps one durable log row to a dashboard activity item. Pure so the
+ * production activity feed is unit-testable without a database.
+ */
+export function mapStoredLogToActivity(entry: StoredLogEntry): DashboardActivity {
+  return {
+    id: `db-${entry.id}`,
+    kind: kindForTool(entry.name),
+    title: `${entry.ok ? "Ran" : "Failed"} ${entry.name}`,
+    detail: `${entry.durationMs}ms - ${entry.ok ? "ok" : "error"}`,
+    timestamp: entry.timestamp,
+  };
+}
+
 async function liveActivities(): Promise<DashboardActivity[]> {
   // Production reads durable storage so recent activity survives
   // serverless isolates and reflects every persisted run, not just the
@@ -206,13 +221,7 @@ async function liveActivities(): Promise<DashboardActivity[]> {
     try {
       const stored = await getDatabase().listLogs(8);
       if (stored.length > 0) {
-        return stored.map((entry) => ({
-          id: `db-${entry.id}`,
-          kind: kindForTool(entry.name),
-          title: `${entry.ok ? "Ran" : "Failed"} ${entry.name}`,
-          detail: `${entry.durationMs}ms - ${entry.ok ? "ok" : "error"}`,
-          timestamp: entry.timestamp,
-        }));
+        return stored.map(mapStoredLogToActivity);
       }
     } catch {
       // Fall through to the in-memory sources below.

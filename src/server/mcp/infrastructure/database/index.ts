@@ -3,7 +3,7 @@ import { MockDatabaseRepository } from "./mock-repository";
 import { SupabaseDatabaseRepository } from "./supabase-repository";
 import type { DatabaseRepository, DatabaseStatus } from "./types";
 
-export type { BootstrapRecord, DatabaseHealth, DatabaseRepository, DatabaseStatus } from "./types";
+export type { BootstrapRecord, DatabaseHealth, DatabaseRepository, DatabaseStatus, PersistedLogEntry, StoredLogEntry } from "./types";
 export { MockDatabaseRepository } from "./mock-repository";
 export { SupabaseDatabaseRepository } from "./supabase-repository";
 

@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   distinctive subject tokens so unrelated guides never pass.
 - Point manifest-only audit directories at auto scan instead of
   disagreeing with it.
+- Extract pure durable-log mappers so production reads stay
+  unit-testable without a database.
 - Read production logs and dashboard activity from durable
   storage with ring fallback instead of process memory.
 - Treat blank resolve queries as absent so they never trip the

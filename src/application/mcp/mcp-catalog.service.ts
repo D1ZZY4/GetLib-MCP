@@ -1,6 +1,7 @@
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
 import { getDatabase } from "@/server/mcp/infrastructure/database";
-import { listLogs } from "@/server/mcp/middleware/logging";
+import type { StoredLogEntry } from "@/server/mcp/infrastructure/database";
+import { listLogs, type McpLogEntry } from "@/server/mcp/middleware/logging";
 import { listPrompts } from "@/server/mcp/registry/prompt-registry";
 import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
 import { listResources } from "@/server/mcp/registry/resource-registry";
@@ -97,7 +98,7 @@ export function getMcpServers(): McpServersSnapshot {
   };
 }
 
-export function isKnownTool(name: string): boolean {
+function isKnownTool(name: string): boolean {
   ensureLoaded();
   return getTool(name) !== undefined;
 }
@@ -168,6 +169,22 @@ function ringLogs(limit: number): McpLogView {
 }
 
 /**
+ * Maps one durable log row to the dashboard log view. Pure so the
+ * production log read path is unit-testable without a database.
+ */
+export function mapStoredLogToView(entry: StoredLogEntry): McpLogEntry {
+  return {
+    id: entry.id,
+    timestamp: entry.timestamp,
+    kind: entry.kind === "http" ? ("http" as const) : ("tool" as const),
+    name: entry.name,
+    durationMs: entry.durationMs,
+    ok: entry.ok,
+    ...(entry.requestId !== undefined ? { requestId: entry.requestId } : {}),
+  };
+}
+
+/**
  * Log read path for the dashboard. Production reads durable storage so
  * the page shows every persisted run, not whatever survives in this
  * process's memory ring (serverless isolates reset constantly). A
@@ -182,15 +199,7 @@ export async function listMcpLogs(limit: number = DEFAULT_LOG_LIMIT): Promise<Mc
   try {
     const stored = await getDatabase().listLogs(limit);
     return {
-      logs: stored.map((entry) => ({
-        id: entry.id,
-        timestamp: entry.timestamp,
-        kind: entry.kind === "http" ? ("http" as const) : ("tool" as const),
-        name: entry.name,
-        durationMs: entry.durationMs,
-        ok: entry.ok,
-        ...(entry.requestId !== undefined ? { requestId: entry.requestId } : {}),
-      })),
+      logs: stored.map(mapStoredLogToView),
       total: stored.length,
     };
   } catch {
