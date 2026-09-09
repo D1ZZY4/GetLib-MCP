@@ -4,19 +4,12 @@ import { Card } from "@heroui/react";
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { LibraryFetch } from "../services/statistics-api.service";
 import { ChartTooltipCard } from "./chart-tooltip";
-
-const BAR_FILLS = [
-  "var(--accent)",
-  "var(--success)",
-  "var(--warning)",
-  "var(--danger)",
-  "var(--muted)",
-];
+import { chartFills } from "./chart-theme";
 
 export function FetchRadial({ fetches }: { fetches: LibraryFetch[] }) {
   const data = fetches.map((entry, index) => ({
     ...entry,
-    fill: BAR_FILLS[index % BAR_FILLS.length],
+    fill: chartFills[index % chartFills.length],
   }));
 
   return (

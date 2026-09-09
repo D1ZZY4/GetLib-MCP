@@ -4,14 +4,7 @@ import { Card } from "@heroui/react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { LibraryStatRow } from "../services/statistics-api.service";
 import { ChartTooltipCard } from "./chart-tooltip";
-
-const SLICE_FILLS = [
-  "var(--accent)",
-  "var(--success)",
-  "var(--warning)",
-  "var(--danger)",
-  "var(--muted)",
-];
+import { chartFills } from "./chart-theme";
 
 export function DocsShareChart({ rows }: { rows: LibraryStatRow[] }) {
   return (
@@ -34,7 +27,7 @@ export function DocsShareChart({ rows }: { rows: LibraryStatRow[] }) {
               strokeWidth={0}
             >
               {rows.map((row, index) => (
-                <Cell key={row.id} fill={SLICE_FILLS[index % SLICE_FILLS.length]} />
+                <Cell key={row.id} fill={chartFills[index % chartFills.length]} />
               ))}
             </Pie>
           </PieChart>
@@ -45,7 +38,7 @@ export function DocsShareChart({ rows }: { rows: LibraryStatRow[] }) {
               <span
                 aria-hidden="true"
                 className="size-2.5 shrink-0 rounded-sm"
-                style={{ backgroundColor: SLICE_FILLS[index % SLICE_FILLS.length] }}
+                style={{ backgroundColor: chartFills[index % chartFills.length] }}
               />
               <span className="truncate">
                 {row.name} · <span className="tabular-nums">{row.docsPages}</span>

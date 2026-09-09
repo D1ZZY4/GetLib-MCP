@@ -1,6 +1,8 @@
 "use client";
 
-import { Button, Card, Skeleton } from "@heroui/react";
+import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { DocsShareChart } from "./docs-share-chart";
 import { FetchRadial } from "./fetch-radial";
@@ -15,13 +17,10 @@ export function StatisticsPage() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Statistics</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Usage and performance analytics from authoritative server telemetry.
-          {stats?.isMock ? " Development mock data." : ""}
-        </p>
-      </header>
+      <PageHeader
+        title="Statistics"
+        description={`Usage and performance analytics from authoritative server telemetry.${stats?.isMock ? " Development mock data." : ""}`}
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading statistics" className="flex flex-col gap-4">
@@ -37,19 +36,18 @@ export function StatisticsPage() {
           </div>
         </div>
       ) : error !== null || stats === null ? (
-        <Card>
-          <Card.Header>
-            <Card.Title>Statistics unavailable</Card.Title>
-            <Card.Description>{error ?? "We could not load statistics."}</Card.Description>
-          </Card.Header>
-          <Card.Footer>
-            <Button variant="secondary" onPress={retry}>
-              Retry
-            </Button>
-          </Card.Footer>
-        </Card>
+        <LoadError message={error ?? "We could not load statistics."} onRetry={retry} />
       ) : (
         <>
+          {stats.days.length === 0 && stats.rows.length === 0 && stats.fetches.length === 0 ? (
+            <Card>
+              <Card.Content>
+                <p className="text-sm text-muted">
+                  No telemetry recorded yet. Run a search or call a tool to populate these charts.
+                </p>
+              </Card.Content>
+            </Card>
+          ) : null}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Card variant="secondary">
               <Card.Content>
