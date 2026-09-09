@@ -10,8 +10,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+</details>
+
+## [1.1.2] - 2026-09-09
+
+<details>
+<summary>1.1.2 changes (click to expand)</summary>
+
+### Fixed
+
+- Streamable HTTP transport runs stateless, so every MCP request
+  succeeds on any instance with no shared session memory. This ends
+  the total outage where every post-initialize call failed with
+  "Server not initialized" on serverless hosts.
+- Empty tool inputs (`environments: []`, `categories: []`) are
+  rejected with clean validation errors instead of silent misses.
+- Dashboard overview error state is reachable again instead of
+  showing a skeleton forever on failed loads.
+
 ### Added
 
+- Canonical MCP protocol boundary at `/api/mcp` alongside
+  `/api/mcp/http`, both served by the stateless transport.
+- Shared dashboard primitives (page header, back link, load error,
+  status tone) and a centralized chart palette.
+- Version contract test pinning `SERVER_VERSION` to
+  `package.json`, with the sidebar reading the live server version
+  from the runtime probe instead of a hardcoded string.
 - SSE transport for the MCP server, served at `/api/mcp/sse`,
   with session tracking and transport modes.
 - Registry loader that replaces the hardcoded registration
@@ -91,8 +116,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dashboard discover/docs endpoints, and future consumers.
 - Management catalog endpoints for servers, tools, tool runs,
   resources, prompts, and logs with limit validation.
-- Removal of the unguarded `/api/mcp` catalog and tool-run
-  duplicates now served by the management API.
 - Next.js instrumentation hook running application startup once
   per server process, skipped on builds and edge runtimes.
 - Drill-down detail views for tools, servers, clients, log
@@ -100,8 +123,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   states.
 - Publishable `getlib-mcp` binary bundling the stdio entry to
   `dist/mcp.js` on prepublish.
-- Canonical Streamable HTTP protocol route with a serverless
-  warning for SSE sessions and shutdown lifecycle tests.
 - Credential contract tests locking fallback and demo identities
   plus email normalization rules.
 - Shared UI primitives for back links, load errors, page headers,
@@ -109,6 +130,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Production startup fails fast on invalid database policy;
+  transient database and bootstrap failures stay degraded with
+  loud error logs.
+- Session signing fails closed in production when authentication
+  is enabled without `GETLIB_SESSION_SECRET`.
+- Single source of truth for the server identity: `SERVER_NAME`
+  and `SERVER_VERSION` feed the MCP server, health payloads,
+  user agent, and update checks.
 - Replace every em dash with a hyphen across comments and
   controlled text (around 70 files under `src/server/mcp`:
   services, tools, source tables, and utilities) to comply
@@ -198,13 +227,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   while still allowing backend matchers on untrusted content.
 - Extend the SSE function timeout and send baseline security
   headers on every response.
-- Run Streamable HTTP stateless so serverless isolates answer
-  every request identically; the clients view lists recently seen
-  clients instead of live sessions.
 - Adopt the shared header, error, tone, and link primitives
   across the control center with stronger focus states.
-- Reject empty arrays and strings in tool inputs instead of
-  silently accepting them.
 - Harden the toolchain: stricter TypeScript flags, frozen
   lockfile installs, pinned bun manager, dropped shadcn dev
   dependency, and production build inside validation.
@@ -228,8 +252,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   registry only on explicit call.
 - Guard the audit file walk, drop tool barrel re-exports, and
   load the registry explicitly in tests.
-- Remove dead fetch barrel re-exports and the superseded result
-  guarantee and server instructions modules.
+
+### Removed
+
+- Dead modules and shims: server instructions, result guarantee,
+  docs placeholder route, notification demo, and unreferenced
+  fetch barrel and tool re-exports.
+- Unguarded `/api/mcp` catalog and tool-run duplicates now served
+  by the management API.
 
 </details>
 
