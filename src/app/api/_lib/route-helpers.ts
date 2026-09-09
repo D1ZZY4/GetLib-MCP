@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateRequestId } from "@/server/mcp/utils/guard";
+import { UnauthorizedError } from "@/application/auth/session";
 import { DevelopmentForbiddenError } from "@/application/development/development.service";
 import { ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
 import { SourceSettingsValidationError } from "@/server/mcp/services/source-settings";
+import { RateLimitError } from "@/server/mcp/utils/rate-limit";
 
 export type ErrorCode =
   | "validation_error"
@@ -11,19 +13,12 @@ export type ErrorCode =
   | "not_found"
   | "unauthorized"
   | "forbidden"
-  | "conflict"
   | "rate_limited"
-  | "provider_error"
-  | "unavailable"
+  | "payload_too_large"
   | "internal_error";
 
 interface ErrorBody {
   error: { code: ErrorCode; message: string; requestId: string };
-}
-
-interface SuccessEnvelope<T> {
-  data: T;
-  meta: { requestId: string };
 }
 
 const MAX_JSON_BYTES = 256 * 1024;
@@ -32,35 +27,32 @@ function requestId(): string {
   return generateRequestId();
 }
 
-export function jsonOk<T>(data: T): NextResponse {
-  return NextResponse.json(data);
-}
-
-/**
- * Successful result that is partial or degraded at the application level.
- * Always HTTP 200 - the payload meta carries the degraded state so HTTP
- * success is never confused with application completeness.
- */
-export function jsonPartial<T>(data: T, warnings: string[] = []): NextResponse {
-  const body: SuccessEnvelope<T> & { meta: { status: "partial"; warnings: string[] } } = {
-    data,
-    meta: { requestId: requestId(), status: "partial", warnings },
-  };
-  return NextResponse.json(body);
+export function jsonOk<T>(data: T, id?: string): NextResponse {
+  const response = NextResponse.json(data);
+  if (id !== undefined) response.headers.set("X-Request-Id", id);
+  return response;
 }
 
 export function jsonError(code: ErrorCode, message: string, status: number, id: string): NextResponse<ErrorBody> {
-  return NextResponse.json({ error: { code, message, requestId: id } }, { status });
+  const response = NextResponse.json({ error: { code, message, requestId: id } }, { status });
+  response.headers.set("X-Request-Id", id);
+  return response;
 }
 
 export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBody> {
+  if (error instanceof RateLimitError) {
+    return jsonError("rate_limited", error.message, 429, id);
+  }
+  if (error instanceof UnauthorizedError) {
+    return jsonError("unauthorized", "Authentication is required for this endpoint.", 401, id);
+  }
   if (error instanceof UnknownToolError) {
     return jsonError("unknown_tool", error.message, 404, id);
   }
   if (error instanceof ToolNameValidationError) {
     const message = error.message;
     if (message.startsWith("Request body too large")) {
-      return jsonError("validation_error", message, 413, id);
+      return jsonError("payload_too_large", message, 413, id);
     }
     return jsonError("validation_error", message, 400, id);
   }

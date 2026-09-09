@@ -86,6 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repository handles, wired to stdio process signals.
 - Library search, resolve, and docs use cases shared by tools,
   dashboard discover/docs endpoints, and future consumers.
+- Management catalog endpoints for servers, tools, tool runs,
+  resources, prompts, and logs with limit validation.
 
 ### Changed
 
@@ -154,6 +156,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cases; the MCP tools become thin adapters, the dashboard calls
   the management endpoints instead of protocol routes, and the
   resolve formatter module is removed.
+- Standardize the management envelope: `X-Request-Id` on success
+  and errors, `rate_limited` and `unauthorized` mappings, and a
+  `payload_too_large` code; guard every management route with auth
+  and tiered rate limits except the intentionally public health
+  check.
 
 ## [0.1.0] - 2026-09-08
 
