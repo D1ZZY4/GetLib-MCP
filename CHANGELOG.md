@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Harden auth edge cases: trim secrets, hash-compare passwords,
   mirror cookie attributes on sign-out, drop the anon client, and
   run tests hermetic to the operator environment.
+- Consolidate origin rejection into one route helper and simplify
+  every transport route to use it.
 - Cover prompt listing and rendering over both transports and
   fix undefined prompt args crashing the callback.
 - Share one pipeline budget with memoization and singleflight so

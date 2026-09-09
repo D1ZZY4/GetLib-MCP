@@ -1,7 +1,7 @@
 import { requireManagementAuth } from "@/application/auth/session";
 import { listMcpLogs, parseLogLimit } from "@/application/mcp/mcp-catalog.service";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
-import { jsonError, jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
+import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET(req: Request) {
   const id = requestId();
@@ -12,9 +12,6 @@ export async function GET(req: Request) {
     const limit = parseLogLimit(url.searchParams.get("limit"));
     return jsonOk(await listMcpLogs(limit), id);
   } catch (error) {
-    if (error instanceof Error && error.name === "ToolNameValidationError") {
-      return jsonError("validation_error", error.message, 400, id);
-    }
     return mapRouteError(error, id);
   }
 }

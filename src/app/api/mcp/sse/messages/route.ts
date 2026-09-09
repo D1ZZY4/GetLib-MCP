@@ -1,8 +1,8 @@
-import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 import { UnknownSseSessionError, postSseMessage } from "@/server/mcp/transport/sse";
 import { requireManagementAuth } from "@/application/auth/session";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import {
+  assertOriginOr403,
   jsonError,
   mapRouteError,
   readJsonBody,
@@ -12,14 +12,8 @@ import {
 export async function POST(req: Request) {
   const id = requestId();
   try {
-    try {
-      assertAllowedOrigin(req);
-    } catch (error) {
-      if (error instanceof OriginRejectedError) {
-        return jsonError("forbidden", error.message, 403, id);
-      }
-      throw error;
-    }
+    const originRejection = assertOriginOr403(req, id);
+    if (originRejection) return originRejection;
     checkRateLimit(req, "mcp/sse/messages", EXECUTION_TIER);
     requireManagementAuth(req);
     const url = new URL(req.url);

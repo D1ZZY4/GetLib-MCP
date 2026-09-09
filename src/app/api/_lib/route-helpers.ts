@@ -6,6 +6,7 @@ import { DevelopmentForbiddenError } from "@/application/development/development
 import { ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
 import { SourceSettingsValidationError } from "@/server/mcp/services/source-settings";
 import { RateLimitError } from "@/server/mcp/utils/rate-limit";
+import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 
 export type ErrorCode =
   | "validation_error"
@@ -33,15 +34,26 @@ export function jsonOk<T>(data: T, id?: string): NextResponse {
   return response;
 }
 
-export function jsonError(code: ErrorCode, message: string, status: number, id: string): NextResponse<ErrorBody> {
+export function jsonError(
+  code: ErrorCode,
+  message: string,
+  status: number,
+  id: string,
+  headers?: Record<string, string>,
+): NextResponse<ErrorBody> {
   const response = NextResponse.json({ error: { code, message, requestId: id } }, { status });
   response.headers.set("X-Request-Id", id);
+  if (headers !== undefined) {
+    for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
+  }
   return response;
 }
 
 export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBody> {
   if (error instanceof RateLimitError) {
-    return jsonError("rate_limited", error.message, 429, id);
+    return jsonError("rate_limited", error.message, 429, id, {
+      "Retry-After": String(error.retryAfterSeconds),
+    });
   }
   if (error instanceof UnauthorizedError) {
     return jsonError("unauthorized", "Authentication is required for this endpoint.", 401, id);
@@ -76,6 +88,23 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
     return jsonError("validation_error", "Request body failed validation.", 422, id);
   }
   return jsonError("internal_error", "Unexpected error while handling the request.", 500, id);
+}
+
+/**
+ * Shared Origin/Host validation for MCP transports. Returns a 403 response
+ * when the browser Origin is rejected, null when the request may proceed.
+ * Non-origin errors are rethrown for mapRouteError handling.
+ */
+export function assertOriginOr403(req: Request, id: string): NextResponse<ErrorBody> | null {
+  try {
+    assertAllowedOrigin(req);
+    return null;
+  } catch (error) {
+    if (error instanceof OriginRejectedError) {
+      return jsonError("forbidden", error.message, 403, id);
+    }
+    throw error;
+  }
 }
 
 export async function readJsonBody(req: Request): Promise<unknown> {

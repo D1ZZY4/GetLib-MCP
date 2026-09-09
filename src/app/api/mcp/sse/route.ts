@@ -1,20 +1,13 @@
 import { closeSseSession, openSseSession } from "@/server/mcp/transport/sse";
-import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 import { requireManagementAuth } from "@/application/auth/session";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
-import { jsonError, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
+import { assertOriginOr403, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 export async function GET(req: Request) {
   const id = requestId();
   try {
-    try {
-      assertAllowedOrigin(req);
-    } catch (error) {
-      if (error instanceof OriginRejectedError) {
-        return jsonError("forbidden", error.message, 403, id);
-      }
-      throw error;
-    }
+    const originRejection = assertOriginOr403(req, id);
+    if (originRejection) return originRejection;
     checkRateLimit(req, "mcp/sse", READ_TIER);
     requireManagementAuth(req);
     const { sessionId, stream } = await openSseSession();
