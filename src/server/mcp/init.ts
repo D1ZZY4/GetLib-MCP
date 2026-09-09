@@ -39,6 +39,10 @@ export async function initializeApplication(): Promise<void> {
   }
   const databaseMode = resolveDatabaseMode(environment);
   ensureRegistryLoaded();
+  // Health precondition runs before bootstrap on purpose: bootstrap
+  // persists through the database, so it needs the database verdict
+  // first. (Blueprint section 64 lists bootstrap earlier; the enforced
+  // invariant is the same either way - no traffic before both complete.)
   try {
     const status = await getDatabaseStatus();
     log({

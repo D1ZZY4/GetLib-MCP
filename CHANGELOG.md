@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discovery surfaces.
 - Cap lockfile detection fan-out to bounded batches so large
   projects cannot spike file-descriptor pressure.
+- Document accepted database aliases and the health-before-
+  bootstrap startup order.
 
 ### Changed
 
