@@ -88,6 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dashboard discover/docs endpoints, and future consumers.
 - Management catalog endpoints for servers, tools, tool runs,
   resources, prompts, and logs with limit validation.
+- Removal of the unguarded `/api/mcp` catalog and tool-run
+  duplicates now served by the management API.
 
 ### Changed
 
