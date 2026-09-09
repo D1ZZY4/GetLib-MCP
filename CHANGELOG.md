@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   telemetry or explicit mock payloads.
 - Domain auth policy, Supabase database boundary with mock and
   real repositories, versioned migrations, and a startup init
-  lifecycle with production fail-fast.
+  lifecycle that degrades instead of crashing.
 - Developments and Settings pages, a profile menu, origin
   validation on MCP transports, and UI rewired from mocks to
   authoritative backend snapshots.
@@ -144,8 +144,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   catalog instead of a constant.
 - Order startup as detect environment, validate production policy,
   resolve database mode, load registry, check database health,
-  bootstrap account, then ready; bootstrap failure fails fast in
-  production and warns in development.
+  bootstrap account, then ready; policy or bootstrap failure logs
+  loudly and serves degraded instead of crashing startup.
 - Redact sensitive log fields and bearer credentials before either
   log format renders, in both JSON and text output.
 - Issue a session cookie on sign-in behind the strict rate limit;

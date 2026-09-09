@@ -12,9 +12,15 @@ let initialized = false;
  * rules: detect environment, validate configuration, determine database
  * mode, load registry, run database health precondition, bootstrap
  * account, ready). Idempotent and safe to call from stdio entry, web
- * instrumentation, tests, or first-request adapters. Production with
- * missing database configuration fails fast here; bootstrap failure
- * fails fast in production and warns in development.
+ * instrumentation, tests, or first-request adapters.
+ *
+ * Degraded-startup contract: no tool path requires the database
+ * (bootstrap falls back to env credentials plus memory, logs fall back
+ * to the in-memory ring, settings are file-based), so a failed
+ * production database precondition is a loud error log plus degraded
+ * mode - never a startup crash. Hosted web deployments that must refuse
+ * to serve without a database should gate on validateProductionPolicy
+ * explicitly instead of using this entrypoint.
  */
 export async function initializeApplication(): Promise<void> {
   if (initialized) return;
@@ -24,7 +30,6 @@ export async function initializeApplication(): Promise<void> {
     validateProductionPolicy();
   } catch (error) {
     log({ level: "error", msg: "init.production-policy-failed", error: String(error) });
-    throw error;
   }
   const databaseMode = resolveDatabaseMode(environment);
   ensureRegistryLoaded();
@@ -42,10 +47,6 @@ export async function initializeApplication(): Promise<void> {
   try {
     await ensureBootstrapAccount();
   } catch (error) {
-    if (environment === "production") {
-      log({ level: "error", msg: "init.bootstrap-failed", error: String(error) });
-      throw error;
-    }
     log({ level: "warn", msg: "init.bootstrap-failed", error: String(error) });
   }
   log({ level: "info", msg: "init.ready", environment, databaseMode });
