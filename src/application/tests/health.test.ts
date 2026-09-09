@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { getHealthSnapshot } from "../health/health.service";
-import { TOOL_COUNT } from "@/server/mcp/constants";
+import { getMcpCatalog } from "../mcp/mcp-catalog.service";
 
 describe("health application service", () => {
   test("reports a healthy snapshot with live counts", () => {
     const snapshot = getHealthSnapshot();
     expect(snapshot.status).toBe("healthy");
     expect(snapshot.name).toBe("getlib-mcp");
-    expect(snapshot.tools).toBe(TOOL_COUNT);
+    expect(snapshot.tools).toBe(getMcpCatalog().tools.length);
     expect(snapshot.registryEntries).toBeGreaterThan(100);
     expect(snapshot.uptimeSeconds).toBeGreaterThanOrEqual(0);
   });

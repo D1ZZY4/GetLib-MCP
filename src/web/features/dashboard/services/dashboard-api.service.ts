@@ -30,6 +30,9 @@ export interface DashboardSnapshot {
     resources: number;
     prompts: number;
     servers: number;
+    transports: string[];
+    clients: number;
+    cacheEntries: number;
     totalCalls: number;
     successRate: number;
     errorRate: number;

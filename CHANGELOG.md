@@ -169,6 +169,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `payload_too_large` code; guard every management route with auth
   and tiered rate limits except the intentionally public health
   check.
+- Surface transports, clients, cache entries, auth state, and
+  database latency on the dashboard; live mode drops the mock
+  library inventory for real telemetry, and health tests derive
+  counts from the live catalog.
 
 ## [0.1.0] - 2026-09-08
 

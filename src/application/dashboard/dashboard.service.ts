@@ -1,4 +1,5 @@
 import { getAuthConfig } from "@/application/auth/auth.service";
+import { listClients } from "@/application/clients/clients.service";
 import { getHealthSnapshot } from "@/application/health/health.service";
 import { getMcpCatalog, getMcpServers } from "@/application/mcp/mcp-catalog.service";
 import { getDatabaseStatus } from "@/server/mcp/infrastructure/database";
@@ -68,6 +69,9 @@ export interface DashboardSnapshot {
     resources: number;
     prompts: number;
     servers: number;
+    transports: string[];
+    clients: number;
+    cacheEntries: number;
     totalCalls: number;
     successRate: number;
     errorRate: number;
@@ -261,6 +265,20 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   const servers = getMcpServers();
   const database = await getDatabaseStatus();
   const telemetry = getInvocationSummary();
+  const clients = listClients();
+
+  const mcp = {
+    tools: catalog.tools.length,
+    resources: catalog.resources.length,
+    prompts: catalog.prompts.length,
+    servers: servers.servers.length,
+    transports: servers.servers.flatMap((server) => server.transports),
+    clients: clients.total,
+    cacheEntries: health.cache.memoryEntries,
+    totalCalls: telemetry.totalCalls,
+    successRate: telemetry.successRate,
+    errorRate: telemetry.errorRate,
+  };
 
   const systemStatus =
     database.health === "unavailable" || health.status === "degraded" ? "degraded" : "healthy";
@@ -294,15 +312,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
         fallbackActive: auth.fallbackActive,
         uptimeSeconds: health.uptimeSeconds,
       },
-      mcp: {
-        tools: catalog.tools.length,
-        resources: catalog.resources.length,
-        prompts: catalog.prompts.length,
-        servers: servers.servers.length,
-        totalCalls: telemetry.totalCalls,
-        successRate: telemetry.successRate,
-        errorRate: telemetry.errorRate,
-      },
+      mcp,
       database,
       isMock: true,
     };
@@ -329,15 +339,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       fallbackActive: auth.fallbackActive,
       uptimeSeconds: health.uptimeSeconds,
     },
-    mcp: {
-      tools: catalog.tools.length,
-      resources: catalog.resources.length,
-      prompts: catalog.prompts.length,
-      servers: servers.servers.length,
-      totalCalls: telemetry.totalCalls,
-      successRate: telemetry.successRate,
-      errorRate: telemetry.errorRate,
-    },
+    mcp,
     database,
     isMock: false,
   };

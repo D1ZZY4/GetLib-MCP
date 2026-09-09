@@ -11,15 +11,19 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { rankLibraryFetches } from "@/web/features/statistics/services/statistics-api.service";
-import { useStatisticsData } from "@/web/features/statistics/hooks/use-statistics-data";
+import { rankLibraryFetches, type StatisticsSnapshot } from "@/web/features/statistics/services/statistics-api.service";
 import { ArrowRightIcon } from "../../../components/ui/icons";
 import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/features/statistics/components/chart-theme";
 import { ChartTooltipCard } from "@/web/features/statistics/components/chart-tooltip";
 
-export function Overview() {
-  const { stats, loading } = useStatisticsData();
+interface OverviewProps {
+  stats: StatisticsSnapshot | null;
+  loading: boolean;
+  error: string | null;
+  retry: () => void;
+}
 
+export function Overview({ stats, loading, error, retry }: OverviewProps) {
   if (loading || stats === null) {
     return (
       <Card aria-label="Overview">
@@ -29,6 +33,27 @@ export function Overview() {
         </Card.Header>
         <Card.Content>
           <Skeleton className="h-[220px] rounded-xl" />
+        </Card.Content>
+      </Card>
+    );
+  }
+
+  if (error !== null) {
+    return (
+      <Card aria-label="Overview">
+        <Card.Header>
+          <Card.Title>Overview</Card.Title>
+          <Card.Description>Request activity and top fetches.</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <div className="flex flex-col items-start gap-2">
+            <p role="alert" className="text-sm text-danger">
+              {error}
+            </p>
+            <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
+              Retry
+            </button>
+          </div>
         </Card.Content>
       </Card>
     );

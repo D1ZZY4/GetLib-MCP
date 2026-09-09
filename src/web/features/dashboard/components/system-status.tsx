@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@heroui/react";
+import { formatLogTime } from "@/web/lib/format";
 import type { DashboardSnapshot } from "../services/dashboard-api.service";
 
 function statusTone(status: string): string {
@@ -20,12 +21,32 @@ export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot 
     {
       label: "Database",
       value: dashboard.database.health,
-      tone: statusTone(dashboard.database.health === "mock" ? "healthy" : dashboard.database.health),
+      tone: statusTone(dashboard.database.health === "mock" ? "degraded" : dashboard.database.health),
     },
     {
       label: "Success rate",
       value: `${Math.round(dashboard.mcp.successRate * 1000) / 10}%`,
       tone: "bg-success/10 text-success",
+    },
+    {
+      label: "Authentication",
+      value: dashboard.system.authEnabled ? "enabled" : "disabled",
+      tone: dashboard.system.authEnabled ? "bg-success/10 text-success" : "bg-surface-tertiary text-muted",
+    },
+    {
+      label: "Transports",
+      value: String(dashboard.mcp.transports.length),
+      tone: "bg-accent/10 text-accent",
+    },
+    {
+      label: "Cache entries",
+      value: String(dashboard.mcp.cacheEntries),
+      tone: "bg-accent/10 text-accent",
+    },
+    {
+      label: "Latency",
+      value: dashboard.database.latencyMs === null ? "-" : `${dashboard.database.latencyMs}ms`,
+      tone: "bg-accent/10 text-accent",
     },
   ] as const;
 
@@ -49,7 +70,19 @@ export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot 
                       : dashboard.database.configured
                         ? "Supabase connected"
                         : "Not configured"
-                    : `${dashboard.mcp.errorRate * 100}% errors`}
+                    : item.label === "Authentication"
+                      ? dashboard.system.fallbackActive
+                        ? "Default credentials active"
+                        : dashboard.system.authEnabled
+                          ? "Verified sessions"
+                          : "Guest access"
+                      : item.label === "Transports"
+                        ? dashboard.mcp.transports.join(" + ")
+                        : item.label === "Cache entries"
+                          ? "In-memory entries"
+                          : item.label === "Latency"
+                            ? `Checked ${formatLogTime(dashboard.database.checkedAt)}`
+                            : `${dashboard.mcp.errorRate * 100}% errors`}
             </p>
           </Card.Content>
         </Card>
