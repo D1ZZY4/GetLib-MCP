@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   environment.
 - Scrub basic credentials, header api keys, query-string secrets,
   and session fields from logs.
+- Harden auth edge cases: trim secrets, hash-compare passwords,
+  mirror cookie attributes on sign-out, drop the anon client, and
+  run tests hermetic to the operator environment.
 - Cover prompt listing and rendering over both transports and
   fix undefined prompt args crashing the callback.
 - Share one pipeline budget with memoization and singleflight so

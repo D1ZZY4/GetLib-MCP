@@ -21,10 +21,10 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "typecheck": "tsc --noEmit",
-    "check:no-em-dash": "rg -lP \"\\x{2014}\" --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!bun.lock' --glob '!AGENTS.md' . && echo 'EM DASH FOUND' && exit 1 || (rg -lP '\\\\u2014|&#8212;|&mdash;' src/app src/web --glob '*.tsx' --glob '*.css' && echo 'EM DASH CIRCUMVENTION FOUND' && exit 1 || echo 'no-em-dash: clean')",
+    "check:no-em-dash": "rg -lP \"\\x{2014}\" --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!bun.lock' --glob '!AGENTS.md' . && echo 'EM DASH FOUND' && exit 1 || (rg -lP '\\\\u2014|&#8212;|&mdash;' src --glob '*.ts' --glob '*.tsx' --glob '*.css' && echo 'EM DASH CIRCUMVENTION FOUND' && exit 1 || echo 'no-em-dash: clean')",
     "lint": "tsc --noEmit && bun run check:no-em-dash",
-    "validate": "bun run typecheck && bun run check:no-em-dash && bun test && bun run build",
-    "test": "bun test"
+    "validate": "bun run typecheck && bun run check:no-em-dash && bun run test && bun run build",
+    "test": "GET_LIB_MODE=development GETLIB_AUTHENTICATICATION_ENABLE=false GETLIB_DEFAULT_ACCOUNT= GETLIB_DEFAULT_PASS= GETLIB_SESSION_SECRET= GETLIB_DATABASE_MODE= GETLIB_SUPABASE_URL= GETLIB_SUPABASE_ANON_KEY= GETLIB_SUPABASE_PUBLISHABLE_KEY= GETLIB_SUPABASE_SERVICE_KEY= SUPABASE_URL= SUPABASE_ANON_KEY= SUPABASE_PUBLISHABLE_KEY= SUPABASE_SERVICE_ROLE_KEY= NEXT_PUBLIC_SUPABASE_ANON_KEY= bun test"
   },
   "dependencies": {
     "@heroui/react": "^3.2.4",

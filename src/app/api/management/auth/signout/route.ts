@@ -1,18 +1,17 @@
-import { SESSION_COOKIE } from "@/application/auth/session";
+import { clearSessionCookie } from "@/application/auth/session";
+import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
 import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
 /**
  * Destroys the session cookie. Intentionally unauthenticated: clearing a
  * missing or expired credential must always succeed.
  */
-export async function POST() {
+export async function POST(req: Request) {
   const id = requestId();
   try {
+    checkRateLimit(req, "management/auth/signout", READ_TIER);
     const response = jsonOk({ ok: true }, id);
-    response.headers.set(
-      "Set-Cookie",
-      `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
-    );
+    response.headers.set("Set-Cookie", clearSessionCookie());
     return response;
   } catch (error) {
     return mapRouteError(error, id);

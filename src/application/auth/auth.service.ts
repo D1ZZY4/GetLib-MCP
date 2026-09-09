@@ -1,6 +1,5 @@
-import { timingSafeEqual } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import {
-  displayNameFor,
   isDevDemoAllowed,
   isDevDemoCredentials,
   normalizeEmail,
@@ -50,9 +49,10 @@ export function getAuthConfig(): AuthConfigSnapshot {
 }
 
 function passwordsMatch(candidate: string, expected: string): boolean {
-  const a = Buffer.from(candidate, "utf-8");
-  const b = Buffer.from(expected, "utf-8");
-  if (a.length !== b.length) return false;
+  // Compare fixed-length hashes so the early length check cannot leak the
+  // expected password length through timing.
+  const a = createHash("sha256").update(candidate, "utf-8").digest();
+  const b = createHash("sha256").update(expected, "utf-8").digest();
   return timingSafeEqual(a, b);
 }
 
@@ -77,10 +77,6 @@ export function verifyCredentials(email: string, password: string): boolean {
   const isMock = resolveDatabaseMode(environment) === "mock";
   if (isDevDemoAllowed(environment, isMock) && isDevDemoCredentials(email, password)) return true;
   return false;
-}
-
-export function displayNameForEmail(email: string): string {
-  return displayNameFor(email);
 }
 
 /**

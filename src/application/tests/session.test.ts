@@ -1,11 +1,25 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { resetConfigOverride, setConfigOverride } from "@/server/mcp/config";
 import {
+  clearSessionCookie,
   createSessionToken,
   requireManagementAuth,
+  sessionCookieAttributes,
   sessionEmailFromRequest,
   UnauthorizedError,
   verifySessionToken,
 } from "../auth/session";
+
+// Hermetic against the operator .env: session behavior is tested with auth
+// disabled and a deterministic signing secret, independent of production
+// credentials or GETLIB_SESSION_SECRET presence.
+beforeEach(() => {
+  setConfigOverride({ authEnabled: false, sessionSecret: "test-session-secret" });
+});
+
+afterEach(() => {
+  resetConfigOverride();
+});
 
 function requestWith(headers: Record<string, string> = {}): Request {
   return new Request("http://localhost/api/management/health", { headers });
@@ -62,8 +76,7 @@ describe("session extraction", () => {
   });
 });
 
-describe("management authorization boundary", () => {
-  test("allows anonymous context when authentication is disabled", () => {
+describe("management authorization boundary", () => {  test("allows anonymous context when authentication is disabled", () => {
     // Default test env leaves GETLIB_AUTHENTICATICATION_ENABLE unset (false).
     expect(requireManagementAuth(requestWith())).toEqual({ email: null });
   });
@@ -71,5 +84,20 @@ describe("management authorization boundary", () => {
   test("UnauthorizedError carries a neutral message", () => {
     const error = new UnauthorizedError();
     expect(error.message).not.toMatch(/password|secret|token/i);
+  });
+});
+
+describe("session cookie attributes", () => {
+  test("clearing mirrors creation attributes with zero lifetime", () => {
+    const cleared = clearSessionCookie();
+    expect(cleared).toStartWith("getlib_session=;");
+    expect(cleared).toContain("Max-Age=0");
+    expect(cleared).toContain("HttpOnly");
+    expect(cleared).toContain("SameSite=Lax");
+    // Same Path and Secure semantics as issuance, otherwise browsers keep
+    // the Secure production cookie alive after sign-out.
+    expect(cleared).toContain("Path=/;");
+    const issuedSecure = sessionCookieAttributes().includes("Secure");
+    expect(cleared.includes("Secure")).toBe(issuedSecure);
   });
 });

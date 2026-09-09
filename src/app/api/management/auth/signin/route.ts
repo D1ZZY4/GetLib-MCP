@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { verifyCredentials } from "@/application/auth/auth.service";
+import { displayNameFor } from "@/domain/auth/policy";
 import {
   SESSION_COOKIE,
   createSessionToken,
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
       // password was wrong, or whether auth is configured at all.
       return jsonError("unauthorized", "Those credentials don't match. Try again.", 401, id);
     }
-    const name = email.split("@")[0] || "user";
+    const name = displayNameFor(email.trim());
     const response = jsonOk({ ok: true, name, email: email.trim() }, id);
     response.headers.set(
       "Set-Cookie",

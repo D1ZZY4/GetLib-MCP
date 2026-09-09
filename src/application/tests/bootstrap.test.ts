@@ -2,25 +2,33 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { ensureBootstrapAccount, resetBootstrapCache } from "../auth/auth.service";
 import { getDatabase, resetDatabaseCache } from "@/server/mcp/infrastructure/database";
 import { setDatabaseModeOverride } from "@/server/mcp/runtime";
+import { resetConfigOverride, setConfigOverride } from "@/server/mcp/config";
 import { FALLBACK_ACCOUNT } from "@/domain/auth/policy";
 
 afterEach(() => {
   resetBootstrapCache();
   resetDatabaseCache();
+  resetConfigOverride();
 });
 
-// Test intent is the mock repository contract, independent of whatever
-// GETLIB_DATABASE_MODE the local .env selects. Force mock explicitly:
-// resolveDatabaseMode() reads the environment live on every call.
+// Test intent is the mock repository contract, independent of whatever the
+// local .env selects. Force development + mock explicitly (environment is
+// read live) and clear bootstrap credentials so the fallback identity
+// applies regardless of operator GETLIB_DEFAULT_ACCOUNT configuration.
 async function withMockMode(fn: () => Promise<void>): Promise<void> {
-  const prev = process.env.GETLIB_DATABASE_MODE;
+  const prevMode = process.env.GETLIB_DATABASE_MODE;
+  const prevLibMode = process.env.GET_LIB_MODE;
   try {
     delete process.env.GETLIB_DATABASE_MODE;
+    process.env.GET_LIB_MODE = "development";
     setDatabaseModeOverride(null);
+    setConfigOverride({ defaultAccount: undefined, defaultPass: undefined });
     await fn();
   } finally {
-    if (prev === undefined) delete process.env.GETLIB_DATABASE_MODE;
-    else process.env.GETLIB_DATABASE_MODE = prev;
+    if (prevMode === undefined) delete process.env.GETLIB_DATABASE_MODE;
+    else process.env.GETLIB_DATABASE_MODE = prevMode;
+    if (prevLibMode === undefined) delete process.env.GET_LIB_MODE;
+    else process.env.GET_LIB_MODE = prevLibMode;
     setDatabaseModeOverride(null);
   }
 }

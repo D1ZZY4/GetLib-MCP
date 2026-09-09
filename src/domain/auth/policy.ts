@@ -27,10 +27,17 @@ export interface ResolvedBootstrapCredentials {
  * Resolve effective bootstrap credentials. Empty configuration falls back
  * to the documented emergency defaults; callers must surface isFallback
  * as a dashboard warning and provide a rotation mechanism.
+ *
+ * Surrounding whitespace is trimmed from both values. Secrets injected via
+ * environment (secret managers, .env files, deployment dashboards) commonly
+ * carry an invisible trailing newline or space from copy-paste, which would
+ * otherwise make the correct password permanently mismatch with no visible
+ * cause. Passwords with meaningful leading/trailing spaces are not a
+ * supported bootstrap use case.
  */
 export function resolveBootstrapCredentials(candidate: CredentialCandidate): ResolvedBootstrapCredentials {
   const account = candidate.account?.trim();
-  const password = candidate.password;
+  const password = candidate.password?.trim();
   if (account && account.length > 0 && password && password.length > 0) {
     return { account, password, isFallback: false };
   }

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   detectEnvironment,
   getDatabaseModePolicy,
@@ -177,6 +177,17 @@ describe("auth domain policy", () => {
 });
 
 describe("database boundary", () => {
+  // Hermetic against the operator .env: the mock contract is a development
+  // concern, so force development regardless of local GET_LIB_MODE.
+  const savedLibMode = process.env.GET_LIB_MODE;
+  beforeEach(() => {
+    process.env.GET_LIB_MODE = "development";
+  });
+  afterAll(() => {
+    if (savedLibMode === undefined) delete process.env.GET_LIB_MODE;
+    else process.env.GET_LIB_MODE = savedLibMode;
+  });
+
   test("mock repository round-trips bootstrap records", async () => {
     const db = getDatabase("mock");
     expect(db.mode).toBe("mock");

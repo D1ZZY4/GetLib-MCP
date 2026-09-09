@@ -135,3 +135,15 @@ export function sessionCookieAttributes(): string {
   const maxAge = Math.floor(SESSION_TTL_MS / 1000);
   return `Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
 }
+
+/**
+ * Full Set-Cookie value that deletes the session cookie. Mirrors
+ * sessionCookieAttributes (including Secure in production) so browsers
+ * actually drop the cookie instead of keeping the Secure one alive.
+ */
+export function clearSessionCookie(): string {
+  return `${SESSION_COOKIE}=; ${sessionCookieAttributes().replace(
+    /Max-Age=\d+/,
+    "Max-Age=0",
+  )}`;
+}

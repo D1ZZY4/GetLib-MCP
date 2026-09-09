@@ -39,6 +39,16 @@ describe("bootstrap credential resolution", () => {
     expect(resolved.account).toBe("ops@example.com");
   });
 
+  test("surrounding whitespace in secrets is trimmed, not a mismatch", () => {
+    const resolved = resolveBootstrapCredentials({ account: "  ops@example.com  ", password: "s3cret!\n" });
+    expect(resolved.isFallback).toBe(false);
+    expect(resolved.account).toBe("ops@example.com");
+    expect(resolved.password).toBe("s3cret!");
+    expect(
+      resolveBootstrapCredentials({ account: "a@b.c", password: "   " }).isFallback,
+    ).toBe(true);
+  });
+
   test("fallback constants match the documented bootstrap contract", () => {
     expect(FALLBACK_ACCOUNT).toBe("awesomemcp@getlib-local.com");
     expect(FALLBACK_PASSWORD).toBe("getlib123");
