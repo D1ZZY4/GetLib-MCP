@@ -90,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resources, prompts, and logs with limit validation.
 - Removal of the unguarded `/api/mcp` catalog and tool-run
   duplicates now served by the management API.
+- Next.js instrumentation hook running application startup once
+  per server process, skipped on builds and edge runtimes.
 - Drill-down detail views for tools, servers, clients, log
   entries, resources, and prompts with loading, empty, and error
   states.
