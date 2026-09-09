@@ -215,6 +215,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   social provider list.
 - Give the dashboard overview real empty states and screen-reader
   activity labels while sharing error and tone primitives.
+- Adopt the shared primitives across development, discover,
+  install, and settings views with proper config loading states.
 - Require the session secret in production with auth enabled,
   fail startup on invalid production database policy, log
   unconfigured persistence loudly, share Supabase key lists

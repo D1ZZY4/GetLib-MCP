@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Button, Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "@/web/features/settings/services/runtime-api.service";
@@ -96,12 +98,10 @@ export function DevelopmentsPage() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Development</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Development runtime behavior and diagnostics. Available in development only.
-        </p>
-      </header>
+      <PageHeader
+        title="Development"
+        description="Development runtime behavior and diagnostics. Available in development only."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading development status" className="flex flex-col gap-4">
@@ -109,23 +109,13 @@ export function DevelopmentsPage() {
           <Skeleton className="h-32 rounded-xl" />
         </div>
       ) : error !== null || failed || runtime === null || settings === null ? (
-        <Card>
-          <Card.Header>
-            <Card.Title>Development status unavailable</Card.Title>
-            <Card.Description>{error ?? "We could not load development status."}</Card.Description>
-          </Card.Header>
-          <Card.Footer>
-            <Button
-              variant="secondary"
-              onPress={() => {
-                retryRuntime();
-                retrySettings();
-              }}
-            >
-              Retry
-            </Button>
-          </Card.Footer>
-        </Card>
+        <LoadError
+          message={error ?? "We could not load development status."}
+          onRetry={() => {
+            retryRuntime();
+            retrySettings();
+          }}
+        />
       ) : runtime.environment !== "development" ? (
         <Card>
           <Card.Header>

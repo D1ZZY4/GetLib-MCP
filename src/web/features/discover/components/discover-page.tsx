@@ -1,6 +1,8 @@
 "use client";
 
 import { Card } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { DiscoverSkeleton } from "./discover-skeleton";
 import { PageContainer } from "../../../components/layout/page-container";
 import { SearchField } from "./search-field";
@@ -18,15 +20,10 @@ export function DiscoverPage() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Discover libraries
-        </h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Ask anything. Answers come from the live documentation pipeline, the same one
-          AI agents call.
-        </p>
-      </header>
+      <PageHeader
+        title="Discover libraries"
+        description="Ask anything. Answers come from the live documentation pipeline, the same one AI agents call."
+      />
 
       <SearchField query={query} loading={loading} onQueryChange={setQuery} onSearch={search} />
 
@@ -59,18 +56,7 @@ export function DiscoverPage() {
       {loading ? <DiscoverSkeleton rows={4} /> : null}
 
       {!loading && error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button
-            type="button"
-            onClick={() => void search(query)}
-            className="text-sm font-medium text-accent underline"
-          >
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={() => void search(query)} />
       ) : null}
 
       {!loading && error === null && result !== null ? <SearchResults result={result} /> : null}

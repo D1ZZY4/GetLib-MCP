@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, Skeleton, Tabs } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
 import type { AssistantTransport } from "../services/install-api.service";
 import { PageContainer } from "../../../components/layout/page-container";
@@ -66,12 +68,7 @@ export function InstallAssistant() {
   if (loading) {
     return (
       <PageContainer>
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Install to your AI agents
-          </h1>
-          <p className="mt-1 max-w-xl text-sm text-muted">Loading install instructions.</p>
-        </header>
+        <PageHeader title="Install to your AI agents" description="Loading install instructions." />
         <div role="status" aria-label="Loading install instructions" className="flex flex-col gap-4">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-72 rounded-xl" />
@@ -83,15 +80,8 @@ export function InstallAssistant() {
   if (error !== null || catalog === null) {
     return (
       <PageContainer>
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Install to your AI agents
-          </h1>
-          <p className="mt-1 max-w-xl text-sm text-muted">{error ?? "Unavailable."}</p>
-        </header>
-        <Button variant="secondary" onPress={retry}>
-          Retry
-        </Button>
+        <PageHeader title="Install to your AI agents" />
+        <LoadError message={error ?? "Unavailable."} onRetry={retry} />
       </PageContainer>
     );
   }
@@ -99,28 +89,17 @@ export function InstallAssistant() {
   if (assistants.length === 0) {
     return (
       <PageContainer>
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Install to your AI agents
-          </h1>
-          <p className="mt-1 max-w-xl text-sm text-muted">
-            No AI agents configured yet.
-          </p>
-        </header>
+        <PageHeader title="Install to your AI agents" description="No AI agents configured yet." />
       </PageContainer>
     );
   }
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Install to your AI agents
-        </h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Pick your AI agent, copy the MCP snippet, and follow the setup steps.
-        </p>
-      </header>
+      <PageHeader
+        title="Install to your AI agents"
+        description="Pick your AI agent, copy the MCP snippet, and follow the setup steps."
+      />
 
       <p role="status" aria-live="polite" className="sr-only">
         {copiedId !== null ? "Configuration snippet copied to clipboard." : ""}

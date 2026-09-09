@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Skeleton } from "@heroui/react";
 import { useSearchParams } from "next/navigation";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "../services/runtime-api.service";
@@ -42,20 +44,19 @@ export function SettingsPage() {
     fetchRuntimeInfo,
     "We couldn't load settings. Try again in a moment.",
   );
-  const { data: settings } = useApiData(
-    fetchSettings,
-    "We couldn't load configuration. Try again in a moment.",
-  );
+  const {
+    data: settings,
+    loading: settingsLoading,
+    error: settingsError,
+    retry: retrySettings,
+  } = useApiData(fetchSettings, "We couldn't load configuration. Try again in a moment.");
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Settings</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Application configuration and account controls.
-          {runtime ? ` Environment: ${runtime.environment} - database: ${runtime.databaseMode}.` : ""}
-        </p>
-      </header>
+      <PageHeader
+        title="Settings"
+        description={`Application configuration and account controls.${runtime ? ` Environment: ${runtime.environment} - database: ${runtime.databaseMode}.` : ""}`}
+      />
 
       <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
         {TABS.map((entry) => (
@@ -210,8 +211,14 @@ export function SettingsPage() {
                 </Card.Description>
               </Card.Header>
               <Card.Content>
-                {settings === null ? (
-                  <p className="text-sm text-muted">Configuration snapshot unavailable.</p>
+                {settingsLoading ? (
+                  <div role="status" aria-label="Loading configuration" className="flex flex-col gap-2">
+                    <Skeleton className="h-6 rounded-lg" />
+                    <Skeleton className="h-6 rounded-lg" />
+                    <Skeleton className="h-6 rounded-lg" />
+                  </div>
+                ) : settingsError !== null || settings === null ? (
+                  <LoadError message={settingsError ?? "Configuration snapshot unavailable."} onRetry={retrySettings} />
                 ) : (
                   <dl className="flex flex-col gap-2 text-sm">
                     <div className="flex justify-between gap-4">

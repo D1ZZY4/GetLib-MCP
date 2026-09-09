@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { BackLink } from "@/web/components/ui/back-link";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchDocDetail } from "../services/discover.service";
@@ -37,13 +39,10 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
 
   return (
     <PageContainer>
-      <Link
-        href={backHref}
-        className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
-      >
+      <BackLink href={backHref}>
         <ArrowRightIcon className="size-3.5 rotate-180" />
         Back to results
-      </Link>
+      </BackLink>
 
       {!valid ? (
         <Card>
@@ -60,37 +59,12 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
           <Skeleton className="h-40 rounded-xl" />
         </div>
       ) : error !== null || data === null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error ?? LOAD_ERROR}
-          </p>
-          <button
-            type="button"
-            onClick={retry}
-            className="text-sm font-medium text-accent underline"
-          >
-            Retry
-          </button>
-        </div>
+        <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : (
         <>
-          <header>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                {data.displayName}
-              </h1>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${VERDICT_TONE[data.verdict] ?? VERDICT_TONE.untargeted}`}
-              >
-                {VERDICT_LABEL[data.verdict] ?? data.verdict}
-              </span>
-              {data.truncated ? (
-                <span className="shrink-0 rounded-full bg-surface-tertiary px-2.5 py-1 text-xs font-medium text-muted">
-                  Truncated
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-1 max-w-xl text-sm text-muted">
+          <PageHeader
+            title={data.displayName}
+            description={
               <a
                 href={data.sourceUrl}
                 target="_blank"
@@ -99,8 +73,22 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
               >
                 {data.sourceUrl}
               </a>
-            </p>
-          </header>
+            }
+            badge={
+              <>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${VERDICT_TONE[data.verdict] ?? VERDICT_TONE.untargeted}`}
+                >
+                  {VERDICT_LABEL[data.verdict] ?? data.verdict}
+                </span>
+                {data.truncated ? (
+                  <span className="shrink-0 rounded-full bg-surface-tertiary px-2.5 py-1 text-xs font-medium text-muted">
+                    Truncated
+                  </span>
+                ) : null}
+              </>
+            }
+          />
           {data.verdict === "miss" ? (
             <Card>
               <Card.Content>
