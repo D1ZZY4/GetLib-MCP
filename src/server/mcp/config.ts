@@ -112,7 +112,7 @@ function allowedHostsEnv(): string[] {
     .filter((entry) => entry.length > 0);
 }
 
-export const config: Readonly<GetLibConfig> = Object.freeze({
+const baseConfig: GetLibConfig = {
   tokenLimit: intEnv("GETLIB_TOKEN_LIMIT", 8000),
   maxTokenLimit: intEnv("GETLIB_MAX_TOKEN_LIMIT", 20000),
   cacheTtlMs: intEnv("GETLIB_CACHE_TTL_MS", 30 * 60 * 1000),
@@ -140,4 +140,29 @@ export const config: Readonly<GetLibConfig> = Object.freeze({
   supabaseServiceKey: firstEnv(...SUPABASE_SERVICE_KEYS),
   vercelUrl: firstEnv("VERCEL_URL"),
   allowedHosts: allowedHostsEnv(),
+};
+
+/**
+ * Test-only override for hermetic unit tests. Production code never calls
+ * this - it exists so tests stay independent of the operator .env
+ * (auth flags, bootstrap credentials, session secret). Values set here
+ * take precedence over the frozen process-env snapshot until reset.
+ */
+let configOverride: Partial<GetLibConfig> | null = null;
+
+export function setConfigOverride(override: Partial<GetLibConfig> | null): void {
+  configOverride = override;
+}
+
+export function resetConfigOverride(): void {
+  configOverride = null;
+}
+
+export const config: Readonly<GetLibConfig> = new Proxy(baseConfig, {
+  get(target, property: string | symbol): unknown {
+    if (typeof property === "string" && configOverride !== null && property in configOverride) {
+      return (configOverride as Record<string, unknown>)[property];
+    }
+    return (target as unknown as Record<string | symbol, unknown>)[property];
+  },
 });

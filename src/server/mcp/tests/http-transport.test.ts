@@ -1,5 +1,18 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { resetConfigOverride, setConfigOverride } from "../config";
 import { handleHttpRequest, listSessions } from "../transport/http";
+import { EXECUTION_TIER, checkRateLimit, resetRateLimits } from "../utils/rate-limit";
+
+// Transport behavior is tested with authentication disabled so the suite
+// stays independent of the operator .env. The auth boundary itself is
+// covered by the session tests.
+beforeEach(() => {
+  setConfigOverride({ authEnabled: false });
+});
+
+afterEach(() => {
+  resetConfigOverride();
+});
 
 const HEADERS = {
   "Content-Type": "application/json",
@@ -122,5 +135,28 @@ describe("Streamable HTTP stateless transport", () => {
     expect(body.result?.isError).toBe(true);
     const text = JSON.stringify(body.result?.content ?? "");
     expect(text).not.toContain("not initialized");
+  });
+
+  test("exhausted rate budget returns 429 with retry headers, not 500", async () => {
+    const identity = "http-429-regression-client";
+    const scoped = (id: number | string) =>
+      post(
+        { jsonrpc: "2.0", id, method: "tools/list", params: {} },
+        { "x-forwarded-for": identity },
+      );
+    try {
+      for (let i = 0; i < EXECUTION_TIER.limit; i++) {
+        checkRateLimit(scoped(`warm-${i}`), "mcp/http", EXECUTION_TIER);
+      }
+      const res = await handleHttpRequest(scoped("over-budget"));
+      expect(res.status).toBe(429);
+      expect(res.headers.get("Retry-After")).toBe(String(Math.ceil(EXECUTION_TIER.windowMs / 1000)));
+      expect(res.headers.get("X-Request-Id")).toBeTruthy();
+      const body = (await res.json()) as { error?: { code?: string; requestId?: string } };
+      expect(body.error?.code).toBe("rate_limited");
+      expect(body.error?.requestId).toBe(String(res.headers.get("X-Request-Id")));
+    } finally {
+      resetRateLimits();
+    }
   });
 });

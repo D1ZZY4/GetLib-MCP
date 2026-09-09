@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version transitions.
 - Block numeric-IP SSRF bypasses (decimal, octal, hex) with
   fail-closed parsing and wider private ranges.
+- Unify transport error responses with request IDs and retry
+  headers, and keep transport tests independent of the operator
+  environment.
 
 </details>
 
