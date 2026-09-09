@@ -1,4 +1,10 @@
 import { fetchJson } from "@/web/lib/api-client";
+import type { LibraryFetch } from "@/web/lib/ranking";
+
+// Re-exported from the shared ranking boundary so existing feature
+// imports keep working while the single implementation lives in web/lib.
+export { rankLibraryFetches } from "@/web/lib/ranking";
+export type { LibraryFetch } from "@/web/lib/ranking";
 
 export interface UsageDay {
   date: string;
@@ -12,12 +18,6 @@ export interface LibraryStatRow {
   latestVersion: string;
   status: string;
   docsPages: number;
-}
-
-export interface LibraryFetch {
-  id: string;
-  name: string;
-  fetches: number;
 }
 
 export interface UsageStats {
@@ -37,14 +37,4 @@ export interface StatisticsSnapshot {
 
 export function fetchStatistics(): Promise<StatisticsSnapshot> {
   return fetchJson<StatisticsSnapshot>("/api/management/statistics");
-}
-
-/**
- * Single ranking implementation for library fetch counts. Both the
- * dashboard overview and the statistics ranking view use this so the
- * sort order cannot drift between surfaces.
- */
-export function rankLibraryFetches(fetches: LibraryFetch[], limit?: number): LibraryFetch[] {
-  const ranked = [...fetches].sort((a, b) => b.fetches - a.fetches);
-  return limit === undefined ? ranked : ranked.slice(0, limit);
 }

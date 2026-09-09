@@ -12,8 +12,10 @@ import {
   YAxis,
 } from "recharts";
 import { LoadError } from "@/web/components/ui/load-error";
-import { rankLibraryFetches, type StatisticsSnapshot } from "@/web/features/statistics/services/statistics-api.service";
-import { ArrowRightIcon } from "../../../components/ui/icons";
+import { RankingBarList } from "@/web/components/ui/ranking-bar-list";
+import type { StatisticsSnapshot } from "@/web/features/statistics/services/statistics-api.service";
+import { rankLibraryFetches } from "@/web/lib/ranking";
+import { ArrowRightIcon } from "@/web/components/ui/icons";
 import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/features/statistics/components/chart-theme";
 import { ChartTooltipCard } from "@/web/features/statistics/components/chart-tooltip";
 
@@ -75,7 +77,6 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
     { label: "Success rate", value: `${stats.usage.successRate}%`, hint: "Fetch success" },
   ] as const;
   const topFetches = rankLibraryFetches(stats.fetches, 3);
-  const topCount = topFetches[0]?.fetches ?? 1;
 
   return (
     <Card aria-label="Overview">
@@ -134,36 +135,9 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
             </div>
           ))}
         </div>
-        <ol className="mt-4 flex flex-col gap-3" aria-label="Top fetched libraries">
-          {topFetches.length === 0 ? (
-            <li className="text-sm text-muted">No library fetches recorded yet.</li>
-          ) : (
-            topFetches.map((entry, index) => (
-            <li key={entry.id}>
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="truncate text-sm font-medium">
-                  <span className="mr-2 font-mono text-xs text-muted tabular-nums">
-                    {index + 1}
-                  </span>
-                  {entry.name}
-                </p>
-                <span className="shrink-0 text-xs text-muted tabular-nums">
-                  {entry.fetches} fetches
-                </span>
-              </div>
-              <div
-                role="presentation"
-                className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-tertiary"
-              >
-                <div
-                  className="h-full rounded-full bg-accent"
-                  style={{ width: `${Math.max(4, (entry.fetches / topCount) * 100)}%` }}
-                />
-              </div>
-            </li>
-            ))
-          )}
-        </ol>
+        <div className="mt-4">
+          <RankingBarList entries={topFetches} label="Top fetched libraries" />
+        </div>
       </Card.Content>
       <Card.Footer>
         <Link
