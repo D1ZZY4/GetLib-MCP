@@ -80,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bootstrap lifecycle tests.
 - Development seed and reset endpoints with page controls and
   lifecycle tests; production always rejects both.
+- Read-only settings snapshot endpoint with a Configuration tab
+  and a no-secrets test; display identity comes from the session.
 
 ### Changed
 
@@ -138,6 +140,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Point the install service and its tests at the domain transport
   registry and require auth plus read-tier rate limits on the
   install catalog route.
+- Show environment-driven configuration on the Settings page with
+  a live tab query param, and drop display name from the runtime
+  info contract.
 
 ## [0.1.0] - 2026-09-08
 

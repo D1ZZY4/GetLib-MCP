@@ -12,7 +12,6 @@ export interface RuntimeInfo {
     fallbackActive: boolean;
     environment: string;
     databaseMode: string;
-    displayName: string | null;
   };
   database: {
     mode: string;

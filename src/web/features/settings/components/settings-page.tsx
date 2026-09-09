@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, Skeleton } from "@heroui/react";
 import { useSearchParams } from "next/navigation";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "../services/runtime-api.service";
+import { fetchSettings } from "../services/settings-api.service";
 
-type TabId = "profile" | "account" | "preferences" | "security" | "about";
+type TabId = "profile" | "account" | "preferences" | "security" | "about" | "configuration";
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: "profile", label: "Profile" },
@@ -15,10 +16,17 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: "preferences", label: "Preferences" },
   { id: "security", label: "Security" },
   { id: "about", label: "About" },
+  { id: "configuration", label: "Configuration" },
 ];
 
 function validTab(raw: string | null): TabId {
-  if (raw === "account" || raw === "preferences" || raw === "security" || raw === "about") {
+  if (
+    raw === "account" ||
+    raw === "preferences" ||
+    raw === "security" ||
+    raw === "about" ||
+    raw === "configuration"
+  ) {
     return raw;
   }
   return "profile";
@@ -27,9 +35,16 @@ function validTab(raw: string | null): TabId {
 export function SettingsPage() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<TabId>(() => validTab(searchParams.get("tab")));
+  useEffect(() => {
+    setTab(validTab(searchParams.get("tab")));
+  }, [searchParams]);
   const { data: runtime, loading, error, retry } = useApiData(
     fetchRuntimeInfo,
     "We couldn't load settings. Try again in a moment.",
+  );
+  const { data: settings } = useApiData(
+    fetchSettings,
+    "We couldn't load configuration. Try again in a moment.",
   );
 
   return (
@@ -83,10 +98,6 @@ export function SettingsPage() {
               </Card.Header>
               <Card.Content>
                 <dl className="flex flex-col gap-2 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted">Display name</dt>
-                    <dd className="font-medium">{runtime.auth.displayName ?? "Guest"}</dd>
-                  </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted">Authentication</dt>
                     <dd className="font-medium">{runtime.auth.enabled ? "Enabled" : "Disabled"}</dd>
@@ -185,6 +196,61 @@ export function SettingsPage() {
                     <dd className="font-medium">{runtime.health.registryEntries} libraries</dd>
                   </div>
                 </dl>
+              </Card.Content>
+            </Card>
+          ) : null}
+
+          {tab === "configuration" ? (
+            <Card>
+              <Card.Header>
+                <Card.Title>Configuration</Card.Title>
+                <Card.Description>
+                  Environment-driven application configuration. Values change via environment
+                  variables plus restart - secrets are never shown here.
+                </Card.Description>
+              </Card.Header>
+              <Card.Content>
+                {settings === null ? (
+                  <p className="text-sm text-muted">Configuration snapshot unavailable.</p>
+                ) : (
+                  <dl className="flex flex-col gap-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Server</dt>
+                      <dd className="font-medium">
+                        {settings.general.server} v{settings.general.version}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Environment</dt>
+                      <dd className="font-medium">{settings.general.environment}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Authentication</dt>
+                      <dd className="font-medium">
+                        {settings.authentication.enabled ? "Enabled" : "Disabled"}
+                        {settings.authentication.fallbackActive ? " (fallback credentials)" : ""}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Transports</dt>
+                      <dd className="font-medium">{settings.mcp.transports.join(" + ")}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Capabilities</dt>
+                      <dd className="font-medium tabular-nums">
+                        {settings.mcp.tools} tools · {settings.mcp.resources} resources ·{" "}
+                        {settings.mcp.prompts} prompts
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted">Database</dt>
+                      <dd className="font-medium">
+                        {settings.database.mode}
+                        {settings.database.isMock ? " (mock)" : ""}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
               </Card.Content>
             </Card>
           ) : null}
