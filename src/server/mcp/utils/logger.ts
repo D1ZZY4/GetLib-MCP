@@ -32,9 +32,14 @@ const SENSITIVE_KEYS = new Set([
   "pwd",
   "token",
   "secret",
+  "session",
+  "cookie",
+  "set-cookie",
   "authorization",
   "api_key",
   "apikey",
+  "api-key",
+  "x-api-key",
   "access_token",
   "refresh_token",
   "client_secret",
@@ -42,12 +47,20 @@ const SENSITIVE_KEYS = new Set([
 ]);
 
 const BEARER_PATTERN = /Bearer [A-Za-z0-9\-._~+/=]+/g;
+const BASIC_PATTERN = /Basic [A-Za-z0-9\-._~+/=]+/g;
+// Header-style credentials in free text: api_key: <value>, x-api-key=<value>.
+const HEADER_KEY_PATTERN = /((?:api[_-]?key|x-api-key)\s*[:=]\s*)['"]?[A-Za-z0-9\-._~+/=]+['"]?/gi;
+// Query-string secrets in logged URLs: ?token=<value>&api_key=<value>.
+const QUERY_TOKEN_PATTERN = /([?&](?:token|api_key|apikey|access_token|secret|password|auth|key)=)[^&\s"']*/gi;
 
 function redactValue(key: string, value: unknown): unknown {
   if (SENSITIVE_KEYS.has(key.toLowerCase())) return "[redacted]";
   if (typeof value === "string") {
-    const scrubbed = value.replace(BEARER_PATTERN, "Bearer [redacted]");
-    return scrubbed === value ? value : scrubbed;
+    return value
+      .replace(BEARER_PATTERN, "Bearer [redacted]")
+      .replace(BASIC_PATTERN, "Basic [redacted]")
+      .replace(HEADER_KEY_PATTERN, "$1[redacted]")
+      .replace(QUERY_TOKEN_PATTERN, "$1[redacted]");
   }
   return value;
 }

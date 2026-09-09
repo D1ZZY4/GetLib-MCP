@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unify transport error responses with request IDs and retry
   headers, and keep transport tests independent of the operator
   environment.
+- Scrub basic credentials, header api keys, query-string secrets,
+  and session fields from logs.
 
 </details>
 
