@@ -26,8 +26,10 @@ export interface MockAttention {
   libraryName: string;
   message: string;
   severity: AttentionSeverity;
-  installedVersion: string;
-  latestVersion: string;
+  installedVersion?: string;
+  latestVersion?: string;
+  actionHref?: string;
+  actionLabel?: string;
 }
 
 export interface DashboardStats {

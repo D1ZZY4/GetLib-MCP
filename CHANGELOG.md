@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Give operational warnings action links instead of invented
+  version transitions.
+
 </details>
 
 ## [1.1.4] - 2026-09-09

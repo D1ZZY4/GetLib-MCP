@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card } from "@heroui/react";
 import type { MockAttention } from "../../../types/library";
@@ -52,9 +53,20 @@ export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProp
                   <Alert.Title>{item.libraryName}</Alert.Title>
                   <Alert.Description>
                     {item.message}
-                    <span className="mt-1 block font-mono text-xs tabular-nums">
-                      {item.installedVersion} → {item.latestVersion}
-                    </span>
+                    {item.installedVersion !== undefined && item.latestVersion !== undefined ? (
+                      <span className="mt-1 block font-mono text-xs tabular-nums">
+                        {item.installedVersion} → {item.latestVersion}
+                      </span>
+                    ) : null}
+                    {item.actionHref !== undefined ? (
+                      <Link
+                        href={item.actionHref}
+                        className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        {item.actionLabel ?? "Take action"}
+                        <ArrowRightIcon className="size-3" />
+                      </Link>
+                    ) : null}
                   </Alert.Description>
                 </Alert.Content>
               </Alert>

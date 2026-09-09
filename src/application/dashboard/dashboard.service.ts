@@ -40,8 +40,16 @@ export interface DashboardAttention {
   libraryName: string;
   message: string;
   severity: "high" | "medium" | "low";
-  installedVersion: string;
-  latestVersion: string;
+  /**
+   * Version transition, only for library-update items. Operational
+   * warnings (credentials, database) leave these unset instead of
+   * inventing fake versions like "default" -> "rotated".
+   */
+  installedVersion?: string;
+  latestVersion?: string;
+  /** Deep link to the surface that resolves the warning, if any. */
+  actionHref?: string;
+  actionLabel?: string;
 }
 
 export interface DashboardStats {
@@ -259,8 +267,8 @@ function liveAttentions(params: {
       libraryName: "authentication",
       message: "Default bootstrap credentials are active. Rotate them immediately.",
       severity: "high",
-      installedVersion: "default",
-      latestVersion: "rotated",
+      actionHref: "/settings?tab=account",
+      actionLabel: "Review credentials",
     });
   }
   if (params.databaseError) {
@@ -269,8 +277,8 @@ function liveAttentions(params: {
       libraryName: "database",
       message: `Database degraded: ${params.databaseError}`,
       severity: "high",
-      installedVersion: "degraded",
-      latestVersion: "healthy",
+      actionHref: "/mcp/health",
+      actionLabel: "Check health",
     });
   }
   if (params.circuitsOpen > 0) {
@@ -326,8 +334,8 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
                 libraryName: "authentication",
                 message: "Default bootstrap credentials are active. Rotate them immediately.",
                 severity: "high",
-                installedVersion: "default",
-                latestVersion: "rotated",
+                actionHref: "/settings?tab=account",
+                actionLabel: "Review credentials",
               } as DashboardAttention,
             ]
           : []),

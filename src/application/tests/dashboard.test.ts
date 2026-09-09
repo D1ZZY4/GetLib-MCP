@@ -12,6 +12,16 @@ describe("dashboard application service", () => {
     expect(Array.isArray(snapshot.attentions)).toBe(true);
   });
 
+  test("operational warnings carry actions, not fake versions", async () => {
+    const snapshot = await getDashboardSnapshot();
+    for (const item of snapshot.attentions) {
+      if (item.id === "att-fallback" || item.id === "att-db") {
+        expect(item.installedVersion).toBeUndefined();
+        expect(item.latestVersion).toBeUndefined();
+        expect(typeof item.actionHref).toBe("string");
+      }
+    }
+  });
   test("mock mode flags itself explicitly", async () => {
     const snapshot = await getDashboardSnapshot();
     if (snapshot.system.isMock) {
