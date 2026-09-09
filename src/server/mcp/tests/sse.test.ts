@@ -57,4 +57,59 @@ describe("SSE transport", () => {
   test("unknown sessions and malformed bodies are rejected", () => {
     expect(() => postSseMessage("no-such-session", {})).toThrow(UnknownSseSessionError);
   });
+
+  test("prompts/list answers over the SSE stream with all six prompts", async () => {
+    const { sessionId, stream } = await openSseSession();
+    const reader = stream.getReader();
+    try {
+      await readUntil(reader, "event: endpoint");
+      postSseMessage(sessionId, {
+        jsonrpc: "2.0",
+        id: 21,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: { name: "sse-prompts-test", version: "0.0.0" },
+        },
+      });
+      await readUntil(reader, '"id":21');
+      postSseMessage(sessionId, { jsonrpc: "2.0", id: 22, method: "prompts/list", params: {} });
+      const response = await readUntil(reader, '"id":22');
+      for (const name of ["review-libraries", "get-docs", "best-practices", "migrate-library", "audit-project", "compare-libraries"]) {
+        expect(response).toContain(name);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  });
+
+  test("prompts/get renders over the SSE stream without crashing", async () => {
+    const { sessionId, stream } = await openSseSession();
+    const reader = stream.getReader();
+    try {
+      await readUntil(reader, "event: endpoint");
+      postSseMessage(sessionId, {
+        jsonrpc: "2.0",
+        id: 31,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: { name: "sse-prompts-get-test", version: "0.0.0" },
+        },
+      });
+      await readUntil(reader, '"id":31');
+      postSseMessage(sessionId, {
+        jsonrpc: "2.0",
+        id: 32,
+        method: "prompts/get",
+        params: { name: "get-docs", arguments: { libraryId: "facebook/react", topic: "hooks" } },
+      });
+      const response = await readUntil(reader, '"id":32');
+      expect(response).toContain("facebook/react");
+    } finally {
+      reader.releaseLock();
+    }
+  });
 });

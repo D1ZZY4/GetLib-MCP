@@ -54,8 +54,11 @@ export function createServer(): McpServer {
     const name = prompt.name;
     const def = getPrompt(name);
     const argsSchema = def?.args ? toPromptArgsSchema(def.args) : undefined;
+    // SDK calls the callback as (args, extra) when argsSchema exists. Default
+    // missing args to {} so renderPrompt raises its clean "missing required
+    // argument" error instead of a type crash on undefined.
     const respond = async (args: unknown) => {
-      const rendered = (await renderPrompt(name, args)) as {
+      const rendered = (await renderPrompt(name, args ?? {})) as {
         messages: Array<{ role: "user"; content: { type: "text"; text: string } }>;
       };
       return { messages: rendered.messages };

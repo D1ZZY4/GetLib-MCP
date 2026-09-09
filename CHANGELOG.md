@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   environment.
 - Scrub basic credentials, header api keys, query-string secrets,
   and session fields from logs.
+- Cover prompt listing and rendering over both transports and
+  fix undefined prompt args crashing the callback.
 
 </details>
 
