@@ -1,4 +1,4 @@
-import { TRANSPORT_MODES, type TransportMode } from "@/server/mcp/transport/modes";
+import { TRANSPORT_MODES, type TransportMode } from "@/domain/mcp/catalog";
 
 /**
  * Install application service - canonical installation metadata shared by

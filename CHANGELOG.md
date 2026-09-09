@@ -135,6 +135,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require auth and rate limits on the development settings routes;
   the Development page gains seed/reset actions and drops the
   notification demo block.
+- Point the install service and its tests at the domain transport
+  registry and require auth plus read-tier rate limits on the
+  install catalog route.
 
 ## [0.1.0] - 2026-09-08
 

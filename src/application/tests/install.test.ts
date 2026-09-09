@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { getInstallCatalog } from "../install/install.service";
-import { TRANSPORT_MODES } from "@/server/mcp/transport/modes";
+import { TRANSPORT_MODES } from "@/domain/mcp/catalog";
 
 describe("install application service", () => {
   test("assistants and transports are present", () => {
