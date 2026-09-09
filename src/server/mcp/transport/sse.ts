@@ -4,6 +4,8 @@ import type { JSONRPCMessage, MessageExtraInfo } from "@modelcontextprotocol/sdk
 import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
 import { createServer } from "../server";
+import { getRuntimeSnapshot } from "../runtime";
+import { log } from "../utils/logger";
 import { pruneSessionMap } from "./sessions";
 
 /**
@@ -99,6 +101,8 @@ interface SseSession {
 
 const sessions = new Map<string, SseSession>();
 
+let sseVercelWarned = false;
+
 export class UnknownSseSessionError extends Error {
   constructor() {
     super("Unknown SSE session. Open GET /api/mcp/sse first.");
@@ -119,6 +123,15 @@ function getSession(sessionId: string): SseSession {
 /** Opens a session: connects a fresh MCP server to a new SSE stream. */
 export async function openSseSession(): Promise<{ sessionId: string; stream: ReadableStream<Uint8Array> }> {
   pruneSessionMap(sessions);
+  if (getRuntimeSnapshot().vercelEnv !== undefined && !sseVercelWarned) {
+    sseVercelWarned = true;
+    log({
+      level: "warn",
+      msg: "sse.serverless-sessions",
+      detail:
+        "SSE sessions live in process memory and need a sticky long-running host. Prefer Streamable HTTP on Vercel.",
+    });
+  }
   const sessionId = crypto.randomUUID();
   const server = createServer();
   const transport = new WebSseTransport(sessionId);
