@@ -185,6 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document the versioned migration order.
 - Reject encoded em-dash circumventions in user-facing output
   while still allowing backend matchers on untrusted content.
+- Extend the SSE function timeout and send baseline security
+  headers on every response.
 
 ## [0.1.0] - 2026-09-08
 
