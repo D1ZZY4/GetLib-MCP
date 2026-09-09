@@ -1,7 +1,10 @@
 "use client";
 
 import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
+import { statusTone } from "@/web/components/ui/status-tone";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
 import type { HealthStatus } from "@/web/types/mcp";
@@ -10,12 +13,7 @@ import { fetchHealth } from "../services/health.service";
 const LOAD_ERROR = "We couldn't load health status. Try again in a moment.";
 
 function StatusPill({ status }: { status: HealthStatus }) {
-  const tone =
-    status === "healthy"
-      ? "bg-success/10 text-success"
-      : status === "degraded"
-        ? "bg-warning/10 text-warning"
-        : "bg-danger/10 text-danger";
+  const tone = statusTone(status);
   const label = status === "healthy" ? "Healthy" : status === "degraded" ? "Degraded" : "Unavailable";
   return (
     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
@@ -29,15 +27,11 @@ export function McpHealth() {
 
   return (
     <PageContainer>
-      <header>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Health</h1>
-          {health !== null ? <StatusPill status={health.status} /> : null}
-        </div>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Operational status of this MCP server process, not analytics.
-        </p>
-      </header>
+      <PageHeader
+        title="Health"
+        description="Operational status of this MCP server process, not analytics."
+        badge={health !== null ? <StatusPill status={health.status} /> : null}
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading health" className="grid gap-4 sm:grid-cols-3">
@@ -46,14 +40,7 @@ export function McpHealth() {
           <Skeleton className="h-24 rounded-xl" />
         </div>
       ) : error !== null || health === null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error ?? LOAD_ERROR}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

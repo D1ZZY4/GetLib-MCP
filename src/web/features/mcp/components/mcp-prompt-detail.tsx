@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { BackLink } from "@/web/components/ui/back-link";
+import { LoadError } from "@/web/components/ui/load-error";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
@@ -11,12 +12,7 @@ export function McpPromptDetail({ promptName }: { promptName: string }) {
 
   return (
     <PageContainer>
-      <Link
-        href="/mcp/prompts"
-        className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
-      >
-        Back to prompts
-      </Link>
+      <BackLink href="/mcp/prompts">Back to prompts</BackLink>
 
       {loading ? (
         <div role="status" aria-label="Loading prompt" className="flex flex-col gap-2">
@@ -24,14 +20,7 @@ export function McpPromptDetail({ promptName }: { promptName: string }) {
           <Skeleton className="h-40 rounded-xl" />
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : prompt === null ? (
         <Card>
           <Card.Content>

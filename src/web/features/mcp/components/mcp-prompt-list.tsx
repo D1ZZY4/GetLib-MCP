@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
@@ -10,12 +12,10 @@ export function McpPromptList() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Prompts</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Reusable prompt templates exposed by the MCP server from the shared registry.
-        </p>
-      </header>
+      <PageHeader
+        title="Prompts"
+        description="Reusable prompt templates exposed by the MCP server from the shared registry."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading prompts" className="flex flex-col gap-2">
@@ -24,14 +24,7 @@ export function McpPromptList() {
           ))}
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : catalog.prompts.length === 0 ? (
         <Card>
           <Card.Content>
@@ -61,7 +54,7 @@ export function McpPromptList() {
                         <li
                           key={arg.name}
                           title={arg.description}
-                          className="rounded-full bg-surface-tertiary px-2 py-0.5 font-mono text-[11px] text-muted"
+                          className="rounded-full bg-surface-tertiary px-2 py-0.5 font-mono text-xs text-muted"
                         >
                           {arg.name}
                           {arg.required ? " *" : ""}

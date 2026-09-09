@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Key } from "@heroui/react";
 import { Card, Label, ListBox, Select, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
@@ -36,15 +38,13 @@ export function McpLogViewer() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Logs</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Last {limit} tool runs recorded by the registry middleware in this process.
-        </p>
-      </header>
+      <PageHeader
+        title="Logs"
+        description={`Last ${limit} tool runs recorded by the registry middleware in this process.`}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent">
+        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
           <SearchIcon className="size-4 shrink-0 text-muted" />
           <label htmlFor="logs-search" className="sr-only">
             Filter logs by tool or request id
@@ -136,14 +136,7 @@ export function McpLogViewer() {
           ))}
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : logs.length === 0 ? (
         <Card>
           <Card.Content>

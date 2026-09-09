@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
@@ -10,12 +12,10 @@ export function McpResourceList() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Resources</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Readable resources exposed by the MCP server from the shared registry.
-        </p>
-      </header>
+      <PageHeader
+        title="Resources"
+        description="Readable resources exposed by the MCP server from the shared registry."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading resources" className="flex flex-col gap-2">
@@ -24,14 +24,7 @@ export function McpResourceList() {
           ))}
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : catalog.resources.length === 0 ? (
         <Card>
           <Card.Content>

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
@@ -14,14 +16,10 @@ export function McpClients() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Clients</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          AI agents recently seen on this server over Streamable HTTP. The transport is
-          stateless, so this lists recently observed clients rather than live sessions.
-          Agents using stdio run their own server process.
-        </p>
-      </header>
+      <PageHeader
+        title="Clients"
+        description="AI agents recently seen on this server over Streamable HTTP. The transport is stateless, so this lists recently observed clients rather than live sessions. Agents using stdio run their own server process."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading clients" className="flex flex-col gap-2">
@@ -29,14 +27,7 @@ export function McpClients() {
           <Skeleton className="h-12 rounded-xl" />
         </div>
       ) : error !== null || snapshot === null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error ?? LOAD_ERROR}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : snapshot.total === 0 ? (
         <Card>
           <Card.Content>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { Key } from "@heroui/react";
 import { Button, Card, Label, ListBox, Select, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 import { exampleArgsFor, runToolWithArgs } from "../services/playground.service";
@@ -51,12 +53,10 @@ export function McpPlayground() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Playground</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Pick a tool, edit the JSON arguments, and run it against this server.
-        </p>
-      </header>
+      <PageHeader
+        title="Playground"
+        description="Pick a tool, edit the JSON arguments, and run it against this server."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading playground" className="flex flex-col gap-2">
@@ -64,14 +64,7 @@ export function McpPlayground() {
           <Skeleton className="h-40 rounded-xl" />
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : (
         <>
           <Card>
@@ -111,7 +104,7 @@ export function McpPlayground() {
                           <li
                             key={input.key}
                             title={input.description ?? undefined}
-                            className="rounded-full bg-surface-tertiary px-2 py-0.5 font-mono text-[11px] text-muted"
+                            className="rounded-full bg-surface-tertiary px-2 py-0.5 font-mono text-xs text-muted"
                           >
                             {input.key}
                           </li>
@@ -130,7 +123,7 @@ export function McpPlayground() {
                     onChange={(event) => setArgsText(event.target.value)}
                     rows={8}
                     spellCheck={false}
-                    className="mt-1.5 w-full rounded-xl border border-border bg-surface px-3 py-2 font-mono text-xs leading-relaxed outline-none placeholder:text-muted focus:border-accent"
+                    className="mt-1.5 w-full rounded-xl border border-border bg-surface px-3 py-2 font-mono text-xs leading-relaxed outline-none placeholder:text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                   />
                 </div>
                 <div className="flex items-center gap-3">

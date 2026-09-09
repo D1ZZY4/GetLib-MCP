@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchHealth } from "../services/health.service";
@@ -56,19 +58,17 @@ export function McpOverview() {
 
   return (
     <PageContainer>
-      <header>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">MCP</h1>
-          {health !== null && degraded ? (
+      <PageHeader
+        title="MCP"
+        description="First-class MCP module: one registry feeds the stdio server and these pages."
+        badge={
+          health !== null && degraded ? (
             <span className="shrink-0 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
               Degraded
             </span>
-          ) : null}
-        </div>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          First-class MCP module: one registry feeds the stdio server and these pages.
-        </p>
-      </header>
+          ) : null
+        }
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading MCP overview" className="grid gap-4 sm:grid-cols-3">
@@ -77,14 +77,7 @@ export function McpOverview() {
           ))}
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retryAll} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retryAll} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

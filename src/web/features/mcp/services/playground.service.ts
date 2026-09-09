@@ -7,7 +7,7 @@ export interface PlaygroundResult {
   ok: boolean;
 }
 
-export const EXAMPLE_ARGS: Record<string, string> = {
+const EXAMPLE_ARGS: Record<string, string> = {
   gl_dispatch: '{\n  "query": "use getlib for react"\n}',
   gl_resolve_library: '{\n  "libraryName": "react"\n}',
   gl_get_docs: '{\n  "libraryId": "facebook/react",\n  "topic": "hooks"\n}',

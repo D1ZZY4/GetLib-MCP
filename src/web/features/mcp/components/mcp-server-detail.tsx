@@ -2,17 +2,14 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { BackLink } from "@/web/components/ui/back-link";
+import { LoadError } from "@/web/components/ui/load-error";
 import { PageContainer } from "../../../components/layout/page-container";
+import { statusTone } from "@/web/components/ui/status-tone";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchServers } from "../services/mcp.service";
 
 const LOAD_ERROR = "We couldn't load this server. Try again in a moment.";
-
-function statusTone(status: string): string {
-  if (status === "online" || status === "healthy") return "bg-success/10 text-success";
-  if (status === "degraded") return "bg-warning/10 text-warning";
-  return "bg-danger/10 text-danger";
-}
 
 export function McpServerDetail({ serverId }: { serverId: string }) {
   const { data, loading, error, retry } = useApiData(fetchServers, LOAD_ERROR);
@@ -20,12 +17,7 @@ export function McpServerDetail({ serverId }: { serverId: string }) {
 
   return (
     <PageContainer>
-      <Link
-        href="/mcp/servers"
-        className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
-      >
-        Back to servers
-      </Link>
+      <BackLink href="/mcp/servers">Back to servers</BackLink>
 
       {loading ? (
         <div role="status" aria-label="Loading server" className="flex flex-col gap-2">
@@ -33,14 +25,7 @@ export function McpServerDetail({ serverId }: { serverId: string }) {
           <Skeleton className="h-40 rounded-xl" />
         </div>
       ) : error !== null || data === null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error ?? LOAD_ERROR}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : server === null ? (
         <Card>
           <Card.Content>

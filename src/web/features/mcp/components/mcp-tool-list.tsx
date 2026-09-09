@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button, Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 import { runTool } from "../services/mcp.service";
@@ -31,12 +33,10 @@ export function McpToolList() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Tools</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Every tool runs through the shared registry. It is the same registry the stdio server exposes.
-        </p>
-      </header>
+      <PageHeader
+        title="Tools"
+        description="Every tool runs through the shared registry. It is the same registry the stdio server exposes."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading tools" className="flex flex-col gap-2">
@@ -45,14 +45,7 @@ export function McpToolList() {
           ))}
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : catalog.tools.length === 0 ? (
         <Card>
           <Card.Content>

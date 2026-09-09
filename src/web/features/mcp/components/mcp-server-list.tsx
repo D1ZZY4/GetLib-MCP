@@ -2,17 +2,14 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
+import { statusTone } from "@/web/components/ui/status-tone";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchServers } from "../services/mcp.service";
 
 const LOAD_ERROR = "We couldn't load servers. Try again in a moment.";
-
-function statusTone(status: string): string {
-  if (status === "online") return "bg-success/10 text-success";
-  if (status === "degraded") return "bg-warning/10 text-warning";
-  return "bg-danger/10 text-danger";
-}
 
 export function McpServerList() {
   const { data, loading, error, retry } = useApiData(fetchServers, LOAD_ERROR);
@@ -20,26 +17,17 @@ export function McpServerList() {
 
   return (
     <PageContainer>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Servers</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted">
-          Registered MCP servers with live primitive counts from the shared registry.
-        </p>
-      </header>
+      <PageHeader
+        title="Servers"
+        description="Registered MCP servers with live primitive counts from the shared registry."
+      />
 
       {loading ? (
         <div role="status" aria-label="Loading servers" className="flex flex-col gap-2">
           <Skeleton className="h-20 rounded-xl" />
         </div>
       ) : error !== null ? (
-        <div className="flex flex-col items-start gap-2">
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-          <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-            Retry
-          </button>
-        </div>
+        <LoadError message={error} onRetry={retry} />
       ) : servers.length === 0 ? (
         <Card>
           <Card.Content>
