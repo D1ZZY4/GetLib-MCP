@@ -2,7 +2,7 @@
 -- Owner: src/server/mcp/infrastructure/database (SupabaseDatabaseRepository.saveLog),
 -- written production-only from src/server/mcp/middleware/logging.ts.
 -- The hot read path (/api/mcp/logs) stays on the in-memory ring.
--- Apply order: alphabetical by filename (no cross-file dependencies).
+-- Apply order: filename version prefix (no cross-file dependencies).
 
 create table if not exists public.mcp_logs (
   id bigint generated always as identity primary key,

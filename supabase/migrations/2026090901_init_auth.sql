@@ -1,6 +1,6 @@
 -- Concern: authentication bootstrap state (single-row record).
 -- Owner: src/server/mcp/infrastructure/database (SupabaseDatabaseRepository).
--- Apply order: alphabetical by filename (no cross-file dependencies).
+-- Apply order: filename version prefix (no cross-file dependencies).
 
 create table if not exists public.app_bootstrap (
   id integer primary key,
@@ -22,3 +22,17 @@ alter table public.app_bootstrap enable row level security;
 insert into public.app_bootstrap (id, account, credentials_changed)
 values (1, 'awesomemcp@getlib-local.com', false)
 on conflict (id) do nothing;
+
+-- Keep updated_at authoritative on every write.
+create or replace function public.touch_app_bootstrap_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists touch_app_bootstrap_updated_at on public.app_bootstrap;
+create trigger touch_app_bootstrap_updated_at
+  before update on public.app_bootstrap
+  for each row execute function public.touch_app_bootstrap_updated_at();

@@ -179,6 +179,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wait for the auth probe before redirecting, hold avatar space
   while resolving, remove the Docs route and shortcut, and rename
   Developments to Development.
+- Keep `updated_at` authoritative with a bootstrap trigger and
+  document the versioned migration order.
 
 ## [0.1.0] - 2026-09-08
 

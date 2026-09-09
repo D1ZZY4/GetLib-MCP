@@ -1,12 +1,14 @@
-# Supabase migrations (per-concern)
+# Supabase migrations (per-concern, versioned)
 
-One file per persistence concern, named `init_<concern>.sql`. Files apply in
-alphabetical order and must not depend on each other.
+One file per persistence concern, named `<version>_init_<concern>.sql`.
+Files apply in filename order and must not depend on each other.
 
-- `init_auth.sql` - authentication bootstrap state (`app_bootstrap` plus the
-  idempotent seed row). Owner: `SupabaseDatabaseRepository` + auth bootstrap.
-- `init_mcp_observability.sql` - durable MCP tool-call log (`mcp_logs`).
-  Owner: `SupabaseDatabaseRepository.saveLog`, written production-only.
+- `2026090901_init_auth.sql` - authentication bootstrap state (`app_bootstrap`
+  plus the idempotent seed row). Owner: `SupabaseDatabaseRepository` + auth
+  bootstrap.
+- `2026090902_init_mcp_observability.sql` - durable MCP tool-call log
+  (`mcp_logs`). Owner: `SupabaseDatabaseRepository.saveLog`, written
+  production-only.
 
 Rules:
 
