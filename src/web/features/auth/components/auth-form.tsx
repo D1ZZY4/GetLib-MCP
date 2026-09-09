@@ -13,9 +13,9 @@ import {
   TextField,
 } from "@heroui/react";
 import { mockSession } from "../services/auth.service";
-import { validateEmail, validatePassword } from "@/web/lib/validation";
+import { validateEmail, validatePassword, validateSigninPassword } from "@/web/lib/validation";
 import { useEnvironment } from "@/web/features/development/hooks/use-environment";
-import type { MockSession } from "../../../types/library";
+import type { MockSession } from "@/web/types/library";
 
 export type AuthMode = "sign-in" | "sign-up";
 
@@ -54,13 +54,17 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials }: AuthFormP
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const validatePasswordForMode = mode === "sign-in" ? validateSigninPassword : validatePassword;
+  const passwordMinLength = mode === "sign-in" ? 1 : 8;
+  const passwordPlaceholder = mode === "sign-in" ? "Enter your password" : "At least 8 characters";
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const rawEmail = String(formData.get("email") ?? "").trim();
     const rawPassword = String(formData.get("password") ?? "");
     const emailError = validateEmail(rawEmail);
-    const passwordError = validatePassword(rawPassword);
+    const passwordError = validatePasswordForMode(rawPassword);
     if (emailError !== null || passwordError !== null) {
       setFormError("Check the highlighted fields and try again.");
       return;
@@ -130,12 +134,12 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials }: AuthFormP
             isRequired
             name="password"
             type="password"
-            minLength={8}
-            validate={validatePassword}
+            minLength={passwordMinLength}
+            validate={validatePasswordForMode}
           >
             <Label>Password</Label>
-            <Input placeholder="At least 8 characters" variant="secondary" />
-            <Description>Must be at least 8 characters</Description>
+            <Input placeholder={passwordPlaceholder} variant="secondary" />
+            {mode === "sign-up" ? <Description>Must be at least 8 characters</Description> : null}
             <FieldError />
           </TextField>
           <Button type="submit" fullWidth isDisabled={submitting}>

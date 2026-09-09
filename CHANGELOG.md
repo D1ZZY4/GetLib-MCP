@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every transport route to use it.
 - Centralize fetch ranking and its bar list so dashboard and
   statistics cannot drift apart.
+- Relax sign-in password rules to non-empty and route auth calls
+  through the shared API client.
 - Keep one request-id implementation, dedupe the fallback
   warning, harden prompt arg checks, and match dash punctuation
   in nav patterns.

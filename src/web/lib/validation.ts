@@ -20,3 +20,17 @@ export function validatePassword(value: string): string | null {
   }
   return null;
 }
+
+/**
+ * Sign-in password rule. Sign-in accepts whatever password the server was
+ * configured with (bootstrap credentials can be short, e.g. demo123), so it
+ * only requires a non-empty value. Minimum-length policy applies to choosing
+ * a new password (sign-up), not to entering an existing one. The server
+ * remains the authoritative verifier.
+ */
+export function validateSigninPassword(value: string): string | null {
+  if (value.length === 0) {
+    return "Enter your password";
+  }
+  return null;
+}
