@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   run tests hermetic to the operator environment.
 - Consolidate origin rejection into one route helper and simplify
   every transport route to use it.
+- Keep one request-id implementation, dedupe the fallback
+  warning, harden prompt arg checks, and match dash punctuation
+  in nav patterns.
 - Cover prompt listing and rendering over both transports and
   fix undefined prompt args crashing the callback.
 - Share one pipeline budget with memoization and singleflight so

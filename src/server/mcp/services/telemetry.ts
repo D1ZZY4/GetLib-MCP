@@ -13,8 +13,8 @@
  * can prove 100% success rate (or diagnose exactly why it dropped).
  */
 
-import { randomBytes } from "crypto";
 import { log, type LogEntry } from "../utils/logger";
+import { generateRequestId } from "../utils/guard";
 import { recordToolCall } from "./metrics";
 
 export interface TelemetryContext {
@@ -42,9 +42,7 @@ import { pushOutcome, type InvocationOutcome } from "./telemetry-outcomes";
 export type { InvocationOutcome } from "./telemetry-outcomes";
 export { getRecentOutcomes, getInvocationSummary, resetTelemetry } from "./telemetry-outcomes";
 
-export function generateRequestId(): string {
-  return randomBytes(4).toString("hex");
-}
+export { generateRequestId };
 
 /**
  * Open a telemetry context for a tool invocation. Pair with `endCall*`

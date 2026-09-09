@@ -59,7 +59,8 @@ export async function renderPrompt(name: string, rawArgs: unknown = {}): Promise
   }
   const args = narrowArgs(rawArgs);
   for (const arg of prompt.args ?? []) {
-    if (arg.required && (args[arg.name] === undefined || args[arg.name]!.trim() === "")) {
+    const value = args[arg.name];
+    if (arg.required && (value === undefined || value.trim() === "")) {
       throw new Error(`Missing required prompt argument: "${arg.name}".`);
     }
   }

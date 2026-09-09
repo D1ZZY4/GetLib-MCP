@@ -1,5 +1,5 @@
 import { getRuntimeSnapshot } from "@/server/mcp/runtime";
-import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry-outcomes";
+import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry";
 
 /**
  * Statistics application service - server-side usage analytics shared by

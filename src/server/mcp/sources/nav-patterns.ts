@@ -79,16 +79,17 @@ export const NAV_FOOTER_PATTERNS: RegExp[] = [
   // Newsletter signup / CTA blocks
   /^#{2,4}\s*(Subscribe|Newsletter|Stay [Uu]pdated|Join|Sign [Uu]p)\s*\n.{0,300}$/gm,
 
-  // Changelog-style dates without content
-  /^#{2,4}\s*v?\d+\.\d+[\.\d]*\s*[-\u2014]\s*\d{4}-\d{2}-\d{2}\s*$/gm,
+  // Changelog-style dates without content (separator is any dash punctuation
+  // in external docs, e.g. "## 1.2.3 - 2024-01-01").
+  /^#{2,4}\s*v?\d+\.\d+[\.\d]*\s*\p{Pd}\s*\d{4}-\d{2}-\d{2}\s*$/gmu,
 
-  // Cloudflare cdn-cgi internal links (email-protection, etc.) \u2014 never legitimate
+  // Cloudflare cdn-cgi internal links (email-protection, etc.) - never legitimate
   // documentation content. decodeCloudflareEmails() recovers real addresses first;
   // this clears any remaining wrapper link (incl. the Jina "[[email protected]](...)" form).
   /\[[^\]]*\]\(\s*(?:https?:\/\/[^)]*)?\/cdn-cgi\/l\/[^)]+\)/gi,
 
   // Orphan HTML comment markers left after the balanced <!-- --> strip in
-  // INJECTION_PATTERNS \u2014 a line that is ONLY a closing/opening marker is noise.
+  // INJECTION_PATTERNS: a line that is ONLY a closing/opening marker is noise.
   /^[ \t]*-->[ \t]*$/gm,
   /^[ \t]*<!--[^\n]*$/gm,
 
@@ -98,7 +99,7 @@ export const NAV_FOOTER_PATTERNS: RegExp[] = [
   /^[ \t]*(?:Prev(?:ious)?|Next|Up|Home)(?:[ \t]+(?:Prev(?:ious)?|Next|Up|Home)){2,}[ \t]*$/gim,
   /^[ \t]*v?\d+(?:\.\d+)*[ \t]*(?:\|[ \t]*v?\d+(?:\.\d+)*[ \t]*){2,}$/gm,
 
-  // Event/conference nav headings (heading line only \u2014 never eats following prose,
+  // Event/conference nav headings (heading line only - never eats following prose,
   // so a legitimate "## Community" section with real content is untouched).
   /^#{2,4}[ \t]*(?:Upcoming(?:[ \t]+\w+){0,3}[ \t]+Events?|Global[ \t]+Events?|Upcoming[ \t]+Conferences?|Webinars?)[ \t]*$/gim,
 ];

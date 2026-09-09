@@ -5,7 +5,7 @@ import { getMcpCatalog, getMcpServers } from "@/application/mcp/mcp-catalog.serv
 import { getDatabaseStatus, getDatabase } from "@/server/mcp/infrastructure/database";
 import type { StoredLogEntry } from "@/server/mcp/infrastructure/database";
 import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
-import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry-outcomes";
+import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry";
 import { listLogs } from "@/server/mcp/middleware/logging";
 
 /**
@@ -255,6 +255,17 @@ async function liveActivities(): Promise<DashboardActivity[]> {
   }));
 }
 
+function fallbackAttention(): DashboardAttention {
+  return {
+    id: "att-fallback",
+    libraryName: "authentication",
+    message: "Default bootstrap credentials are active. Rotate them immediately.",
+    severity: "high",
+    actionHref: "/settings?tab=account",
+    actionLabel: "Review credentials",
+  };
+}
+
 function liveAttentions(params: {
   fallbackActive: boolean;
   databaseError: string | null;
@@ -262,14 +273,7 @@ function liveAttentions(params: {
 }): DashboardAttention[] {
   const items: DashboardAttention[] = [];
   if (params.fallbackActive) {
-    items.push({
-      id: "att-fallback",
-      libraryName: "authentication",
-      message: "Default bootstrap credentials are active. Rotate them immediately.",
-      severity: "high",
-      actionHref: "/settings?tab=account",
-      actionLabel: "Review credentials",
-    });
+    items.push(fallbackAttention());
   }
   if (params.databaseError) {
     items.push({
@@ -287,8 +291,6 @@ function liveAttentions(params: {
       libraryName: "providers",
       message: `${params.circuitsOpen} provider circuit(s) open. External fetches are failing fast.`,
       severity: "medium",
-      installedVersion: "open",
-      latestVersion: "closed",
     });
   }
   return items;
@@ -327,18 +329,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       activities: MOCK_ACTIVITIES,
       attentions: [
         ...MOCK_ATTENTIONS,
-        ...(auth.fallbackActive
-          ? [
-              {
-                id: "att-fallback",
-                libraryName: "authentication",
-                message: "Default bootstrap credentials are active. Rotate them immediately.",
-                severity: "high",
-                actionHref: "/settings?tab=account",
-                actionLabel: "Review credentials",
-              } as DashboardAttention,
-            ]
-          : []),
+        ...(auth.fallbackActive ? [fallbackAttention()] : []),
       ],
       system: {
         status: systemStatus,
