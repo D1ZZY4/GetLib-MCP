@@ -104,6 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   warning for SSE sessions and shutdown lifecycle tests.
 - Credential contract tests locking fallback and demo identities
   plus email normalization rules.
+- Shared UI primitives for back links, load errors, page headers,
+  status tones, and form validation.
 
 ### Changed
 
