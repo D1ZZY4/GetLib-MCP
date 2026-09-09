@@ -20,7 +20,7 @@ const MENU_ITEMS: ProfileMenuItem[] = [
   { id: "profile", label: "Profile", href: "/settings?tab=profile" },
   { id: "account", label: "Account", href: "/settings?tab=account" },
   { id: "preferences", label: "Preferences", href: "/settings?tab=preferences" },
-  { id: "development", label: "Developments", href: "/developments", developmentOnly: true },
+  { id: "development", label: "Development", href: "/developments", developmentOnly: true },
   { id: "security", label: "Security", href: "/settings?tab=security" },
   { id: "about", label: "About", href: "/settings?tab=about" },
 ];
@@ -54,7 +54,19 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
     };
   }, [open ]);
 
-  if (session === null) return null;
+  if (session === null) {
+    // Auth mode still resolving: keep layout space with a placeholder
+    // instead of dropping the avatar.
+    if (authEnabled === null) {
+      return (
+        <span
+          aria-hidden="true"
+          className="size-8 shrink-0 animate-pulse rounded-full bg-surface-tertiary"
+        />
+      );
+    }
+    return null;
+  }
   const hasSession = authEnabled !== false || session.email !== "guest@localhost";
 
   return (

@@ -4,7 +4,6 @@ import { PageContainer } from "@/web/components/layout/page-container";
 const SHORTCUTS = [
   { href: "/", label: "Dashboard" },
   { href: "/discover", label: "Discover" },
-  { href: "/docs", label: "Docs" },
   { href: "/mcp", label: "MCP" },
 ] as const;
 

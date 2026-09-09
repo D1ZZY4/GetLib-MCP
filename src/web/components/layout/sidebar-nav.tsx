@@ -11,7 +11,6 @@ import {
   GearIcon,
   GridIcon,
   LayersIcon,
-  LibraryIcon,
   SearchIcon,
   TerminalIcon,
 } from "../ui/icons";
@@ -67,14 +66,10 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Docs",
-    items: [{ href: "/docs", label: "Docs", icon: LibraryIcon }],
-  },
-  {
     label: "Settings",
     items: [
       { href: "/sources", label: "Sources", icon: LayersIcon },
-      { href: "/developments", label: "Developments", icon: CodeIcon, developmentOnly: true },
+      { href: "/developments", label: "Development", icon: CodeIcon, developmentOnly: true },
       { href: "/settings", label: "Settings", icon: GearIcon },
     ],
   },

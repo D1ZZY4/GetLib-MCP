@@ -18,7 +18,7 @@ function readCollapsed(): boolean {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { session } = useSession();
+  const { session, authEnabled } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   // Post-mount only, so the server render never mismatches hydration.
@@ -42,10 +42,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   useEffect(() => {
-    if (mounted && session === null) {
+    // Wait for the auth-mode probe: redirecting while authEnabled is still
+    // loading would force a login wall when authentication is disabled.
+    if (mounted && authEnabled !== null && session === null) {
       router.replace("/signin");
     }
-  }, [mounted, session, router]);
+  }, [mounted, authEnabled, session, router]);
 
   if (!mounted) {
     // Matches the server render (no session server-side) so the first
