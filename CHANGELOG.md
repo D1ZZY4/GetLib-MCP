@@ -20,8 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   disagreeing with it.
 - Extract pure durable-log mappers so production reads stay
   unit-testable without a database.
+
+### Changed
+
 - Move the docs pipeline beside the services that own it and fix
   the import paths.
+- Finish the shared primitive rollout across detail views and
+  feature pages, guard background polls against stale wins, and
+  cover empty catalog states.
 - Read production logs and dashboard activity from durable
   storage with ring fallback instead of process memory.
 - Treat blank resolve queries as absent so they never trip the

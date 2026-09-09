@@ -4,19 +4,13 @@ import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
+import { verdictTone } from "@/web/components/ui/verdict-tone";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchDocDetail } from "../services/discover.service";
 import { ArrowRightIcon } from "../../../components/ui/icons";
 
 const LOAD_ERROR = "We couldn't load this document. Try again in a moment.";
-
-const VERDICT_TONE: Record<string, string> = {
-  strong: "bg-success/10 text-success",
-  weak: "bg-warning/10 text-warning",
-  miss: "bg-danger/10 text-danger",
-  untargeted: "bg-surface-tertiary text-muted",
-};
 
 const VERDICT_LABEL: Record<string, string> = {
   strong: "Strong match",
@@ -77,7 +71,7 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
             badge={
               <>
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${VERDICT_TONE[data.verdict] ?? VERDICT_TONE.untargeted}`}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${verdictTone(data.verdict)}`}
                 >
                   {VERDICT_LABEL[data.verdict] ?? data.verdict}
                 </span>

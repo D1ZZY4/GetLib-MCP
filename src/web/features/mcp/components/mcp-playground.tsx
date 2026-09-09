@@ -65,6 +65,14 @@ export function McpPlayground() {
         </div>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
+      ) : catalog.tools.length === 0 ? (
+        <Card>
+          <Card.Content>
+            <p className="text-sm text-muted">
+              No tools registered. Restart the server to load the registry.
+            </p>
+          </Card.Content>
+        </Card>
       ) : (
         <>
           <Card>

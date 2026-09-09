@@ -3,6 +3,7 @@
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
@@ -35,20 +36,15 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
         </Card>
       ) : (
         <>
-          <header>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate font-mono text-2xl font-semibold tracking-tight sm:text-3xl">
-                {client.id}
-              </h1>
+          <PageHeader
+            title={<span className="truncate font-mono">{client.id}</span>}
+            description="Recently observed client. Streamable HTTP is stateless, so this is a sighting record, not a live session."
+            badge={
               <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
                 Seen
               </span>
-            </div>
-            <p className="mt-1 max-w-xl text-sm text-muted">
-              Recently observed client. Streamable HTTP is stateless, so this is a
-              sighting record, not a live session.
-            </p>
-          </header>
+            }
+          />
           <Card>
             <Card.Header>
               <Card.Title>Connection</Card.Title>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { statusTone } from "@/web/components/ui/status-tone";
 import { useApiData } from "@/web/hooks/use-api-data";
@@ -36,19 +37,15 @@ export function McpServerDetail({ serverId }: { serverId: string }) {
         </Card>
       ) : (
         <>
-          <header>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-mono text-2xl font-semibold tracking-tight sm:text-3xl">
-                {server.name}
-              </h1>
+          <PageHeader
+            title={<span className="font-mono">{server.name}</span>}
+            description={`v${server.version} · ${server.transports.join(" + ")}`}
+            badge={
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${statusTone(server.status)}`}>
                 {server.status}
               </span>
-            </div>
-            <p className="mt-1 max-w-xl text-sm text-muted">
-              v{server.version} · {server.transports.join(" + ")}
-            </p>
-          </header>
+            }
+          />
           <Card>
             <Card.Header>
               <Card.Title>Capabilities</Card.Title>

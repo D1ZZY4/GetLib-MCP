@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Card } from "@heroui/react";
+import { Card } from "@heroui/react";
+import { LoadError } from "@/web/components/ui/load-error";
 import { AttentionHighlightsPanel } from "./attention-highlights";
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardSkeleton } from "./dashboard-skeleton";
@@ -30,17 +31,7 @@ export function DashboardPage() {
   if (error !== null || dashboard === null) {
     return (
       <PageContainer>
-        <Card>
-          <Card.Header>
-            <Card.Title>Dashboard unavailable</Card.Title>
-            <Card.Description>{error ?? "We could not load the dashboard."}</Card.Description>
-          </Card.Header>
-          <Card.Footer>
-            <Button variant="secondary" onPress={retry}>
-              Retry
-            </Button>
-          </Card.Footer>
-        </Card>
+        <LoadError message={error ?? "We could not load the dashboard."} onRetry={retry} />
       </PageContainer>
     );
   }

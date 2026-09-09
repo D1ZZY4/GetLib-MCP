@@ -34,9 +34,12 @@ export function useApiData<T>(
   loadRef.current = load;
   const dataRef = useRef<T | null>(null);
   dataRef.current = data;
+  const seqRef = useRef(0);
   const refreshIntervalMs = options?.refreshIntervalMs;
 
   useEffect(() => {
+    const seq = seqRef.current + 1;
+    seqRef.current = seq;
     let cancelled = false;
     // Only the very first attempt shows the skeleton. Background refreshes
     // swap data in place so live views never flicker.
@@ -48,7 +51,9 @@ export function useApiData<T>(
     loadRef
       .current()
       .then((result) => {
-        if (!cancelled) {
+        // Stale-wins guard: a slow earlier poll resolving after a newer one
+        // must not overwrite fresher data.
+        if (!cancelled && seqRef.current === seq) {
           setData(result);
           setError(null);
         }
@@ -61,7 +66,7 @@ export function useApiData<T>(
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && seqRef.current === seq) setLoading(false);
       });
     return () => {
       cancelled = true;

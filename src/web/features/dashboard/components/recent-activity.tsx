@@ -25,6 +25,7 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
           <p className="text-sm text-muted">No activity yet. Resolve a library or run a tool and recent operations will appear here.</p>
         ) : (
           <ol className="relative flex flex-col gap-4 pl-5" aria-label="Recent activity items">
+            {/* Rail centered under the 11px dots: (11px dot - 1px rail) / 2 = 5px offset. */}
             <span
               aria-hidden="true"
               className="absolute top-2 bottom-2 left-[5px] w-px bg-border"

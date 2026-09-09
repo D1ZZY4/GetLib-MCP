@@ -90,6 +90,13 @@ export function InstallAssistant() {
     return (
       <PageContainer>
         <PageHeader title="Install to your AI agents" description="No AI agents configured yet." />
+        <Card>
+          <Card.Content>
+            <p className="text-sm text-muted">
+              The install catalog is empty. Restart the server to reload assistant definitions.
+            </p>
+          </Card.Content>
+        </Card>
       </PageContainer>
     );
   }

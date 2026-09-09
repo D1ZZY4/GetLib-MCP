@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
@@ -32,12 +33,10 @@ export function McpToolDetail({ toolName }: { toolName: string }) {
         </Card>
       ) : (
         <>
-          <header>
-            <h1 className="font-mono text-2xl font-semibold tracking-tight sm:text-3xl">
-              {tool.name}
-            </h1>
-            <p className="mt-1 max-w-xl text-sm text-muted">{tool.description}</p>
-          </header>
+          <PageHeader
+            title={<span className="font-mono">{tool.name}</span>}
+            description={tool.description}
+          />
           <Card>
             <Card.Header>
               <Card.Title>Input contract</Card.Title>

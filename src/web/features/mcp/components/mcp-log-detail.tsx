@@ -3,6 +3,7 @@
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
+import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
@@ -35,11 +36,10 @@ export function McpLogDetail({ requestId }: { requestId: string }) {
         </Card>
       ) : (
         <>
-          <header>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-mono text-2xl font-semibold tracking-tight sm:text-3xl">
-                {entry.name}
-              </h1>
+          <PageHeader
+            title={<span className="font-mono">{entry.name}</span>}
+            description={`${formatLogTime(entry.timestamp)} · ${entry.durationMs}ms${entry.requestId ? ` · request ${entry.requestId}` : ""}`}
+            badge={
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
                   entry.ok ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
@@ -47,12 +47,8 @@ export function McpLogDetail({ requestId }: { requestId: string }) {
               >
                 {entry.ok ? "ok" : "fail"}
               </span>
-            </div>
-            <p className="mt-1 max-w-xl text-sm text-muted">
-              {formatLogTime(entry.timestamp)} · {entry.durationMs}ms
-              {entry.requestId ? ` · request ${entry.requestId}` : ""}
-            </p>
-          </header>
+            }
+          />
           <Card>
             <Card.Header>
               <Card.Title>Execution</Card.Title>

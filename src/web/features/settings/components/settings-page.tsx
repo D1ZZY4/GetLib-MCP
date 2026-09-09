@@ -78,17 +78,7 @@ export function SettingsPage() {
           <Skeleton className="h-32 rounded-xl" />
         </div>
       ) : error !== null || runtime === null ? (
-        <Card>
-          <Card.Header>
-            <Card.Title>Settings unavailable</Card.Title>
-            <Card.Description>{error ?? "We could not load settings."}</Card.Description>
-          </Card.Header>
-          <Card.Footer>
-            <Button variant="secondary" onPress={retry}>
-              Retry
-            </Button>
-          </Card.Footer>
-        </Card>
+        <LoadError message={error ?? "We could not load settings."} onRetry={retry} />
       ) : (
         <>
           {tab === "profile" ? (

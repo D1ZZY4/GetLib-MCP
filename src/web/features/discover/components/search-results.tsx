@@ -2,13 +2,8 @@
 
 import Link from "next/link";
 import { Card } from "@heroui/react";
+import { verdictTone } from "@/web/components/ui/verdict-tone";
 import type { DiscoverResult } from "../services/discover.service";
-
-const VERDICT_TONE: Record<DiscoverResult["evidence"]["verdict"], string> = {
-  strong: "bg-success/10 text-success",
-  weak: "bg-warning/10 text-warning",
-  miss: "bg-danger/10 text-danger",
-};
 
 const VERDICT_LABEL: Record<DiscoverResult["evidence"]["verdict"], string> = {
   strong: "Strong evidence",
@@ -40,7 +35,7 @@ export function SearchResults({ result }: { result: DiscoverResult }) {
           &ldquo;{result.query}&rdquo;
         </p>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${VERDICT_TONE[result.evidence.verdict]}`}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${verdictTone(result.evidence.verdict)}`}
         >
           {VERDICT_LABEL[result.evidence.verdict]}
         </span>
