@@ -75,6 +75,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In-memory sliding-window rate limiter with strict, execution,
   and read tiers plus tests for budget, expiry, and scope
   isolation.
+- Stateless HMAC session tokens over cookie or bearer header with
+  an authorization boundary, sign-out endpoint, and session plus
+  bootstrap lifecycle tests.
 
 ### Changed
 
@@ -123,6 +126,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   production and warns in development.
 - Redact sensitive log fields and bearer credentials before either
   log format renders, in both JSON and text output.
+- Issue a session cookie on sign-in behind the strict rate limit;
+  the persisted bootstrap record is authoritative for identity so
+  credential rotation clears the warning, and public auth config
+  no longer carries a display name.
 
 ## [0.1.0] - 2026-09-08
 

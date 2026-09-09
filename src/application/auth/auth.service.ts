@@ -9,13 +9,13 @@ import {
 import { getDatabase } from "@/server/mcp/infrastructure/database";
 import { config } from "@/server/mcp/config";
 import { detectEnvironment, resolveDatabaseMode } from "@/server/mcp/runtime";
+import { log } from "@/server/mcp/utils/logger";
 
 export interface AuthConfigSnapshot {
   enabled: boolean;
   fallbackActive: boolean;
   environment: "development" | "production";
   databaseMode: string;
-  displayName: string | null;
 }
 
 export interface BootstrapStatus {
@@ -28,11 +28,11 @@ export interface BootstrapStatus {
 let bootstrapCache: BootstrapStatus | null = null;
 
 /**
- * Public auth configuration. Never includes the default account name or
- * password - those stay server-side and are only used by verifyCredentials.
+ * Public auth configuration. Never includes account names or passwords -
+ * those stay server-side and are only used by verifyCredentials. Identity
+ * display comes from the client session, never from this payload.
  * fallbackActive drives the dashboard warning that default credentials
- * must be rotated. displayName is the configured identity for the current
- * context (null when auth is disabled and no session exists).
+ * must be rotated.
  */
 export function getAuthConfig(): AuthConfigSnapshot {
   const environment = detectEnvironment();
@@ -46,7 +46,6 @@ export function getAuthConfig(): AuthConfigSnapshot {
     fallbackActive: bootstrap.isFallback,
     environment,
     databaseMode,
-    displayName: config.authEnabled ? bootstrap.account : null,
   };
 }
 
@@ -88,6 +87,12 @@ export function displayNameForEmail(email: string): string {
  * Idempotent bootstrap initialization. Runs once per process (not per
  * request) and persists the bootstrap record through the database
  * boundary when available. Duplicate calls return the cached status.
+ *
+ * The persisted record is authoritative for the account identity: when the
+ * configured env credentials differ from the stored row (operator rotated
+ * credentials and restarted), the row is updated and credentialsChanged is
+ * set so the dashboard warning clears. A failed write throws in production
+ * (fail fast at startup) and falls back to memory in development.
  */
 export async function ensureBootstrapAccount(): Promise<BootstrapStatus> {
   if (bootstrapCache) return bootstrapCache;
@@ -96,16 +101,10 @@ export async function ensureBootstrapAccount(): Promise<BootstrapStatus> {
     password: config.defaultPass,
   });
   const now = new Date().toISOString();
-  const status: BootstrapStatus = {
-    account: bootstrap.account,
-    isFallback: bootstrap.isFallback,
-    credentialsChanged: false,
-    initializedAt: now,
-  };
   try {
     const db = getDatabase();
     const stored = await db.getBootstrap();
-    if (stored) {
+    if (stored && stored.account === bootstrap.account) {
       bootstrapCache = {
         account: stored.account,
         isFallback: bootstrap.isFallback,
@@ -116,13 +115,22 @@ export async function ensureBootstrapAccount(): Promise<BootstrapStatus> {
     }
     await db.saveBootstrap({
       account: bootstrap.account,
-      credentialsChanged: false,
+      credentialsChanged: !bootstrap.isFallback,
       updatedAt: now,
     });
-  } catch {
-    // Persistence is best-effort; the in-memory status still applies.
+  } catch (error) {
+    if (detectEnvironment() === "production") {
+      throw error;
+    }
+    // Development best-effort: the in-memory status still applies.
+    log({ level: "warn", msg: "auth.bootstrap.persist-failed", error: String(error) });
   }
-  bootstrapCache = status;
+  bootstrapCache = {
+    account: bootstrap.account,
+    isFallback: bootstrap.isFallback,
+    credentialsChanged: !bootstrap.isFallback,
+    initializedAt: now,
+  };
   return bootstrapCache;
 }
 

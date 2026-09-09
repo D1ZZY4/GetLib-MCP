@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { verifyCredentials } from "@/application/auth/auth.service";
+import {
+  SESSION_COOKIE,
+  createSessionToken,
+  sessionCookieAttributes,
+} from "@/application/auth/session";
+import { checkRateLimit, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
 import { jsonError, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const SigninBody = z.object({
@@ -10,6 +16,7 @@ const SigninBody = z.object({
 export async function POST(req: Request) {
   const id = requestId();
   try {
+    checkRateLimit(req, "management/auth/signin", STRICT_TIER);
     const { email, password } = SigninBody.parse(await readJsonBody(req));
     if (!verifyCredentials(email, password)) {
       // Neutral on purpose: never reveal whether the email or the
@@ -17,7 +24,12 @@ export async function POST(req: Request) {
       return jsonError("unauthorized", "Those credentials don't match. Try again.", 401, id);
     }
     const name = email.split("@")[0] || "user";
-    return jsonOk({ ok: true, name, email: email.trim() });
+    const response = jsonOk({ ok: true, name, email: email.trim() }, id);
+    response.headers.set(
+      "Set-Cookie",
+      `${SESSION_COOKIE}=${encodeURIComponent(createSessionToken(email.trim()))}; ${sessionCookieAttributes()}`,
+    );
+    return response;
   } catch (error) {
     return mapRouteError(error, id);
   }
