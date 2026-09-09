@@ -70,6 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain MCP catalog contracts for transport modes and client
   sessions, with catalog tool entries carrying input keys and
   annotations and executions returning request IDs and durations.
+- Logger redaction tests proving sensitive fields and bearer
+  credentials never reach log output in readable form.
 
 ### Changed
 
@@ -116,6 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resolve database mode, load registry, check database health,
   bootstrap account, then ready; bootstrap failure fails fast in
   production and warns in development.
+- Redact sensitive log fields and bearer credentials before either
+  log format renders, in both JSON and text output.
 
 ## [0.1.0] - 2026-09-08
 
