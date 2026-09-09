@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
   getDevelopmentSettings,
+  resetDevelopmentData,
+  seedDevelopmentData,
   updateDatabaseMode,
 } from "../development/development.service";
 import { setDatabaseModeOverride } from "@/server/mcp/runtime";
+import { resetDatabaseCache } from "@/server/mcp/infrastructure/database";
+import { resetBootstrapCache } from "@/application/auth/auth.service";
 
 const KEY = "GET_LIB_MODE";
 
@@ -21,6 +25,8 @@ function withLibMode(value: string | undefined, fn: () => void): void {
 
 afterEach(() => {
   setDatabaseModeOverride(null);
+  resetDatabaseCache();
+  resetBootstrapCache();
 });
 
 describe("development application service", () => {
@@ -55,4 +61,47 @@ describe("development application service", () => {
       expect(getDevelopmentSettings().editable).toBe(false);
     });
   });
+
+  test("seed ensures settings in development", async () => {
+    await withMockModeAsync(async () => {
+      const snapshot = await seedDevelopmentData();
+      expect(snapshot.editable).toBe(true);
+    });
+  });
+
+  test("reset reseeds in development and rejects in production", async () => {
+    await withMockModeAsync(async () => {
+      const snapshot = await resetDevelopmentData();
+      expect(snapshot.editable).toBe(true);
+    });
+    await withLibModeAsync("production", async () => {
+      await expect(seedDevelopmentData()).rejects.toThrow();
+      await expect(resetDevelopmentData()).rejects.toThrow();
+    });
+  });
 });
+
+async function withLibModeAsync(value: string | undefined, fn: () => Promise<void>): Promise<void> {
+  const prev = process.env[KEY];
+  try {
+    if (value === undefined) delete process.env[KEY];
+    else process.env[KEY] = value;
+    await fn();
+  } finally {
+    if (prev === undefined) delete process.env[KEY];
+    else process.env[KEY] = prev;
+  }
+}
+
+// Mock-repository contract regardless of the local .env database mode:
+// resolveDatabaseMode() reads the environment live on every call.
+async function withMockModeAsync(fn: () => Promise<void>): Promise<void> {
+  const prev = process.env.GETLIB_DATABASE_MODE;
+  try {
+    delete process.env.GETLIB_DATABASE_MODE;
+    await withLibModeAsync("development", fn);
+  } finally {
+    if (prev === undefined) delete process.env.GETLIB_DATABASE_MODE;
+    else process.env.GETLIB_DATABASE_MODE = prev;
+  }
+}

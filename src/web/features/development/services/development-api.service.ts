@@ -1,4 +1,4 @@
-import { fetchJson, putJson } from "@/web/lib/api-client";
+import { fetchJson, postJson, putJson } from "@/web/lib/api-client";
 
 export type DatabaseModeOption = "mock" | "supabase";
 
@@ -18,4 +18,12 @@ export function fetchDevelopmentSettings(): Promise<DevelopmentSettings> {
 
 export function updateDatabaseMode(mode: DatabaseModeOption | null): Promise<DevelopmentSettings> {
   return putJson<DevelopmentSettings>("/api/management/development", { mode });
+}
+
+export function seedDevelopmentData(): Promise<DevelopmentSettings> {
+  return postJson<DevelopmentSettings>("/api/management/development/seed", {});
+}
+
+export function resetDevelopmentData(): Promise<DevelopmentSettings> {
+  return postJson<DevelopmentSettings>("/api/management/development/reset", {});
 }

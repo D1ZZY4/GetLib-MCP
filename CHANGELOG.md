@@ -78,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stateless HMAC session tokens over cookie or bearer header with
   an authorization boundary, sign-out endpoint, and session plus
   bootstrap lifecycle tests.
+- Development seed and reset endpoints with page controls and
+  lifecycle tests; production always rejects both.
 
 ### Changed
 
@@ -130,6 +132,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the persisted bootstrap record is authoritative for identity so
   credential rotation clears the warning, and public auth config
   no longer carries a display name.
+- Require auth and rate limits on the development settings routes;
+  the Development page gains seed/reset actions and drops the
+  notification demo block.
 
 ## [0.1.0] - 2026-09-08
 

@@ -4,10 +4,11 @@ import { useState } from "react";
 import { Button, Card, Skeleton } from "@heroui/react";
 import { PageContainer } from "../../../components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
-import { NotificationTriggers } from "@/web/components/feedback/notification-triggers";
 import { fetchRuntimeInfo } from "@/web/features/settings/services/runtime-api.service";
 import {
   fetchDevelopmentSettings,
+  resetDevelopmentData,
+  seedDevelopmentData,
   updateDatabaseMode,
   type DatabaseModeOption,
 } from "../services/development-api.service";
@@ -28,7 +29,7 @@ function isActiveMode(settings: { databaseMode: string }, mode: DatabaseModeOpti
 }
 
 /**
- * Developments page - development runtime controls.
+ * Development page - development runtime controls.
  * Development-only surface: in production it renders an unavailable notice
  * instead of any runtime controls, and the sidebar link stays hidden.
  * Database-mode switches apply immediately to the running server process;
@@ -50,15 +51,16 @@ export function DevelopmentsPage() {
     fetchDevelopmentSettings,
     "We couldn't load development settings. Try again in a moment.",
   );
-  const [saving, setSaving] = useState<DatabaseModeOption | "reset" | null>(null);
+  const [saving, setSaving] = useState<DatabaseModeOption | "env-reset" | "seed" | "data-reset" | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lifecycleDone, setLifecycleDone] = useState<string | null>(null);
 
   const loading = runtimeLoading || settingsLoading;
   const error = runtimeError ?? settingsError;
   const failed = runtime === null || settings === null;
 
   async function applyMode(mode: DatabaseModeOption | null) {
-    setSaving(mode === null ? "reset" : mode);
+    setSaving(mode === null ? "env-reset" : mode);
     setSaveError(null);
     try {
       await updateDatabaseMode(mode);
@@ -71,10 +73,31 @@ export function DevelopmentsPage() {
     }
   }
 
+  async function applyLifecycle(action: "seed" | "reset") {
+    setSaving(action === "seed" ? "seed" : "data-reset");
+    setSaveError(null);
+    setLifecycleDone(null);
+    try {
+      if (action === "seed") {
+        await seedDevelopmentData();
+        setLifecycleDone("Seeded development data.");
+      } else {
+        await resetDevelopmentData();
+        setLifecycleDone("Reset development data and reseeded.");
+      }
+      retrySettings();
+      retryRuntime();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Couldn't update development data. Try again.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
   return (
     <PageContainer>
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Developments</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Development</h1>
         <p className="mt-1 max-w-xl text-sm text-muted">
           Development runtime behavior and diagnostics. Available in development only.
         </p>
@@ -196,7 +219,41 @@ export function DevelopmentsPage() {
               ) : null}
             </Card.Content>
           </Card>
-          <NotificationTriggers />
+          <Card>
+            <Card.Header>
+              <Card.Title>Seed and reset</Card.Title>
+              <Card.Description>
+                Development data lifecycle. Seeding ensures the bootstrap record exists;
+                reset clears in-memory mock data and reseeds. Real database modes are
+                never wiped.
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isDisabled={saving !== null}
+                  onPress={() => void applyLifecycle("seed")}
+                >
+                  {saving === "seed" ? "Seeding..." : "Seed data"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isDisabled={saving !== null}
+                  onPress={() => void applyLifecycle("reset")}
+                >
+                  {saving === "data-reset" ? "Resetting..." : "Reset data"}
+                </Button>
+              </div>
+              {lifecycleDone !== null ? (
+                <p role="status" className="mt-3 text-sm text-muted">
+                  {lifecycleDone}
+                </p>
+              ) : null}
+            </Card.Content>
+          </Card>
           <Card>
             <Card.Header>
               <Card.Title>Environment</Card.Title>

@@ -6,6 +6,8 @@ import {
   type DatabaseMode,
   type DatabaseModeSelection,
 } from "@/server/mcp/runtime";
+import { ensureBootstrapAccount, resetBootstrapCache } from "@/application/auth/auth.service";
+import { resetDatabaseCache } from "@/server/mcp/infrastructure/database";
 
 export class DevelopmentForbiddenError extends Error {
   constructor(message = "Development settings cannot be changed in production.") {
@@ -53,5 +55,34 @@ export function updateDatabaseMode(mode: DatabaseModeSelection | null): Developm
     throw new DevelopmentForbiddenError();
   }
   setDatabaseModeOverride(mode);
+  return getDevelopmentSettings();
+}
+
+function requireDevelopment(): void {
+  if (detectEnvironment() === "production") {
+    throw new DevelopmentForbiddenError("Seed and reset are development-only.");
+  }
+}
+
+/**
+ * Seed development state: idempotently ensures the bootstrap record
+ * exists. Safe to call repeatedly. Production always rejects.
+ */
+export async function seedDevelopmentData(): Promise<DevelopmentSettingsSnapshot> {
+  requireDevelopment();
+  await ensureBootstrapAccount();
+  return getDevelopmentSettings();
+}
+
+/**
+ * Reset development state: clears in-memory mock data and reseeds the
+ * bootstrap record. Real database modes are never wiped - only the
+ * bootstrap record is re-ensured. Production always rejects.
+ */
+export async function resetDevelopmentData(): Promise<DevelopmentSettingsSnapshot> {
+  requireDevelopment();
+  resetDatabaseCache();
+  resetBootstrapCache();
+  await ensureBootstrapAccount();
   return getDevelopmentSettings();
 }
