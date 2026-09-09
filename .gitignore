@@ -126,6 +126,11 @@ profile.txt
 /gpg-key-backup/
 
 # ============================================================
+# Attached assets (root-only, user uploads, never commit)
+# ============================================================
+/attached_assets/
+
+# ============================================================
 # NOTE — intentionally COMMITTED, do NOT add ignore rules for:
 #   bun.lock            canonical lockfile (reproducible installs)
 #   .agents/            shared agent rules & skills
