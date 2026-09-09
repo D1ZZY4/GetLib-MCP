@@ -6,20 +6,22 @@ import {
   listMcpLogs,
   parseLogLimit,
 } from "../mcp/mcp-catalog.service";
-import { TOOL_COUNT } from "@/server/mcp/constants";
 
 describe("mcp catalog application service", () => {
   test("catalog exposes tools, resources, and prompts", () => {
     const catalog = getMcpCatalog();
-    expect(catalog.tools).toHaveLength(TOOL_COUNT);
+    expect(catalog.tools.length).toBeGreaterThan(0);
     expect(catalog.resources.length).toBeGreaterThan(0);
     expect(catalog.prompts.length).toBeGreaterThan(0);
   });
 
   test("servers snapshot carries canonical counts", () => {
+    const catalog = getMcpCatalog();
     const snapshot = getMcpServers();
     expect(snapshot.servers).toHaveLength(1);
-    expect(snapshot.servers[0]?.counts.tools).toBe(TOOL_COUNT);
+    expect(snapshot.servers[0]?.counts.tools).toBe(catalog.tools.length);
+    expect(snapshot.servers[0]?.counts.resources).toBe(catalog.resources.length);
+    expect(snapshot.servers[0]?.counts.prompts).toBe(catalog.prompts.length);
   });
 
   test("executeTool rejects unknown tools with 404 semantics", async () => {

@@ -4,10 +4,23 @@ import { listPrompts } from "@/server/mcp/registry/prompt-registry";
 import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
 import { listResources } from "@/server/mcp/registry/resource-registry";
 import { getTool, listTools, runTool } from "@/server/mcp/registry/tool-registry";
-import { transportModeIds, type TransportModeId } from "@/server/mcp/transport/modes";
+import type { GlToolAnnotations } from "@/server/mcp/registry/tool-registry";
+import { transportModeIds, type TransportModeId } from "@/domain/mcp/catalog";
+
+export interface McpToolInputKey {
+  key: string;
+  description: string | null;
+}
+
+export interface McpCatalogToolEntry {
+  name: string;
+  description: string;
+  inputKeys: McpToolInputKey[];
+  annotations?: GlToolAnnotations;
+}
 
 export interface McpCatalogSnapshot {
-  tools: Array<{ name: string; description: string }>;
+  tools: McpCatalogToolEntry[];
   resources: Array<{ name: string; uri: string; description: string }>;
   prompts: Array<{ name: string; description: string }>;
 }
@@ -31,10 +44,32 @@ function ensureLoaded(): void {
   ensureRegistryLoaded();
 }
 
+function describeInputKey(schema: unknown): string | null {
+  if (typeof schema !== "object" || schema === null) return null;
+  const description = (schema as { description?: unknown }).description;
+  return typeof description === "string" && description.length > 0 ? description : null;
+}
+
+function inputKeysOf(inputSchema: Record<string, object> | undefined): McpToolInputKey[] {
+  if (!inputSchema) return [];
+  return Object.entries(inputSchema).map(([key, schema]) => ({
+    key,
+    description: describeInputKey(schema),
+  }));
+}
+
 export function getMcpCatalog(): McpCatalogSnapshot {
   ensureLoaded();
   return {
-    tools: listTools(),
+    tools: listTools().map(({ name, description }) => {
+      const def = getTool(name);
+      return {
+        name,
+        description,
+        inputKeys: inputKeysOf(def?.inputSchema),
+        ...(def?.annotations ? { annotations: def.annotations } : {}),
+      };
+    }),
     resources: listResources(),
     prompts: listPrompts(),
   };
@@ -90,10 +125,22 @@ export class ToolNameValidationError extends Error {
   }
 }
 
-export async function executeTool(name: string, args: unknown): Promise<{ tool: string; result: unknown }> {
+export interface ToolExecution {
+  tool: string;
+  result: unknown;
+  requestId: string;
+  durationMs: number;
+}
+
+export async function executeTool(
+  name: string,
+  args: unknown,
+  requestId?: string,
+): Promise<ToolExecution> {
   validateToolName(name);
-  const result = await runTool(name, args);
-  return { tool: name, result };
+  const started = Date.now();
+  const result = await runTool(name, args, requestId);
+  return { tool: name, result, requestId: requestId ?? "", durationMs: Date.now() - started };
 }
 
 const DEFAULT_LOG_LIMIT = 50;

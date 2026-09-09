@@ -67,6 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GETLIB_DEFAULT_ACCOUNT`, and `GETLIB_DEFAULT_PASS` spelling.
 - Database production-guard test proving production never resolves
   the mock repository.
+- Domain MCP catalog contracts for transport modes and client
+  sessions, with catalog tool entries carrying input keys and
+  annotations and executions returning request IDs and durations.
 
 ### Changed
 
@@ -105,6 +108,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Derive MCP tool counts from the registry instead of a duplicated
   `TOOL_COUNT` constant; server instructions take the count as a
   parameter so counts cannot drift.
+- Move the transport mode registry into the domain catalog with a
+  transport barrel re-export; `runTool` accepts a caller request ID
+  so logs correlate, and catalog tests derive counts from the live
+  catalog instead of a constant.
 
 ## [0.1.0] - 2026-09-08
 

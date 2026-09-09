@@ -43,19 +43,19 @@ export function getTool(name: string): GlToolDef | undefined {
   return tools.get(name);
 }
 
-export async function runTool(name: string, args?: unknown): Promise<unknown> {
+export async function runTool(name: string, args?: unknown, requestId?: string): Promise<unknown> {
   const started = Date.now();
-  const requestId = generateRequestId();
+  const id = requestId ?? generateRequestId();
   try {
     const tool = tools.get(name);
     if (!tool) {
       throw new Error(`Unknown tool: ${name}`);
     }
     const result = await tool.run(args);
-    appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: true, requestId });
+    appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: true, requestId: id });
     return result;
   } catch (error) {
-    appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: false, requestId });
+    appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: false, requestId: id });
     throw error;
   }
 }
