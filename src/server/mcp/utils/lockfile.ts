@@ -97,13 +97,18 @@ export async function detectAllVersions(
   packageNames: string[],
 ): Promise<Map<string, string>> {
   const versions = new Map<string, string>();
-  // Detect all packages in parallel - auto-scan can request 20+ at once, and
-  // each detection independently reads the same lockfiles.
-  const entries = await Promise.all(
-    packageNames.map(async (name) => [name, await detectVersionFromLockfile(projectPath, name)] as const),
-  );
-  for (const [name, v] of entries) {
-    if (v) versions.set(name, v);
+  // Bounded fan-out: each detection independently reads the same lockfiles,
+  // so an unbounded Promise.all over 100+ dependencies would spike to
+  // 700+ parallel reads. Sequential 8-wide batches keep latency close to
+  // parallel while capping file-descriptor pressure.
+  const BATCH = 8;
+  for (let i = 0; i < packageNames.length; i += BATCH) {
+    const entries = await Promise.all(
+      packageNames.slice(i, i + BATCH).map(async (name) => [name, await detectVersionFromLockfile(projectPath, name)] as const),
+    );
+    for (const [name, v] of entries) {
+      if (v) versions.set(name, v);
+    }
   }
   return versions;
 }

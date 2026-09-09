@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unit-testable without a database.
 - Centralize the evidence verdict tone mapping used by
   discovery surfaces.
+- Cap lockfile detection fan-out to bounded batches so large
+  projects cannot spike file-descriptor pressure.
 
 ### Changed
 
