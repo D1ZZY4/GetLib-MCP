@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+</details>
+
+## [1.1.4] - 2026-09-09
+
+<details>
+<summary>1.1.4 changes (click to expand)</summary>
+
 ### Fixed
 
 - Reject whitespace-only tool inputs with clean validation errors
