@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<details open>
+<summary>Unreleased changes (click to collapse)</summary>
+
 ### Added
 
 - SSE transport for the MCP server, served at `/api/mcp/sse`,
@@ -188,7 +191,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extend the SSE function timeout and send baseline security
   headers on every response.
 
+</details>
+
 ## [0.1.0] - 2026-09-08
+
+<details>
+<summary>0.1.0 changes (click to expand)</summary>
 
 Initial release.
 
@@ -201,3 +209,5 @@ Initial release.
   Streamable HTTP and stdio.
 - Dashboard routes for discover, install, sources, statistics,
   and the MCP control center.
+
+</details>
