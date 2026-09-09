@@ -27,10 +27,16 @@
   --z-toast: 70;
 }
 
-/* Global accessibility defaults (theme-agnostic) */
-:focus-visible {
-  outline: 2px solid var(--focus, var(--accent));
-  outline-offset: 2px;
+/* Global accessibility defaults (theme-agnostic).
+ * Inside @layer base so per-component utilities (e.g. outline-none on
+ * inputs wrapped in a focus-within highlight box) can still opt out.
+ * Unlayered author CSS would beat every utility and cause double
+ * focus rings - one on the input, one on its wrapper. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus, var(--accent));
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -252,6 +252,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   registry only on explicit call.
 - Guard the audit file walk, drop tool barrel re-exports, and
   load the registry explicitly in tests.
+- Scope the global focus outline to the base layer so wrapped
+  inputs can opt out without double rings.
 
 ### Removed
 
