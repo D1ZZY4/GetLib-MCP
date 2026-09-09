@@ -55,7 +55,3 @@ export function ensureRegistryLoaded(): void {
   registerComparePrompts();
   loaded = true;
 }
-
-export function isRegistryLoaded(): boolean {
-  return loaded;
-}

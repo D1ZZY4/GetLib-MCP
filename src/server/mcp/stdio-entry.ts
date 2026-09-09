@@ -24,6 +24,8 @@ async function main(): Promise<void> {
         name: SERVER_NAME,
         version: SERVER_VERSION,
         tools: listTools().length,
+        resources: listResources().length,
+        prompts: listPrompts().length,
         registryEntries: LIBRARY_REGISTRY.length,
         node: process.version,
       }),
