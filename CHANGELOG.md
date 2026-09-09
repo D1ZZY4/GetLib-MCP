@@ -208,6 +208,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Harden the toolchain: stricter TypeScript flags, frozen
   lockfile installs, pinned bun manager, dropped shadcn dev
   dependency, and production build inside validation.
+- Collapse the token file to layering plus a11y defaults on the
+  Tailwind scale, drop the unused container variant and demo
+  components, and use scale sizes in the shell.
 - Require the session secret in production with auth enabled,
   fail startup on invalid production database policy, log
   unconfigured persistence loudly, share Supabase key lists

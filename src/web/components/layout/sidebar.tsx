@@ -17,7 +17,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-surface px-4 py-5 transition-[width] lg:flex ${
-        collapsed ? "w-[76px] items-center" : "w-64"
+        collapsed ? "w-19 items-center" : "w-64"
       }`}
     >
       <div className={`flex items-center gap-2.5 ${collapsed ? "" : "px-2"}`}>
@@ -30,7 +30,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {!collapsed && (
           <div className="leading-tight">
             <p className="text-sm font-semibold">GetLib MCP</p>
-            <p className="font-mono text-[11px] text-muted tabular-nums">v0.1.0</p>
+            <p className="font-mono text-xs text-muted tabular-nums">v0.1.0</p>
           </div>
         )}
       </div>

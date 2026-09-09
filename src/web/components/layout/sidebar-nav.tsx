@@ -131,7 +131,7 @@ function DrillDownItem({
                 href={child.href}
                 onClick={onNavigate}
                 aria-current={isChildActive(child) ? "page" : undefined}
-                className={`${linkClasses(false)} py-1.5 pl-10 text-[13px]`}
+                className={`${linkClasses(false)} py-1.5 pl-10 text-sm`}
               >
                 {child.label}
               </Link>
@@ -158,7 +158,7 @@ export function SidebarNav({
       {SIDEBAR_GROUPS.map((group) => (
         <div key={group.label}>
           {!collapsed && (
-            <p className="px-3 pb-1.5 text-[11px] font-semibold tracking-widest text-muted uppercase">
+            <p className="px-3 pb-1.5 text-xs font-semibold tracking-widest text-muted uppercase">
               {group.label}
             </p>
           )}
