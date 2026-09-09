@@ -2,13 +2,8 @@
 
 import { Card } from "@heroui/react";
 import { formatLogTime } from "@/web/lib/format";
+import { statusTone } from "@/web/components/ui/status-tone";
 import type { DashboardSnapshot } from "../services/dashboard-api.service";
-
-function statusTone(status: string): string {
-  if (status === "healthy") return "bg-success/10 text-success";
-  if (status === "degraded") return "bg-warning/10 text-warning";
-  return "bg-danger/10 text-danger";
-}
 
 export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot }) {
   const items = [

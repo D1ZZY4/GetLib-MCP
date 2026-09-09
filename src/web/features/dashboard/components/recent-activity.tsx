@@ -36,7 +36,10 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
                   className={`absolute top-1.5 -left-5 size-[11px] rounded-full border-2 border-surface ${KIND_TONE[activity.kind]}`}
                 />
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-sm font-medium">{activity.title}</p>
+                  <p className="text-sm font-medium">
+                    <span className="sr-only">{activity.kind}: </span>
+                    {activity.title}
+                  </p>
                   <time dateTime={activity.timestamp} className="shrink-0 text-xs text-muted tabular-nums">
                     {formatActivityTime(activity.timestamp)}
                   </time>

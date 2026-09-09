@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { LoadError } from "@/web/components/ui/load-error";
 import { rankLibraryFetches, type StatisticsSnapshot } from "@/web/features/statistics/services/statistics-api.service";
 import { ArrowRightIcon } from "../../../components/ui/icons";
 import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/features/statistics/components/chart-theme";
@@ -24,7 +25,7 @@ interface OverviewProps {
 }
 
 export function Overview({ stats, loading, error, retry }: OverviewProps) {
-  if (loading || stats === null) {
+  if (loading) {
     return (
       <Card aria-label="Overview">
         <Card.Header>
@@ -38,7 +39,7 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
     );
   }
 
-  if (error !== null) {
+  if (error !== null || stats === null) {
     return (
       <Card aria-label="Overview">
         <Card.Header>
@@ -46,14 +47,23 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
           <Card.Description>Request activity and top fetches.</Card.Description>
         </Card.Header>
         <Card.Content>
-          <div className="flex flex-col items-start gap-2">
-            <p role="alert" className="text-sm text-danger">
-              {error}
-            </p>
-            <button type="button" onClick={retry} className="text-sm font-medium text-accent underline">
-              Retry
-            </button>
-          </div>
+          <LoadError message={error ?? "We could not load overview statistics."} onRetry={retry} />
+        </Card.Content>
+      </Card>
+    );
+  }
+
+  if (stats.days.length === 0 && stats.fetches.length === 0) {
+    return (
+      <Card aria-label="Overview">
+        <Card.Header>
+          <Card.Title>Overview</Card.Title>
+          <Card.Description>Request activity and top fetches.</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <p className="text-sm text-muted">
+            No usage recorded yet. Run a search or call a tool to populate this overview.
+          </p>
         </Card.Content>
       </Card>
     );
@@ -125,7 +135,10 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
           ))}
         </div>
         <ol className="mt-4 flex flex-col gap-3" aria-label="Top fetched libraries">
-          {topFetches.map((entry, index) => (
+          {topFetches.length === 0 ? (
+            <li className="text-sm text-muted">No library fetches recorded yet.</li>
+          ) : (
+            topFetches.map((entry, index) => (
             <li key={entry.id}>
               <div className="flex items-baseline justify-between gap-2">
                 <p className="truncate text-sm font-medium">
@@ -148,7 +161,8 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
                 />
               </div>
             </li>
-          ))}
+            ))
+          )}
         </ol>
       </Card.Content>
       <Card.Footer>
