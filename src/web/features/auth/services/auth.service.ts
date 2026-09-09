@@ -1,4 +1,4 @@
-import type { MockSession } from "../../../types/library";
+import type { MockSession } from "@/web/types/library";
 
 /**
  * Development demo identity for auth-disabled and mock flows.

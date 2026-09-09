@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@heroui/react";
-import { ActivityIcon, BoltIcon, SearchIcon } from "../../../components/ui/icons";
+import { ActivityIcon, BoltIcon, SearchIcon } from "@/web/components/ui/icons";
 
 const QUICK_ACTIONS = [
   {

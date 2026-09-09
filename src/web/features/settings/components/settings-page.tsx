@@ -5,7 +5,7 @@ import { Button, Card, Skeleton } from "@heroui/react";
 import { useSearchParams } from "next/navigation";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "../services/runtime-api.service";
 import { fetchSettings } from "../services/settings-api.service";

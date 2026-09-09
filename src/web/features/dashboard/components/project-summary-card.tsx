@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@heroui/react";
-import type { MockLibrary } from "../../../types/library";
-import { ArrowRightIcon } from "../../../components/ui/icons";
+import type { MockLibrary } from "@/web/types/library";
+import { ArrowRightIcon } from "@/web/components/ui/icons";
 
 interface ProjectSummaryCardProps {
   libraries: MockLibrary[];

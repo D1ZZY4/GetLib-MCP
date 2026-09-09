@@ -3,7 +3,7 @@
 import { Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { DocsShareChart } from "./docs-share-chart";
 import { FetchRadial } from "./fetch-radial";
 import { FetchRanking } from "./fetch-ranking";

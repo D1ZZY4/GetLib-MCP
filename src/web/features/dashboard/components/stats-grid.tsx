@@ -1,6 +1,6 @@
 import { Card } from "@heroui/react";
-import type { DashboardStats } from "../../../types/library";
-import { AlertIcon, CheckIcon, LibraryIcon, ActivityIcon } from "../../../components/ui/icons";
+import type { DashboardStats } from "@/web/types/library";
+import { AlertIcon, CheckIcon, LibraryIcon, ActivityIcon } from "@/web/components/ui/icons";
 
 interface StatsRowProps {
   stats: DashboardStats;

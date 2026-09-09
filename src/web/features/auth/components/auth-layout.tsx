@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckIcon } from "../../../components/ui/icons";
+import { CheckIcon } from "@/web/components/ui/icons";
 
 const HIGHLIGHTS = [
   "Resolve any library to version-accurate docs",

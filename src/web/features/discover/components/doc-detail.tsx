@@ -5,10 +5,10 @@ import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { verdictTone } from "@/web/components/ui/verdict-tone";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchDocDetail } from "../services/discover.service";
-import { ArrowRightIcon } from "../../../components/ui/icons";
+import { ArrowRightIcon } from "@/web/components/ui/icons";
 
 const LOAD_ERROR = "We couldn't load this document. Try again in a moment.";
 

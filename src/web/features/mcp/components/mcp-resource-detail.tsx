@@ -4,7 +4,7 @@ import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
 export function McpResourceDetail({ resourceId }: { resourceId: string }) {

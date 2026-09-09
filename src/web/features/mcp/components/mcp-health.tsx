@@ -3,7 +3,7 @@
 import { Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { statusTone } from "@/web/components/ui/status-tone";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";

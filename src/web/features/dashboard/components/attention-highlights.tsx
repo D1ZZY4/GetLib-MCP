@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card } from "@heroui/react";
-import type { MockAttention } from "../../../types/library";
-import { ArrowRightIcon } from "../../../components/ui/icons";
+import type { MockAttention } from "@/web/types/library";
+import { ArrowRightIcon } from "@/web/components/ui/icons";
 
 interface AttentionHighlightsPanelProps {
   items: MockAttention[];

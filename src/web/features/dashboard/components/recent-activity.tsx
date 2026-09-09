@@ -1,6 +1,6 @@
 import { Card } from "@heroui/react";
 import { formatActivityTime } from "@/web/lib/format";
-import type { MockActivity } from "../../../types/library";
+import type { MockActivity } from "@/web/types/library";
 
 interface RecentActivityListProps {
   activities: MockActivity[];

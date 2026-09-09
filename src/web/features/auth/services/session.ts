@@ -1,4 +1,4 @@
-import type { MockSession } from "../../../types/library";
+import type { MockSession } from "@/web/types/library";
 
 const SESSION_KEY = "getlib-session";
 

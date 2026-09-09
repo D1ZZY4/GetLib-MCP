@@ -6,7 +6,7 @@ import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
 import type { AssistantTransport } from "../services/install-api.service";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 
 function transportLabel(transport: AssistantTransport): string {
   if (transport === "stdio") return "STDIO";

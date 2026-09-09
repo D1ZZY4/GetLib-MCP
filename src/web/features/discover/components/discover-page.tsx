@@ -4,7 +4,7 @@ import { Card } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { DiscoverSkeleton } from "./discover-skeleton";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { SearchField } from "./search-field";
 import { SearchResults } from "./search-results";
 import { useLibrarySearch } from "../hooks/use-library-search";

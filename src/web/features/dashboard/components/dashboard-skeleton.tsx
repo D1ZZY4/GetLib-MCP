@@ -1,5 +1,5 @@
 import { Card, Skeleton } from "@heroui/react";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 
 function StatCardSkeleton() {
   return (

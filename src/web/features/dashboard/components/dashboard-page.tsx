@@ -7,7 +7,7 @@ import { DashboardHeader } from "./dashboard-header";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 import { Overview } from "./overview";
 import { FallbackWarning, SystemStatusPanel } from "./system-status";
-import { PageContainer } from "../../../components/layout/page-container";
+import { PageContainer } from "@/web/components/layout/page-container";
 import { ProjectSummaryCard } from "./project-summary-card";
 import { QuickActionsPanel } from "./quick-actions";
 import { RecentActivityList } from "./recent-activity";
