@@ -74,7 +74,10 @@ export async function resolveLibraryUseCase(input: ResolveInput): Promise<Resolv
   const name = input.libraryName.trim();
   const query = input.query;
 
-  if (isExtractionAttempt(name) || (query !== undefined && isExtractionAttempt(query))) {
+  // A blank query is the same as no query - it must not trip the
+  // extraction guard and refuse an otherwise valid lookup.
+  const effectiveQuery = query !== undefined && query.trim().length > 0 ? query : undefined;
+  if (isExtractionAttempt(name) || (effectiveQuery !== undefined && isExtractionAttempt(effectiveQuery))) {
     return {
       response: { content: [{ type: "text", text: EXTRACTION_REFUSAL }] },
       resolved: true,

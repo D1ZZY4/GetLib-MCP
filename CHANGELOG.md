@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   disagreeing with it.
 - Read production logs and dashboard activity from durable
   storage with ring fallback instead of process memory.
+- Treat blank resolve queries as absent so they never trip the
+  extraction guard.
 
 </details>
 
