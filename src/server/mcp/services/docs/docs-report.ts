@@ -1,8 +1,8 @@
-import type { FetchResult } from "../types";
-import { isIndexContent } from "../services/fetcher";
-import { buildEvidenceBlock, buildHonestMiss, extractHeadingOutline, type EvidenceCheck } from "../utils/evidence";
-import { withNotice } from "../utils/guard";
-import { computeQualityScore } from "../utils/quality";
+import type { FetchResult } from "../../types";
+import { isIndexContent } from "../fetcher";
+import { buildEvidenceBlock, buildHonestMiss, extractHeadingOutline, type EvidenceCheck } from "../../utils/evidence";
+import { withNotice } from "../../utils/guard";
+import { computeQualityScore } from "../../utils/quality";
 
 export interface DocsReportInput {
   libraryId: string;

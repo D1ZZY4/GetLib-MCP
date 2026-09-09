@@ -1,7 +1,7 @@
-import type { FetchResult, LibraryEntry } from "../types";
-import { fetchDocs, fetchGitHubContent, fetchAsMarkdownRace } from "../services/fetcher";
-import { deepFetchForTopic, splitTopics } from "../services/deep-fetch";
-import { withNotice } from "../utils/guard";
+import type { FetchResult, LibraryEntry } from "../../types";
+import { fetchDocs, fetchGitHubContent, fetchAsMarkdownRace } from "../fetcher";
+import { deepFetchForTopic, splitTopics } from "../deep-fetch";
+import { withNotice } from "../../utils/guard";
 import { isValidPackageName, type DocsTarget } from "./docs-resolve";
 
 /** README at a version tag, when the library has a GitHub repo. */
@@ -113,13 +113,16 @@ export async function applyTopic(
     return deepFetchForTopic(fetchResult, topic, docsUrl, urlPatterns);
   }
 
+  // Bounded fan-out: each subtopic spawns a full deep-fetch pipeline, so a
+  // crafted 500-char topic ("a and b and c ...") must not multiply into
+  // dozens of parallel pipelines. Four covers genuine multi-part topics.
   const baseCopy: FetchResult = {
     content: fetchResult.content,
     url: fetchResult.url,
     sourceType: fetchResult.sourceType,
   };
   const results = await Promise.all(
-    subtopics.map((st) => deepFetchForTopic(baseCopy, st, docsUrl, urlPatterns)),
+    subtopics.slice(0, 4).map((st) => deepFetchForTopic(baseCopy, st, docsUrl, urlPatterns)),
   );
   const seenUrls = new Set<string>();
   const combined = results

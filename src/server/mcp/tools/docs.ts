@@ -12,7 +12,7 @@ import {
 } from "@/application/library/docs.service";
 
 // Re-exported so the existing test import path stays valid.
-export { isValidPackageName } from "./docs-resolve";
+export { isValidPackageName } from "../services/docs/docs-resolve";
 
 const TIMEOUT_RESPONSE = {
   content: [{ type: "text" as const, text: "Documentation lookup timed out. Retry with a narrower topic or an explicit version." }],

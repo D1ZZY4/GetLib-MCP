@@ -6,9 +6,9 @@ import { checkEvidence } from "@/server/mcp/utils/evidence";
 import { isExtractionAttempt, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 import { sanitizeContent } from "@/server/mcp/utils/sanitize";
 import { detectVersionForEntry } from "@/server/mcp/utils/lockfile";
-import { resolveLibraryFromId, resolveDocsTarget } from "@/server/mcp/tools/docs-resolve";
-import { fetchDocsContent, applyTopic } from "@/server/mcp/tools/docs-fetch";
-import { renderDocs } from "@/server/mcp/tools/docs-report";
+import { resolveLibraryFromId, resolveDocsTarget } from "@/server/mcp/services/docs/docs-resolve";
+import { fetchDocsContent, applyTopic } from "@/server/mcp/services/docs/docs-fetch";
+import { renderDocs } from "@/server/mcp/services/docs/docs-report";
 
 export const DOCS_LIBRARY_ID_MAX = 300;
 export const DOCS_TOPIC_MAX = 500;

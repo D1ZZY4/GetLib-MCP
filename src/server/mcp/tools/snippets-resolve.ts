@@ -1,6 +1,6 @@
 import { lookupById, lookupByAlias } from "../sources/registry";
 import { checkLibraryAccess, isSourceEnabled } from "../services/source-settings";
-import { resolveBareTarget } from "./docs-resolve";
+import { resolveBareTarget } from "../services/docs/docs-resolve";
 
 export interface SnippetTarget {
   library: string;

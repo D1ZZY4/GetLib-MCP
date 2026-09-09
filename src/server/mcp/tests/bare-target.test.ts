@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resolveBareTarget } from "../tools/docs-resolve";
+import { resolveBareTarget } from "../services/docs/docs-resolve";
 import { resolveSnippetTarget } from "../tools/snippets-resolve";
 
 describe("resolveBareTarget", () => {

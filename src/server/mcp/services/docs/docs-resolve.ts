@@ -1,8 +1,8 @@
-import { lookupById, lookupByAlias } from "../sources/registry";
-import { probeLlmsTxt } from "../services/resolve";
-import { checkLibraryAccess, isSourceEnabled } from "../services/source-settings";
-import { assertPublicUrl } from "../utils/guard";
-import type { LibraryEntry } from "../types";
+import { lookupById, lookupByAlias } from "../../sources/registry";
+import { probeLlmsTxt } from "../resolve";
+import { checkLibraryAccess, isSourceEnabled } from "../source-settings";
+import { assertPublicUrl } from "../../utils/guard";
+import type { LibraryEntry } from "../../types";
 
 export interface DocsTarget {
   docsUrl: string;
