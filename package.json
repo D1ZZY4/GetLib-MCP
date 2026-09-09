@@ -1,12 +1,22 @@
 {
   "name": "getlib-mcp",
-  "private": true,
   "version": "0.1.0",
   "type": "module",
   "description": "GetLib MCP - powerful modular self-hostable library docs MCP server and dashboard (Context7 alternative)",
+  "bin": {
+    "getlib-mcp": "./dist/mcp.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "mcp": "bun src/server/mcp/stdio-entry.ts",
+    "build:mcp": "bun build src/server/mcp/stdio-entry.ts --outfile dist/mcp.js --target node --format esm --minify --banner '#!/usr/bin/env node' && chmod +x dist/mcp.js",
+    "prepublishOnly": "bun run build:mcp",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "typecheck": "tsc --noEmit",

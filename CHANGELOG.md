@@ -98,6 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drill-down detail views for tools, servers, clients, log
   entries, resources, and prompts with loading, empty, and error
   states.
+- Publishable `getlib-mcp` binary bundling the stdio entry to
+  `dist/mcp.js` on prepublish.
 
 ### Changed
 

@@ -18,6 +18,7 @@ bun install
 cp .env.example .env   # set GET_LIB_MODE=development for local work
 bun run dev      # dashboard with Turbopack
 bun run mcp      # MCP server over stdio (14 tools, 2 resources, 6 prompts)
+bun run build:mcp # bundle the npx/CLI entry to dist/mcp.js (runs on prepublishOnly)
 bun run build
 bun run start    # also serves Streamable HTTP at /api/mcp/http and SSE at /api/mcp/sse
 bun run typecheck
