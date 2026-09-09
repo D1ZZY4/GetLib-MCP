@@ -50,6 +50,10 @@ export function safeguardPath(inputPath: string): string {
 /**
  * Validates that a URL points to a public host, not private/internal infrastructure.
  * Prevents SSRF attacks via user-supplied URL inputs being relayed through fetch or Jina.
+ *
+ * Fail-closed pre-check: anything that looks like a numeric IP but cannot be
+ * parsed is blocked. Hostnames pass here and are enforced at DNS resolution
+ * time by the SSRF-guarding dispatcher (services/http/ssrf.ts).
  */
 export function assertPublicUrl(url: string): void {
   let parsed: URL;
@@ -63,7 +67,19 @@ export function assertPublicUrl(url: string): void {
     throw new Error(`Unsupported URL protocol: ${parsed.protocol}`);
   }
 
-  const h = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const h = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+
+  // Numeric IPv4 bypass forms: decimal integer (2130706433), octal
+  // (0177.0.0.1), hex (0x7f.0.0.1, 0x7f000001). WHATWG URL keeps these as
+  // written, so naive dotted-quad prefix checks miss them while network
+  // stacks resolve them to the same private address.
+  const numericIp = parseNumericIpv4(h);
+  if (numericIp === "unparseable-numeric") {
+    throw new Error(`Private/internal URL not allowed: ${h}`);
+  }
+  if (numericIp !== null && isBlockedIpv4(numericIp)) {
+    throw new Error(`Private/internal URL not allowed: ${h}`);
+  }
 
   const isPrivate =
     h === "localhost" ||
@@ -86,6 +102,72 @@ export function assertPublicUrl(url: string): void {
   if (isPrivate) {
     throw new Error(`Private/internal URL not allowed: ${h}`);
   }
+}
+
+/**
+ * Parses numeric IPv4 forms to a 32-bit integer. Returns null for hostnames,
+ * "unparseable-numeric" for numeric-looking hosts that fail to parse (fail
+ * closed), or the address integer otherwise.
+ */
+function parseNumericIpv4(host: string): number | "unparseable-numeric" | null {
+  if (/^\d+$/.test(host)) {
+    const n = Number(host);
+    if (!Number.isSafeInteger(n) || n < 0 || n > 0xffffffff) return "unparseable-numeric";
+    return n;
+  }
+  if (/^0x[0-9a-f]+$/i.test(host)) {
+    const n = parseInt(host, 16);
+    if (!Number.isSafeInteger(n) || n < 0 || n > 0xffffffff) return "unparseable-numeric";
+    return n;
+  }
+  const parts = host.split(".");
+  if (parts.length !== 4) return null;
+  if (!parts.every((p) => p.length > 0 && /^(?:0x[0-9a-f]+|0[0-9]+|\d+)$/i.test(p))) {
+    return null;
+  }
+  let n = 0;
+  for (const p of parts) {
+    let octet: number;
+    if (/^0x[0-9a-f]+$/i.test(p)) {
+      octet = parseInt(p, 16);
+    } else if (/^0\d+$/.test(p)) {
+      // Leading-zero octet: "08"/"09" are invalid octal and rejected by
+      // resolvers inconsistently, so fail closed instead of guessing.
+      if (/[89]/.test(p)) return "unparseable-numeric";
+      octet = parseInt(p, 8);
+    } else {
+      octet = parseInt(p, 10);
+    }
+    if (!Number.isSafeInteger(octet) || octet < 0 || octet > 255) return "unparseable-numeric";
+    n = n * 256 + octet;
+  }
+  return n;
+}
+
+/** True for loopback, private, link-local, CGNAT, reserved, and documentation ranges. */
+function isBlockedIpv4(n: number): boolean {
+  const inRange = (base: number, bits: number): boolean => {
+    const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+    return ((n & mask) >>> 0) === ((base & mask) >>> 0);
+  };
+  const ip = (a: number, b: number, c: number, d: number): number =>
+    ((a * 256 + b) * 256 + c) * 256 + d;
+  return (
+    inRange(ip(127, 0, 0, 0), 8) || // loopback
+    inRange(ip(10, 0, 0, 0), 8) || // private
+    inRange(ip(172, 16, 0, 0), 12) || // private
+    inRange(ip(192, 168, 0, 0), 16) || // private
+    inRange(ip(169, 254, 0, 0), 16) || // link-local
+    inRange(ip(100, 64, 0, 0), 10) || // carrier-grade NAT
+    inRange(ip(0, 0, 0, 0), 8) || // current network
+    inRange(ip(192, 0, 0, 0), 24) || // protocol assignments
+    inRange(ip(192, 0, 2, 0), 24) || // documentation (TEST-NET-1)
+    inRange(ip(198, 51, 100, 0), 24) || // documentation (TEST-NET-2)
+    inRange(ip(203, 0, 113, 0), 24) || // documentation (TEST-NET-3)
+    inRange(ip(198, 18, 0, 0), 15) || // benchmarking
+    inRange(ip(224, 0, 0, 0), 4) || // multicast
+    inRange(ip(240, 0, 0, 0), 4) // reserved
+  );
 }
 
 export function generateRequestId(): string {

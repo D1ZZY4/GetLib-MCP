@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Give operational warnings action links instead of invented
   version transitions.
+- Block numeric-IP SSRF bypasses (decimal, octal, hex) with
+  fail-closed parsing and wider private ranges.
 
 </details>
 
