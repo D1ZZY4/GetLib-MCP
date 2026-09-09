@@ -33,6 +33,16 @@ export interface PersistedLogEntry {
   ok: boolean;
 }
 
+/**
+ * A log row read back from durable storage, newest first.
+ * Carries the storage identity and timestamp the write path does not
+ * need, so dashboard reads never depend on process memory.
+ */
+export interface StoredLogEntry extends PersistedLogEntry {
+  id: number;
+  timestamp: string;
+}
+
 export interface DatabaseRepository {
   readonly mode: DatabaseMode;
   getStatus(): Promise<DatabaseStatus>;
@@ -40,8 +50,13 @@ export interface DatabaseRepository {
   saveBootstrap(record: BootstrapRecord): Promise<void>;
   /**
    * Durable observability write. Never rejects: failures are observed
-   * through the logger and the in-memory ring stays authoritative for
-   * reads, so a broken sink can never break tool execution.
+   * through the logger, so a broken sink can never break tool execution.
    */
   saveLog(entry: PersistedLogEntry): Promise<void>;
+  /**
+   * Durable observability read, newest first, capped at limit. This is
+   * the authoritative read path for production: the dashboard must show
+   * persisted logs, not whatever survives in this process's memory.
+   */
+  listLogs(limit: number): Promise<StoredLogEntry[]>;
 }

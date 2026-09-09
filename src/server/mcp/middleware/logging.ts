@@ -40,7 +40,9 @@ export function appendLog(entry: Omit<McpLogEntry, "id" | "timestamp">): McpLogE
   // Durable sink for production only: development and tests stay on the
   // in-memory ring (plus the mock repository when addressed directly), so
   // the hot tool path never pays for network I/O outside production.
-  // saveLog never rejects, keeping this fire-and-forget safe.
+  // saveLog never rejects, keeping this fire-and-forget safe. Production
+  // dashboard reads come back out of durable storage (listMcpLogs), never
+  // from this ring, so persisted runs stay visible across isolates.
   if (resolveDatabaseMode() === "supabase-production") {
     void getDatabase().saveLog({
       ...(full.requestId !== undefined ? { requestId: full.requestId } : {}),

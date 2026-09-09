@@ -40,8 +40,8 @@ describe("mcp catalog application service", () => {
     expect(() => parseLogLimit("abc")).toThrow("Invalid limit");
   });
 
-  test("listMcpLogs respects the limit", () => {
-    const { logs, total } = listMcpLogs(10);
+  test("listMcpLogs respects the limit", async () => {
+    const { logs, total } = await listMcpLogs(10);
     expect(logs.length).toBeLessThanOrEqual(10);
     expect(total).toBeGreaterThanOrEqual(logs.length);
   });

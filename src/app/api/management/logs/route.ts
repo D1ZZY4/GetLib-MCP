@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     requireManagementAuth(req);
     const url = new URL(req.url);
     const limit = parseLogLimit(url.searchParams.get("limit"));
-    return jsonOk(listMcpLogs(limit), id);
+    return jsonOk(await listMcpLogs(limit), id);
   } catch (error) {
     if (error instanceof Error && error.name === "ToolNameValidationError") {
       return jsonError("validation_error", error.message, 400, id);

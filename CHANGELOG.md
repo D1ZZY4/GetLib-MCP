@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   distinctive subject tokens so unrelated guides never pass.
 - Point manifest-only audit directories at auto scan instead of
   disagreeing with it.
+- Read production logs and dashboard activity from durable
+  storage with ring fallback instead of process memory.
 
 </details>
 

@@ -3,6 +3,7 @@ import type {
   DatabaseRepository,
   DatabaseStatus,
   PersistedLogEntry,
+  StoredLogEntry,
 } from "./types";
 
 /**
@@ -38,6 +39,14 @@ export class MockDatabaseRepository implements DatabaseRepository {
     if (this.logs.length > 200) {
       this.logs.length = 200;
     }
+  }
+
+  async listLogs(limit: number): Promise<StoredLogEntry[]> {
+    return this.logs.slice(0, Math.max(0, limit)).map((entry, index) => ({
+      ...entry,
+      id: index + 1,
+      timestamp: new Date().toISOString(),
+    }));
   }
 
   reset(): void {

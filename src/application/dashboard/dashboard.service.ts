@@ -2,8 +2,8 @@ import { getAuthConfig } from "@/application/auth/auth.service";
 import { listClients } from "@/application/clients/clients.service";
 import { getHealthSnapshot } from "@/application/health/health.service";
 import { getMcpCatalog, getMcpServers } from "@/application/mcp/mcp-catalog.service";
-import { getDatabaseStatus } from "@/server/mcp/infrastructure/database";
-import { getRuntimeSnapshot } from "@/server/mcp/runtime";
+import { getDatabaseStatus, getDatabase } from "@/server/mcp/infrastructure/database";
+import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
 import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry-outcomes";
 import { listLogs } from "@/server/mcp/middleware/logging";
 
@@ -197,7 +197,27 @@ function kindForTool(tool: string): DashboardActivity["kind"] {
   return "docs";
 }
 
-function liveActivities(): DashboardActivity[] {
+async function liveActivities(): Promise<DashboardActivity[]> {
+  // Production reads durable storage so recent activity survives
+  // serverless isolates and reflects every persisted run, not just the
+  // ones this process happened to execute. Anything less makes the
+  // dashboard lie about activity on multi-instance hosts.
+  if (resolveDatabaseMode() === "supabase-production") {
+    try {
+      const stored = await getDatabase().listLogs(8);
+      if (stored.length > 0) {
+        return stored.map((entry) => ({
+          id: `db-${entry.id}`,
+          kind: kindForTool(entry.name),
+          title: `${entry.ok ? "Ran" : "Failed"} ${entry.name}`,
+          detail: `${entry.durationMs}ms - ${entry.ok ? "ok" : "error"}`,
+          timestamp: entry.timestamp,
+        }));
+      }
+    } catch {
+      // Fall through to the in-memory sources below.
+    }
+  }
   const outcomes = getRecentOutcomes().slice(-8).reverse();
   if (outcomes.length === 0) {
     const logs = listLogs().slice(0, 8);
@@ -318,7 +338,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     };
   }
 
-  const activities = liveActivities();
+  const activities = await liveActivities();
   const attentions = liveAttentions({
     fallbackActive: auth.fallbackActive,
     databaseError: database.health === "healthy" ? null : (database.error ?? "degraded"),

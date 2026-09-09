@@ -1,9 +1,11 @@
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
+import { getDatabase } from "@/server/mcp/infrastructure/database";
 import { listLogs } from "@/server/mcp/middleware/logging";
 import { listPrompts } from "@/server/mcp/registry/prompt-registry";
 import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
 import { listResources } from "@/server/mcp/registry/resource-registry";
 import { getTool, listTools, runTool } from "@/server/mcp/registry/tool-registry";
+import { resolveDatabaseMode } from "@/server/mcp/runtime";
 import type { GlToolAnnotations } from "@/server/mcp/registry/tool-registry";
 import { transportModeIds, type TransportModeId } from "@/domain/mcp/catalog";
 
@@ -155,7 +157,43 @@ export function parseLogLimit(raw: string | null): number {
   return Math.min(parsed, MAX_LOG_LIMIT);
 }
 
-export function listMcpLogs(limit: number = DEFAULT_LOG_LIMIT): { logs: ReturnType<typeof listLogs>; total: number } {
+export interface McpLogView {
+  logs: ReturnType<typeof listLogs>;
+  total: number;
+}
+
+function ringLogs(limit: number): McpLogView {
   const logs = listLogs();
   return { logs: logs.slice(0, limit), total: logs.length };
+}
+
+/**
+ * Log read path for the dashboard. Production reads durable storage so
+ * the page shows every persisted run, not whatever survives in this
+ * process's memory ring (serverless isolates reset constantly). A
+ * failed durable read falls back to the ring rather than breaking the
+ * page. Development and tests stay on the ring, which is their only
+ * source.
+ */
+export async function listMcpLogs(limit: number = DEFAULT_LOG_LIMIT): Promise<McpLogView> {
+  if (resolveDatabaseMode() !== "supabase-production") {
+    return ringLogs(limit);
+  }
+  try {
+    const stored = await getDatabase().listLogs(limit);
+    return {
+      logs: stored.map((entry) => ({
+        id: entry.id,
+        timestamp: entry.timestamp,
+        kind: entry.kind === "http" ? ("http" as const) : ("tool" as const),
+        name: entry.name,
+        durationMs: entry.durationMs,
+        ok: entry.ok,
+        ...(entry.requestId !== undefined ? { requestId: entry.requestId } : {}),
+      })),
+      total: stored.length,
+    };
+  } catch {
+    return ringLogs(limit);
+  }
 }

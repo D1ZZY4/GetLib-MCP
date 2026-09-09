@@ -193,4 +193,15 @@ describe("database boundary", () => {
     await db.saveLog({ kind: "tool", name: "gl_search", durationMs: 3, ok: false });
     expect((await db.getStatus()).health).toBe("mock");
   });
+
+  test("mock repository reads logs back newest first within the limit", async () => {
+    const db = getDatabase("mock");
+    await db.saveLog({ kind: "tool", name: "gl_search", durationMs: 12, ok: true });
+    await db.saveLog({ kind: "http", name: "gl_docs", durationMs: 3, ok: false });
+    const listed = await db.listLogs(1);
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?.name).toBe("gl_docs");
+    expect(typeof listed[0]?.id).toBe("number");
+    expect(typeof listed[0]?.timestamp).toBe("string");
+  });
 });

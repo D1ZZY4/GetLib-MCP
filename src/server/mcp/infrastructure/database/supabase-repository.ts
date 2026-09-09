@@ -6,6 +6,7 @@ import type {
   DatabaseRepository,
   DatabaseStatus,
   PersistedLogEntry,
+  StoredLogEntry,
 } from "./types";
 
 /**
@@ -165,4 +166,48 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       log({ level: "warn", msg: "supabase.logs.save-failed", error: String(error) });
     }
   }
+
+  async listLogs(limit: number): Promise<StoredLogEntry[]> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.logs.unconfigured", this.mode);
+      return [];
+    }
+    try {
+      const query = client
+        .from("mcp_logs")
+        .select("id,request_id,kind,name,duration_ms,ok,created_at")
+        .order("created_at", { ascending: false })
+        .limit(Math.max(1, Math.min(200, Math.floor(limit))));
+      const { data, error } = await withTimeout(query, 5000, "Supabase log read timed out.");
+      if (error || !Array.isArray(data)) return [];
+      const entries: StoredLogEntry[] = [];
+      for (const row of data) {
+        const parsed = parseLogRow(row);
+        if (parsed) entries.push(parsed);
+      }
+      return entries;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.logs.read-failed", error: String(error) });
+      return [];
+    }
+  }
+}
+
+function parseLogRow(row: unknown): StoredLogEntry | null {
+  if (typeof row !== "object" || row === null) return null;
+  const record = row as Record<string, unknown>;
+  const { id, request_id, kind, name, duration_ms, ok, created_at } = record;
+  if (typeof id !== "number" || !Number.isFinite(id)) return null;
+  if (typeof name !== "string" || typeof created_at !== "string") return null;
+  if (typeof duration_ms !== "number" || typeof ok !== "boolean") return null;
+  return {
+    id,
+    timestamp: created_at,
+    ...(typeof request_id === "string" ? { requestId: request_id } : {}),
+    kind: typeof kind === "string" ? kind : "tool",
+    name,
+    durationMs: duration_ms,
+    ok,
+  };
 }
