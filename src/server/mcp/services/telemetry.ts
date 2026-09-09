@@ -114,7 +114,8 @@ export function endCallError(ctx: TelemetryContext, error: unknown): TelemetryRe
  * `ctx.resolved` to communicate richer state to telemetry. Errors thrown
  * inside the handler are caught, recorded, then re-thrown so the MCP
  * protocol layer can format them. If you want a never-fail tool that
- * returns guidance text instead of throwing, use `result-guarantee.ts`.
+ * returns guidance text instead of throwing, wrap the handler with
+ * withToolTimeout and a fallback response instead.
  */
 export async function withTelemetry<T>(
   tool: string,
