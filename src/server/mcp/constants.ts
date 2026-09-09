@@ -48,6 +48,20 @@ export const DEEP_FETCH_TIMEOUT_MS = config.deepFetchTimeoutMs;
 export const MAX_CONCURRENT_FETCHES = config.maxConcurrentFetches;
 export const TOOL_TIMEOUT_MS = config.toolTimeoutMs;
 
+/**
+ * Shared singleflight pipeline budget for search and snippet rebuilds.
+ * Kept comfortably below the outer tool timeout so the outer per-caller
+ * race never decides the outcome first. One implementation so parallel
+ * pipelines cannot drift into different timeout behavior.
+ */
+export function sharedPipelineBudgetMs(outerTimeoutMs: number = TOOL_TIMEOUT_MS): number {
+  const outer =
+    typeof outerTimeoutMs === "number" && Number.isFinite(outerTimeoutMs)
+      ? outerTimeoutMs
+      : 55_000;
+  return Math.max(10_000, Math.min(45_000, outer - 5_000));
+}
+
 export const JINA_BASE_URL = "https://r.jina.ai";
 export const NPM_REGISTRY_URL = "https://registry.npmjs.org";
 export const PYPI_URL = "https://pypi.org/pypi";

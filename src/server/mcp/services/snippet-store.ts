@@ -1,9 +1,16 @@
 import type { Snippet, SnippetIndex } from "../types";
 import { DiskCache } from "./cache";
-import { CACHE_TTLS } from "../constants";
 import { rankSnippets } from "../utils/snippet-extract";
 
-const SNIPPET_TTL_MS = CACHE_TTLS.CHANGELOG;
+/**
+ * Snippet indexes are expensive to rebuild (multi-page docs traversal) and
+ * must survive transient upstream failures. The disk entry lives for days,
+ * not hours, and an in-memory mirror serves repeat calls within the same
+ * process even when disk I/O flakes. A flaky rebuild must never flip a
+ * known-good library to "No snippets indexed".
+ */
+export const SNIPPET_INDEX_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MEMORY_MIRROR_MAX = 200;
 
 function indexKey(library: string, version: string | null): string {
   return `snippets:${library}:${version ?? "latest"}`;
@@ -11,18 +18,42 @@ function indexKey(library: string, version: string | null): string {
 
 export class SnippetStore {
   private readonly disk: DiskCache;
+  private readonly memory = new Map<string, { index: SnippetIndex; expiresAt: number }>();
 
   constructor(disk = new DiskCache()) {
     this.disk = disk;
   }
 
+  private remember(key: string, index: SnippetIndex): void {
+    if (this.memory.size >= MEMORY_MIRROR_MAX) {
+      const oldest = this.memory.keys().next().value;
+      if (oldest !== undefined) this.memory.delete(oldest);
+    }
+    this.memory.set(key, { index, expiresAt: Date.now() + SNIPPET_INDEX_TTL_MS });
+  }
+
+  private recall(key: string): SnippetIndex | null {
+    const entry = this.memory.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.memory.delete(key);
+      return null;
+    }
+    this.memory.delete(key);
+    this.memory.set(key, entry);
+    return entry.index;
+  }
+
   async save(index: SnippetIndex): Promise<void> {
     const key = indexKey(index.library, index.version);
-    await this.disk.set(key, JSON.stringify(index), SNIPPET_TTL_MS);
+    this.remember(key, index);
+    await this.disk.set(key, JSON.stringify(index), SNIPPET_INDEX_TTL_MS);
   }
 
   async load(library: string, version: string | null): Promise<SnippetIndex | null> {
     const key = indexKey(library, version);
+    const mem = this.recall(key);
+    if (mem) return mem;
     const raw = await this.disk.get(key);
     if (!raw) return null;
     try {
@@ -40,14 +71,22 @@ export class SnippetStore {
       ) {
         return null;
       }
-      return parsed as SnippetIndex;
+      const index = parsed as SnippetIndex;
+      this.remember(key, index);
+      return index;
     } catch {
       return null;
     }
   }
 
   async has(library: string, version: string | null): Promise<boolean> {
+    if (this.recall(indexKey(library, version))) return true;
     return this.disk.has(indexKey(library, version));
+  }
+
+  /** Test seam - clears the in-memory mirror. Disk entries are TTL-bound. */
+  clearMemory(): void {
+    this.memory.clear();
   }
 
   async query(

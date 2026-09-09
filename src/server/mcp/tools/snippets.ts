@@ -1,6 +1,7 @@
 import { defineTool } from "../registry/tool-registry";
-import type { Snippet } from "../types";
+import type { Snippet, SnippetIndex } from "../types";
 import { z } from "zod";
+import { sharedPipelineBudgetMs } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import { snippetStore } from "../services/snippet-store";
 import { buildIndex } from "../services/snippets/build-index";
@@ -12,6 +13,47 @@ import { renderNoIndex, renderNoTopicMatch, renderSnippetResult } from "./snippe
 
 // Re-exported so gl_examples and the existing tests keep one stable import path.
 export { buildIndex } from "../services/snippets/build-index";
+
+/**
+ * Singleflight for snippet rebuilds: N parallel callers for the same
+ * library:version:topic share one buildIndex pipeline instead of each
+ * firing its own multi-page traversal. The entry carries a single shared
+ * budget timer below the outer tool timeout, so the group resolves
+ * identically and a slow rebuild falls back to the persisted index
+ * instead of diverging into timeout vs result across callers.
+ */
+const snippetBuildInFlight = new Map<string, Promise<SnippetIndex | null>>();
+
+/** Test seam - clears the shared rebuild map. */
+export function clearSnippetBuildInFlight(): void {
+  snippetBuildInFlight.clear();
+}
+
+function snippetBuildBudgetMs(): number {
+  return sharedPipelineBudgetMs();
+}
+
+export { snippetBuildBudgetMs };
+export { buildIndexShared };
+
+function buildIndexShared(
+  key: string,
+  build: () => Promise<SnippetIndex | null>,
+  budgetMs = snippetBuildBudgetMs(),
+): Promise<SnippetIndex | null> {
+  const ongoing = snippetBuildInFlight.get(key);
+  if (ongoing) return ongoing;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const budget: Promise<SnippetIndex | null> = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(null), budgetMs);
+  });
+  const shared = Promise.race([build(), budget]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+    if (snippetBuildInFlight.get(key) === shared) snippetBuildInFlight.delete(key);
+  });
+  snippetBuildInFlight.set(key, shared);
+  return shared;
+}
 
 const InputSchema = z.object({
   libraryId: z
@@ -109,19 +151,31 @@ IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library re
           let builtAt = new Date().toISOString();
           let fromCache = false;
 
+          // Load the full persisted index once. The ranked query below answers
+          // the topic, but the full index is the stability fallback: a topic
+          // miss against a non-empty index must report "no match for topic"
+          // (with the available list), never "no snippets indexed", even when
+          // the network rebuild below fails.
+          const persisted = await snippetStore.load(library, versionKey);
+
           if (!refresh) {
-            const cached = await snippetStore.query(library, versionKey, topic, language, maxSnippets);
-            if (cached && cached.snippets.length > 0) {
-              snippets = cached.snippets;
-              sourceUrl = cached.sourceUrl;
-              builtAt = cached.builtAt;
+            const cached = persisted
+              ? rankSnippets(persisted.snippets, topic, language, maxSnippets)
+              : [];
+            if (cached.length > 0) {
+              snippets = cached;
+              sourceUrl = persisted?.sourceUrl ?? docsUrl;
+              builtAt = persisted?.builtAt ?? builtAt;
               fromCache = true;
             }
           }
 
           if (snippets.length === 0) {
-            const index = await buildIndex(
-              library, version, docsUrl, target.llmsTxtUrl, target.llmsFullTxtUrl, target.githubUrl, topic,
+            const buildKey = `snippets-build:${library}:${versionKey ?? "latest"}:${topic.trim().toLowerCase()}:${refresh ? "refresh" : "cached"}`;
+            const index = await buildIndexShared(buildKey, () =>
+              buildIndex(
+                library, version, docsUrl, target.llmsTxtUrl, target.llmsFullTxtUrl, target.githubUrl, topic,
+              ),
             );
 
             // Merge with whatever the store already holds for this library:version.
@@ -130,7 +184,7 @@ IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library re
             if (index) {
               // refresh:true is documented as a clean rebuild - merging with the
               // old disk index would carry deleted upstream snippets forever.
-              const existing = refresh ? null : await snippetStore.load(library, versionKey);
+              const existing = refresh ? null : persisted;
               if (existing && existing.snippets.length > 0) {
                 const byId = new Map(existing.snippets.map((s) => [s.id, s]));
                 for (const s of index.snippets) byId.set(s.id, s);
@@ -138,7 +192,23 @@ IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library re
               }
             }
 
-            if (!index || index.snippets.length === 0) return renderNoIndex(displayName);
+            if (!index || index.snippets.length === 0) {
+              // Rebuild found nothing but a persisted index exists: fall back
+              // to it so one flaky fetch cannot flip a known-good library to
+              // "No snippets indexed". Only report NoIndex when no persisted
+              // data exists at all.
+              if (persisted && persisted.snippets.length > 0) {
+                const fallback = rankSnippets(persisted.snippets, topic, language, maxSnippets);
+                if (fallback.length > 0) {
+                  return renderSnippetResult({
+                    snippets: fallback, library, displayName, topic, version, language,
+                    sourceUrl: persisted.sourceUrl, builtAt: persisted.builtAt, fromCache: true,
+                  });
+                }
+                return renderNoTopicMatch({ index: persisted, displayName, library, topic, version, language });
+              }
+              return renderNoIndex(displayName);
+            }
 
             await snippetStore.save(index);
             snippets = rankSnippets(index.snippets, topic, language, maxSnippets);

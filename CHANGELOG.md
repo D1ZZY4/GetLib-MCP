@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and session fields from logs.
 - Cover prompt listing and rendering over both transports and
   fix undefined prompt args crashing the callback.
+- Share one pipeline budget with memoization and singleflight so
+  parallel search and snippet work resolves identically, with a
+  memory mirror and days-long snippet persistence.
 
 </details>
 
