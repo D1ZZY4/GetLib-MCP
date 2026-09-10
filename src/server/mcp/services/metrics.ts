@@ -31,10 +31,20 @@ export function recordToolCall(tool: string, durationMs: number, cacheHit: boole
   if (m.latencies.length > RING_SIZE) m.latencies.shift();
 }
 
-function percentile(sorted: number[], p: number): number {
+/**
+ * Canonical percentile definition for every surface (Prometheus gauges,
+ * health telemetry, statistics). Nearest-rank on the sorted sample:
+ * the smallest value at or above the requested percentage. All other
+ * modules must use this instead of their own index math.
+ */
+export function percentileOfSorted(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
   const idx = Math.ceil((p / 100) * sorted.length) - 1;
   return sorted[Math.max(0, idx)] ?? 0;
+}
+
+function percentile(sorted: number[], p: number): number {
+  return percentileOfSorted(sorted, p);
 }
 
 export interface ToolMetricsSummary {

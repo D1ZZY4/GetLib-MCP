@@ -1,5 +1,7 @@
 /** Rolling window of tool-invocation outcomes and the counters derived from it. */
 
+import { percentileOfSorted } from "./metrics";
+
 export interface InvocationOutcome {
   tool: string;
   requestId: string;
@@ -11,7 +13,16 @@ export interface InvocationOutcome {
   error?: string;
 }
 
-const RECENT_OUTCOMES_CAP = 200;
+/**
+ * Single outcome-window definition. The in-memory ring below and the
+ * durable read window in statistics.service.ts both use this so totals,
+ * charts, and health aggregate the same recent history. The per-tool
+ * latency ring in metrics.ts is a separate concern (Prometheus gauge
+ * basis per tool) and intentionally keeps its own cap.
+ */
+export const OUTCOME_WINDOW = 200;
+
+const RECENT_OUTCOMES_CAP = OUTCOME_WINDOW;
 const recentOutcomes: InvocationOutcome[] = [];
 
 export function pushOutcome(o: InvocationOutcome): void {
@@ -35,6 +46,10 @@ export function getInvocationSummary(): {
   byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }>;
 } {
   if (recentOutcomes.length === 0) {
+    // Cold start, not proven reliability: zero calls with neutral 100%
+    // rates so empty states render as "no data yet" instead of 0%.
+    // summarizeOutcomePoints uses the same convention on the percent
+    // scale (100). Consumers must check totalCalls === 0 for "no data".
     return { totalCalls: 0, successRate: 1, resolveRate: 1, errorRate: 0, byTool: {} };
   }
 
@@ -59,8 +74,8 @@ export function getInvocationSummary(): {
   const byToolOut: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }> = {};
   for (const [tool, m] of byTool.entries()) {
     const sorted = [...m.latencies].sort((a, b) => a - b);
-    const p50 = sorted[Math.floor(sorted.length * 0.5)] ?? 0;
-    const p95 = sorted[Math.floor(sorted.length * 0.95)] ?? 0;
+    const p50 = percentileOfSorted(sorted, 50);
+    const p95 = percentileOfSorted(sorted, 95);
     byToolOut[tool] = {
       calls: m.calls,
       successRate: m.calls > 0 ? +(m.success / m.calls).toFixed(3) : 1,
