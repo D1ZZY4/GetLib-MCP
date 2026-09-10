@@ -1,11 +1,8 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { safeguardPath, withToolTimeout } from "../utils/guard";
 import { withTelemetry } from "../services/telemetry";
-import { readProjectFiles, runPatterns, groupIssues, type SourceFile } from "./audit-scan";
-import { detectDependencies } from "../utils/deps/manifest";
-import { fetchBestPractice } from "./audit-fixes";
-import { renderAuditReport } from "./audit-report";
+import { auditProjectUseCase } from "@/application/audit/audit.service";
+import { liveAuditDeps } from "../infrastructure/deps/audit-deps";
 
 const InputSchema = z.object({
   projectPath: z
@@ -80,67 +77,17 @@ If doc fetches fail with empty results, the user likely needs to set GETLIB_GITH
     run: async (rawArgs: unknown) => {
       const { projectPath, categories, tokens, maxFiles } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_audit", async (ctx) => {
-        let resolvedPath: string;
-        try {
-          resolvedPath = safeguardPath(projectPath ?? process.cwd());
-        } catch {
-          return { content: [{ type: "text", text: `Invalid project path.` }] };
-        }
-
-        let files: SourceFile[];
-        try {
-          files = await readProjectFiles(resolvedPath, maxFiles);
-        } catch {
-          return { content: [{ type: "text", text: `Could not read project at: ${resolvedPath}` }] };
-        }
-
-        if (files.length === 0) {
-          // Reconcile with gl_auto_scan: manifests are not source files, so
-          // a directory with only package.json/lockfiles yields zero files
-          // here while auto_scan still detects dependencies. Say so plainly
-          // instead of disagreeing with the sibling tool.
-          const depSources = await detectDependencies(resolvedPath);
-          const depCount = depSources.reduce((total, source) => total + source.dependencies.length, 0);
-          const hint =
-            depCount > 0
-              ? ` Found ${depCount} declared dependencies but no scannable source files - this looks like a build output or install directory. Run gl_auto_scan for dependency guidance, or point projectPath at the source checkout to audit your own code.`
-              : "";
-          return { content: [{ type: "text", text: `No source files found in: ${resolvedPath}${hint}` }] };
-        }
-
-        const allIssues = runPatterns(files, categories);
-        const SRANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-        allIssues.sort((a, b) => (SRANK[a.severity] ?? 4) - (SRANK[b.severity] ?? 4));
-
-        const grouped = groupIssues(allIssues);
-        const topIssues = Array.from(grouped.entries()).slice(0, 6);
-        const bpMap = new Map<string, string>();
-
-        await withToolTimeout(
-          () => Promise.allSettled(
-            topIssues.map(async ([title, issues]) => {
-              const query = issues[0]?.docsQuery ?? title;
-              const bp = await fetchBestPractice(query, Math.floor(tokens / topIssues.length));
-              bpMap.set(title, bp);
-            }),
-          ),
-          [],
+        const { response, resolved } = await auditProjectUseCase(
+          {
+            ...(projectPath !== undefined ? { projectPath } : {}),
+            categories,
+            tokens,
+            maxFiles,
+          },
+          liveAuditDeps,
         );
-
-        const report = renderAuditReport({
-          projectPath: resolvedPath,
-          filesScanned: files.length,
-          issues: allIssues,
-          grouped,
-          bpMap,
-          categories,
-        });
-
-        ctx.resolved = allIssues.length > 0 || files.length > 0;
-        return {
-          content: [{ type: "text", text: report.text }],
-          structuredContent: report.structuredContent,
-        };
+        ctx.resolved = resolved;
+        return response;
       });
     },
   });

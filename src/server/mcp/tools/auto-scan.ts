@@ -1,13 +1,8 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { withNotice, withToolTimeout, safeguardPath } from "../utils/guard";
-import type { LibraryEntry } from "../types";
-import { detectAllVersions } from "../utils/lockfile";
 import { withTelemetry } from "../services/telemetry";
-import { detectDependencies } from "../utils/deps/manifest";
-import { SKIP_DEPS } from "../sources/skip-deps";
-import { matchDepToRegistry, fetchLibraryBatches, type LibraryResult } from "./auto-scan-fetch";
-import { renderScanReport } from "./auto-scan-report";
+import { autoScanUseCase } from "@/application/scan/auto-scan.service";
+import { liveAutoScanDeps } from "../infrastructure/deps/auto-scan-deps";
 
 const InputSchema = z.object({
   projectPath: z
@@ -55,72 +50,16 @@ Fetches best practices for your installed DEPENDENCIES - to scan your own source
     run: async (rawArgs: unknown) => {
       const { projectPath, topic = "latest best practices", tokensPerLib } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_auto_scan", async (ctx) => {
-        let resolvedPath: string;
-        try {
-          resolvedPath = safeguardPath(projectPath ?? process.cwd());
-        } catch {
-          return { content: [{ type: "text", text: `Invalid project path.` }] };
-        }
-
-        // No extraction guard on `topic` - it only scopes what to look up per
-        // already-detected dependency and cannot enumerate the registry.
-        const sources = await detectDependencies(resolvedPath);
-
-        if (sources.length === 0) {
-          return {
-            content: [{
-              type: "text",
-              text: `No dependency files found in: ${resolvedPath}\n\nLooked for: package.json, requirements.txt, pyproject.toml, Cargo.toml, go.mod\n\nTry providing the correct projectPath or use gl_get_docs / gl_best_practices directly.`,
-            }],
-          };
-        }
-
-        // Deduplicate and filter
-        const allDeps = new Set<string>();
-        for (const src of sources) {
-          for (const dep of src.dependencies) {
-            if (!SKIP_DEPS.has(dep.toLowerCase())) allDeps.add(dep);
-          }
-        }
-
-        // Match to registry, deduplicating entries reached via different package names
-        const matched: Array<{ dep: string; entry: LibraryEntry }> = [];
-        const unmatched: string[] = [];
-        for (const dep of allDeps) {
-          const entry = matchDepToRegistry(dep);
-          if (!entry) {
-            unmatched.push(dep);
-          } else if (!matched.some((m) => m.entry.id === entry.id)) {
-            matched.push({ dep, entry });
-          }
-        }
-
-        // Cap at 20 libraries to avoid overwhelming responses
-        const topMatched = matched.slice(0, 20);
-        const versions = await detectAllVersions(resolvedPath, [...allDeps]);
-        const results: LibraryResult[] = [];
-        await withToolTimeout(
-          () => fetchLibraryBatches(topMatched, versions, topic, tokensPerLib, results),
-          undefined,
+        const { response, resolved } = await autoScanUseCase(
+          {
+            ...(projectPath !== undefined ? { projectPath } : {}),
+            topic,
+            tokensPerLib,
+          },
+          liveAutoScanDeps,
         );
-
-        const report = renderScanReport({
-          projectPath: resolvedPath,
-          topic,
-          sources,
-          totalDeps: allDeps.size,
-          matchedCount: matched.length,
-          topMatched,
-          unmatched,
-          versions,
-          results,
-        });
-
-        ctx.resolved = results.some((r) => !r.failed);
-        return {
-          content: [{ type: "text", text: withNotice(report.text) }],
-          structuredContent: report.structuredContent,
-        };
+        ctx.resolved = resolved;
+        return response;
       });
     },
   });

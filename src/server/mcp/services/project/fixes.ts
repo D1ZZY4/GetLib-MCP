@@ -1,10 +1,10 @@
-import { lookupById } from "../sources/registry";
-import { fetchDocs, fetchGitHubReleases, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../services/fetcher";
-import { extractRelevantContent } from "../utils/extract";
-import { checkEvidence } from "../utils/evidence";
-import { sanitizeContent } from "../utils/sanitize";
-import { FIX_TARGET_GROUPS, PYTHON_FIX_URLS, KEYWORD_TO_LIB } from "../sources/audit-fix-urls";
-import { isSourceEnabled } from "../services/source-settings";
+import { lookupById } from "../../sources/registry";
+import { fetchDocs, fetchGitHubReleases, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../fetcher";
+import { extractRelevantContent } from "../../utils/extract";
+import { checkEvidence } from "../../utils/evidence";
+import { sanitizeContent } from "../../utils/sanitize";
+import { FIX_TARGET_GROUPS, PYTHON_FIX_URLS, KEYWORD_TO_LIB } from "../../sources/audit-fix-urls";
+import { isSourceEnabled } from "../source-settings";
 
 /**
  * Fetch + evidence-gate a guidance page. Index pages, search results and

@@ -1,6 +1,6 @@
-import type { LibraryEntry } from "../types";
-import type { DependencySource } from "../utils/deps/manifest";
-import type { LibraryResult } from "./auto-scan-fetch";
+import type { LibraryEntry } from "@/server/mcp/types";
+import type { DependencySource } from "@/server/mcp/utils/deps/manifest";
+import type { LibraryResult } from "@/server/mcp/services/project/dependency-fetch";
 
 export interface ScanReportInput {
   projectPath: string;

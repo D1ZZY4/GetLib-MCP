@@ -1,9 +1,9 @@
-import { lookupByAlias, lookupById, fuzzySearch } from "../sources/registry";
-import { fetchDocs, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../services/fetcher";
-import { extractRelevantContent } from "../utils/extract";
-import { sanitizeContent } from "../utils/sanitize";
-import { config } from "../config";
-import type { LibraryEntry } from "../types";
+import { lookupByAlias, lookupById, fuzzySearch } from "../../sources/registry";
+import { fetchDocs, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../fetcher";
+import { extractRelevantContent } from "../../utils/extract";
+import { sanitizeContent } from "../../utils/sanitize";
+import { config } from "../../config";
+import type { LibraryEntry } from "../../types";
 
 export interface LibraryResult {
   name: string;

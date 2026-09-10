@@ -1,4 +1,4 @@
-import type { Issue } from "../sources/audit-patterns";
+import type { Issue } from "@/server/mcp/sources/audit-patterns";
 
 const BADGE: Record<string, string> = {
   critical: "[CRITICAL]",
@@ -6,6 +6,15 @@ const BADGE: Record<string, string> = {
   medium: "[MEDIUM]",
   low: "[LOW]",
 };
+
+export interface AuditReportInput {
+  projectPath: string;
+  filesScanned: number;
+  issues: Issue[];
+  grouped: Map<string, Issue[]>;
+  bpMap: Map<string, string>;
+  categories: string[];
+}
 
 export interface AuditReport {
   text: string;
@@ -60,14 +69,7 @@ function renderSection(title: string, issues: Issue[], bpMap: Map<string, string
     .join("\n");
 }
 
-export function renderAuditReport(params: {
-  projectPath: string;
-  filesScanned: number;
-  issues: Issue[];
-  grouped: Map<string, Issue[]>;
-  bpMap: Map<string, string>;
-  categories: string[];
-}): AuditReport {
+export function renderAuditReport(params: AuditReportInput): AuditReport {
   const { projectPath, filesScanned, issues, grouped, bpMap, categories } = params;
 
   const header = [

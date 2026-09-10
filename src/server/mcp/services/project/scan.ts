@@ -1,9 +1,9 @@
 import { readdir, readFile, stat } from "fs/promises";
 import { join, extname, relative } from "path";
-import { AUDIT_PATTERNS, type Issue } from "../sources/audit-patterns";
-import { safeguardPath } from "../utils/guard";
-import { isSourceEnabled } from "../services/source-settings";
-import { buildCommentMap, SKIP_FILE_RE } from "../utils/comment-map";
+import { AUDIT_PATTERNS, type Issue } from "../../sources/audit-patterns";
+import { safeguardPath } from "../../utils/guard";
+import { isSourceEnabled } from "../source-settings";
+import { buildCommentMap, SKIP_FILE_RE } from "../../utils/comment-map";
 
 export interface SourceFile {
   path: string;

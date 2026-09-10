@@ -10,16 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
-### Fixed
-
-- Validate every fetch response through shared schemas with
-  capped bodies instead of unchecked casts.
-
-### Changed
-
-- Share one bare-name fallback pipeline between dynamic resolve
-  and the resolve use case.
-
 ### Added
 
 - Validate every external payload through centralized schemas so
@@ -27,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fold provider em dashes at the transformation boundary.
 - Abort cancellable work on tool timeout and share one timeout
   envelope factory across tools.
+
+### Fixed
+
+- Validate every fetch response through shared schemas with
+  capped bodies instead of unchecked casts.
+
+### Changed
+
+- Extract audit and auto-scan use cases with injected seams so
+  tools stay thin adapters.
+- Share one bare-name fallback pipeline between dynamic resolve
+  and the resolve use case.
 
 </details>
 
