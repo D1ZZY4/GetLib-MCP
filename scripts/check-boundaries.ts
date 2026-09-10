@@ -40,18 +40,23 @@ function collect(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+function lineOf(source: string, index: number): number {
+  return source.slice(0, index).split("\n").length;
+}
+
 function importsOf(source: string): Array<{ line: number; path: string }> {
   const found: Array<{ line: number; path: string }> = [];
-  const lines = source.split("\n");
-  const pattern = /(?:import|export)[^'"]*from\s*['"]([^'"]+)['"]/g;
-  lines.forEach((text, index) => {
-    pattern.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = pattern.exec(text)) !== null) {
-      const path = match[1];
-      if (path) found.push({ line: index + 1, path });
-    }
-  });
+  const staticPattern = /(?:import|export)\s+[\s\S]*?from\s*['"]([^'"]+)['"]/g;
+  let match: RegExpExecArray | null;
+  while ((match = staticPattern.exec(source)) !== null) {
+    const path = match[1];
+    if (path) found.push({ line: lineOf(source, match.index), path });
+  }
+  const dynamicPattern = /(?:import\s*\(\s*|require\s*\()\s*['"]([^'"]+)['"]/g;
+  while ((match = dynamicPattern.exec(source)) !== null) {
+    const path = match[1];
+    if (path) found.push({ line: lineOf(source, match.index), path });
+  }
   return found;
 }
 
@@ -81,7 +86,7 @@ for (const file of collect(SRC)) {
     const isRelativeTo = (name: string): boolean =>
       path.startsWith(".") && path.split("/").includes(name);
 
-    if (under(file, "src/server", "src/application", "src/domain")) {
+    if (under(file, "server", "application", "domain")) {
       if (
         isAlias("@/web") ||
         isAlias("@/app") ||
@@ -92,7 +97,7 @@ for (const file of collect(SRC)) {
         continue;
       }
     }
-    if (under(file, "src/domain")) {
+    if (under(file, "domain")) {
       if (
         isAlias("@/server") ||
         isAlias("@/application") ||
@@ -106,7 +111,7 @@ for (const file of collect(SRC)) {
         continue;
       }
     }
-    if (under(file, "src/web")) {
+    if (under(file, "web")) {
       if (
         isAlias("@/server") ||
         isAlias("@/application") ||
@@ -117,13 +122,13 @@ for (const file of collect(SRC)) {
         continue;
       }
     }
-    if (under(file, "src/application")) {
+    if (under(file, "application")) {
       if (isAlias("@/server/mcp/tools")) {
         report(4);
         continue;
       }
     }
-    if (under(file, "src/app")) {
+    if (under(file, "app")) {
       if (
         isAlias("@/domain") ||
         path.includes("supabase") ||
