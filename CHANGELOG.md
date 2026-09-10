@@ -76,6 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dist/index.js and declare full npm publish metadata.
 - Share one evidence verdict helper and one Pill primitive across
   report and dashboard surfaces.
+- Rename the MCP build script to scripts/mcp-build.ts with no
+  behavior change.
 
 </details>
 
