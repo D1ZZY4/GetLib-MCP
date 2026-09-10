@@ -1,18 +1,35 @@
-# No Em Dash Rule
+---
+name: no-em-dashes
+description: Larangan global penggunaan karakter em dash di seluruh project, termasuk source code, documentation, output, dan generated content.
+metadata:
+  owner: D1ZZY4
+  category: agent-rules
+  language: id-ID
+version: 6.0.0
+license: MIT
+---
 
-Em dash character `—` **DILARANG** digunakan di seluruh project tanpa pengecualian.
+# Aturan Tanpa Em Dash
 
-Rule ini berlaku secara global terhadap seluruh source code, configuration, documentation, comments, tests, generated files, user-facing text, tool output, log message, error message, metadata, dan seluruh text atau content yang dihasilkan dalam repository maupun melalui application.
+## Cara Menggunakan Modul Ini
 
-## 1. Global Prohibition
+Baca `blueprint.md` terlebih dahulu. Modul ini adalah aturan global yang berlaku untuk seluruh perubahan content, code, dokumentasi, dan output. Terapkan bersama modul lain yang relevan setiap kali membuat atau mengubah teks apa pun. Penomoran bagian pada file ini bersifat lokal dan berurutan mulai dari 1.
 
-Character berikut:
+Pengecualian dokumentasi diri: file aturan ini boleh memuat karakter terlarang hanya di dalam blok kode yang memang mendefinisikan karakter tersebut. Blok kode definisi tersebut bukan pelanggaran. Scan validasi HARUS mengecualikan blok definisi pada file ini dan hanya gagal bila em dash muncul di luar blok definisi atau pada file terkontrol lain.
+
+Karakter em dash (U+2014) **DILARANG** digunakan di seluruh project, kecuali blok kode definisi pada file aturan ini dan fixture eksternal immutable yang dikecualikan secara eksplisit.
+
+Aturan ini berlaku secara global terhadap seluruh source code, configuration, documentation, comments, tests, generated files, user-facing text, tool output, log message, error message, metadata, dan seluruh text atau content yang dihasilkan dalam repository maupun melalui application.
+
+## 1. Larangan Global
+
+Karakter berikut:
 
 ```text
 —
 ```
 
-HARUS tidak pernah muncul pada:
+**DILARANG** muncul pada:
 
 ```text
 Source code
@@ -45,11 +62,11 @@ Changelog
 README
 ```
 
-Tidak ada pengecualian berdasarkan file type, layer, environment, runtime, framework, atau output destination.
+Tidak terdapat pengecualian berdasarkan jenis file, lapisan, environment, runtime, framework, atau tujuan output.
 
-## 2. Required Replacement
+## 2. Pengganti yang Wajib Digunakan
 
-Gunakan punctuation alternative yang sesuai dengan konteks.
+Gunakan tanda baca alternatif yang sesuai dengan konteks.
 
 Gunakan:
 
@@ -62,7 +79,7 @@ Gunakan:
 []
 ```
 
-atau struktur kalimat baru.
+atau susun ulang struktur kalimat.
 
 Contoh:
 
@@ -82,7 +99,7 @@ Application layer is responsible for use cases.
 
 ## 3. Source Code
 
-Em dash TIDAK BOLEH muncul dalam:
+Em dash **DILARANG** muncul dalam:
 
 ```text
 String literals
@@ -97,21 +114,21 @@ Fixtures
 Snapshots
 ```
 
-Contoh yang DILARANG:
+Contoh yang tidak disarankan:
 
 ```ts
 const message = "Request failed — retry later";
 ```
 
-Contoh yang BENAR:
+Contoh yang **DISARANKAN**:
 
 ```ts
 const message = "Request failed - retry later";
 ```
 
-## 4. Documentation
+## 4. Dokumentasi
 
-Seluruh documentation HARUS bebas dari em dash.
+Seluruh dokumentasi HARUS bebas dari em dash.
 
 Termasuk:
 
@@ -130,7 +147,7 @@ Release notes
 
 Generated documentation juga HARUS mengikuti rule ini.
 
-## 5. User-Facing Content
+## 5. Konten User-Facing
 
 Seluruh text yang terlihat oleh user HARUS bebas dari em dash.
 
@@ -153,7 +170,7 @@ MCP responses
 API-generated UI content
 ```
 
-## 6. Generated Output
+## 6. Output yang Dihasilkan
 
 Seluruh generated output HARUS bebas dari em dash.
 
@@ -173,13 +190,13 @@ Generated MCP responses
 
 Generated content tidak dianggap valid apabila mengandung em dash.
 
-## 7. Third-Party and External Content
+## 7. Konten Pihak Ketiga dan Eksternal
 
-External content yang berasal dari provider, API, documentation source, repository, website, atau external service dapat mengandung em dash.
+Konten eksternal yang berasal dari provider, API, sumber dokumentasi, repository, website, atau layanan eksternal dapat memuat em dash.
 
-External content HARUS dianggap untrusted data.
+Konten eksternal **WAJIB** diperlakukan sebagai data yang tidak tepercaya.
 
-Ketika external content akan digunakan sebagai:
+Apabila konten eksternal akan digunakan sebagai:
 
 ```text
 UI content
@@ -190,67 +207,74 @@ Generated content
 Stored normalized content
 ```
 
-content HARUS dinormalisasi atau ditangani sesuai kebutuhan agar global output tidak melanggar rule ini.
+Konten **WAJIB** dinormalisasi atau ditangani sesuai kebutuhan agar output global tidak melanggar aturan ini.
 
-Raw external payload dapat mempertahankan original content hanya apabila diperlukan untuk correctness, auditability, atau source fidelity dan tidak menjadi output yang dikendalikan application.
+Payload eksternal mentah dapat mempertahankan konten asli hanya apabila diperlukan untuk correctness, auditability, atau source fidelity dan tidak menjadi output yang dikendalikan aplikasi.
 
-## 8. Data Transformation
+## 8. Transformasi Data
 
-Apabila application mentransformasikan external content, transformation layer HARUS dapat menormalkan em dash ketika output contract melarang character tersebut.
+Apabila aplikasi mentransformasikan konten eksternal, lapisan transformasi HARUS dapat menormalkan em dash apabila kontrak output melarang karakter tersebut.
 
-Conceptual flow:
+Alur konseptual:
 
-```text
-External Content
-      ↓
-Validation
-      ↓
-Normalization
-      ↓
-Application
-      ↓
-Output Transformation
-      ↓
-Consumer
+```mermaid
+flowchart TD
+    EXT["External Content"] --> VAL["Validation"]
+    VAL --> NORM["Normalization"]
+    NORM --> APP["Application"]
+    APP --> OUT["Output Transformation"]
+    OUT --> CONS["Consumer"]
 ```
 
-Normalization tidak boleh merusak semantic meaning secara tidak perlu.
+Normalisasi **DILARANG** merusak makna semantik secara tidak perlu.
 
-## 9. Validation
+## 9. Validasi
 
-Repository validation HARUS dapat mendeteksi keberadaan em dash.
+Validasi repository HARUS dapat mendeteksi keberadaan em dash.
 
-Validation harus mencakup repository content yang relevan.
+Validasi **WAJIB** mencakup konten repository yang relevan.
 
-Conceptual check:
+Pemeriksaan konseptual:
 
-```text
-Search repository
-      ↓
-Detect "—"
-      ↓
-Report location
-      ↓
-Replace or justify external/raw-data boundary
-      ↓
-Validate again
+```mermaid
+flowchart TD
+    S["Search repository"] --> D["Detect prohibited character"]
+    D -->|Tidak ditemukan| PASS["Lolos Quality Gate"]
+    D -->|Ditemukan| R["Report location"]
+    R --> CLASSIFY{"Definisi Aturan atau Fixture Dikecualikan?"}
+    CLASSIFY -->|Ya| JUSTIFY["Catat Justifikasi dan Batas Raw Content"]
+    CLASSIFY -->|Tidak| F["Replace dengan Tanda Baca Alternatif"]
+    F --> V["Validate again"]
+    JUSTIFY --> V
+    V --> PASS
 ```
 
-Source-controlled files yang mengandung em dash HARUS diperbaiki kecuali secara eksplisit merupakan immutable external fixture yang memang membutuhkan exact source fidelity.
+Prosedur remediasi minimum:
 
-## 10. CI and Quality Gates
+| Langkah | Aturan | Bukti |
+|---------|--------|-------|
+| Deteksi | Scan repository setelah formatting dan generation | Lokasi temuan |
+| Klasifikasi | Bedakan output terkontrol, definisi aturan, dan fixture eksternal | Justifikasi tertulis |
+| Perbaikan | Ganti dengan `-`, `,`, `:`, `;`, tanda kurung, atau susun ulang kalimat | Diff perbaikan |
+| Validasi ulang | Scan ulang hingga bersih di luar pengecualian | Hasil scan akhir |
 
-Apabila project mempunyai CI atau quality gate, pemeriksaan no-em-dash HARUS menjadi bagian dari validation.
+Contoh CI minimum: jalankan scan sebagai quality gate terpisah, gagalkan build apabila karakter terlarang ditemukan di luar blok definisi dan fixture yang dikecualikan, serta lakukan scan setelah seluruh generation selesai.
 
-Build atau validation HARUS gagal apabila prohibited em dash ditemukan pada files yang termasuk scope repository rule.
+File yang dikendalikan source control dan memuat em dash **WAJIB** diperbaiki, kecuali file aturan ini pada blok kode definisi karakter atau fixture eksternal immutable yang secara eksplisit membutuhkan fidelitas sumber yang persis.
 
-Pemeriksaan HARUS dilakukan setelah formatting dan generation agar hasil akhir tetap compliant.
+## 10. CI dan Quality Gate
 
-## 11. Logs and Errors
+Apabila proyek memiliki CI atau quality gate, pemeriksaan no-em-dash **WAJIB** menjadi bagian dari validasi.
 
-Application logs dan error messages HARUS bebas dari em dash.
+Build atau validasi HARUS gagal apabila em dash terlarang ditemukan pada file yang termasuk scope aturan repository, di luar blok definisi pada file aturan ini dan di luar fixture eksternal yang dikecualikan secara eksplisit.
 
-Contoh DILARANG:
+Pemeriksaan **WAJIB** dilakukan setelah formatting dan generation agar hasil akhir tetap patuh.
+
+## 11. Log dan Error
+
+Log aplikasi dan pesan error HARUS bebas dari em dash.
+
+Contoh yang tidak disarankan:
 
 ```text
 Failed to fetch source — timeout
@@ -270,31 +294,31 @@ Failed to fetch source: timeout
 
 ## 12. MCP
 
-MCP tool descriptions, resource descriptions, prompt descriptions, tool errors, tool results, resource content, prompt output, server instructions, dan protocol-facing generated text HARUS bebas dari em dash ketika content tersebut dikontrol atau dihasilkan oleh application.
+Deskripsi tool MCP, deskripsi resource, deskripsi prompt, error tool, hasil tool, konten resource, output prompt, instruksi server, dan teks protocol-facing yang dihasilkan aplikasi HARUS bebas dari em dash apabila konten tersebut dikendalikan atau dihasilkan oleh aplikasi.
 
-MCP responses HARUS mengikuti global text constraint ini.
+Response MCP **WAJIB** mengikuti batasan teks global ini.
 
-External raw content yang diteruskan secara verbatim harus diperlakukan sebagai explicit raw-content exception hanya apabila exact fidelity merupakan requirement.
+Konten eksternal mentah yang diteruskan secara verbatim hanya diperlakukan sebagai pengecualian raw-content eksplisit apabila fidelitas persis merupakan persyaratan.
 
 ## 13. API
 
-API responses yang dibentuk atau dikontrol oleh application HARUS bebas dari em dash.
+Response API yang dibentuk atau dikendalikan oleh aplikasi HARUS bebas dari em dash.
 
-Error payloads, validation messages, metadata, descriptions, and generated response content HARUS mengikuti rule ini.
+Payload error, pesan validasi, metadata, deskripsi, dan konten response yang dihasilkan **WAJIB** mengikuti aturan ini.
 
-Raw external payload tidak boleh dianggap application-authored content.
+Payload eksternal mentah **DILARANG** dianggap sebagai konten yang ditulis aplikasi.
 
-## 14. Comments and Code Review
+## 14. Komentar dan Code Review
 
-Code review HARUS memperlakukan em dash sebagai style violation.
+Review code **WAJIB** memperlakukan em dash sebagai pelanggaran gaya.
 
-Comments yang mengandung em dash HARUS diperbaiki.
+Komentar yang memuat em dash **WAJIB** diperbaiki.
 
-Developer tidak boleh menambahkan em dash secara sengaja.
+Developer DILARANG menambahkan em dash secara sengaja.
 
-## 15. No Circumvention
+## 15. Larangan Penyiasatan
 
-Tidak boleh menyiasati rule dengan:
+**DILARANG** menyiasati aturan dengan:
 
 ```text
 Unicode escape
@@ -305,9 +329,9 @@ Generated runtime substitution
 Indirect interpolation
 ```
 
-apabila hasil akhirnya menghasilkan em dash pada controlled output.
+apabila hasil akhirnya memuat em dash pada output yang dikendalikan.
 
-Contoh DILARANG:
+Contoh yang tidak disarankan:
 
 ```ts
 const separator = "\u2014";
@@ -319,11 +343,11 @@ atau bentuk encoded lain yang menghasilkan:
 —
 ```
 
-pada output yang dikendalikan application.
+pada output yang dikendalikan aplikasi.
 
-## 16. Scope
+## 16. Ruang Lingkup
 
-Rule ini berlaku terhadap:
+Aturan ini berlaku terhadap:
 
 ```text
 Entire repository
@@ -338,18 +362,21 @@ Entire developer-facing output
 Entire user-facing output
 ```
 
-Tidak ada module, feature, route, service, tool, provider adapter, test suite, script, atau documentation file yang otomatis dikecualikan.
+Tidak terdapat modul, fitur, route, service, tool, provider adapter, test suite, script, atau file dokumentasi yang dikecualikan secara otomatis.
 
-## 17. Final Rule
+## 17. Aturan Final
 
-Character:
+Karakter:
 
 ```text
 —
 ```
 
-**MUST NEVER be intentionally introduced into controlled project content or controlled application output.**
+**DILARANG secara sengaja dimasukkan ke dalam konten project yang terkontrol atau output aplikasi yang terkontrol.**
 
-Seluruh implementation, generated content, documentation, comments, UI text, API responses, MCP responses, logs, tests, configuration, dan repository content HARUS menggunakan punctuation alternatif yang tidak menghasilkan em dash.
+Seluruh implementasi, generated content, dokumentasi, komentar, teks UI, response API, response MCP, log, test, konfigurasi, dan konten repository **WAJIB** menggunakan tanda baca alternatif yang tidak menghasilkan em dash.
 
-No-em-dash compliance merupakan bagian dari code quality, documentation quality, output quality, dan engineering standards.
+Kepatuhan no-em-dash merupakan bagian dari kualitas code, kualitas dokumentasi, kualitas output, dan standar engineering.
+
+---
+

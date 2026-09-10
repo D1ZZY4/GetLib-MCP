@@ -1,20 +1,35 @@
-# UI/UX Architecture and Centralized CSS Rules
+---
+name: ui-ux
+description: Standar UI/UX profesional untuk design tokens, CSS, Tailwind, accessibility, responsive behavior, content, state, performance, security, testing, dan definition of done.
+metadata:
+  owner: D1ZZY4
+  category: agent-rules
+  language: id-ID
+version: 6.0.0
+license: MIT
+---
 
-Dokumen ini mendefinisikan standar UI/UX, styling, design system, dan arsitektur CSS untuk seluruh application.
+# UI/UX dan Arsitektur CSS Terpusat
 
-Tujuan utamanya adalah memastikan seluruh interface memiliki visual language yang konsisten, predictable, maintainable, responsive, accessible, dan mudah dikembangkan tanpa menghasilkan CSS yang tersebar, redundant, atau saling bertabrakan.
+## Cara Menggunakan Modul Ini
 
-CSS harus diperlakukan sebagai bagian dari architecture application, bukan sekadar kumpulan style untuk membuat tampilan terlihat bagus.
+Baca `blueprint.md` terlebih dahulu, lalu gunakan modul ini sebagai sumber otoritatif untuk keputusan UI, copy, styling, dan interaction. Terapkan bersama `no-em-dashes.md` untuk setiap perubahan teks atau visual. Penomoran bagian pada file ini bersifat lokal dan berurutan mulai dari 1. Aturan di sini bersifat kumulatif dengan modul keamanan, performa, dan error handling untuk konten, state, dan testing.
+
+Dokumen ini menetapkan standar UI/UX, styling, design system, dan arsitektur CSS untuk seluruh aplikasi.
+
+Tujuannya adalah memastikan seluruh antarmuka memiliki bahasa visual yang konsisten, terprediksi, terpelihara, responsif, dan aksesibel, serta dapat dikembangkan tanpa menghasilkan CSS yang tersebar, redundan, atau saling bertentangan.
+
+CSS diperlakukan sebagai bagian dari arsitektur aplikasi, bukan sekadar kumpulan gaya untuk memperbaiki tampilan.
 
 ---
 
-## 1. Core Principle
+# 1. Prinsip Inti
 
-Seluruh styling harus menggunakan centralized styling architecture.
+Seluruh styling **WAJIB** menggunakan arsitektur styling terpusat.
 
-Tidak boleh terdapat pola di mana setiap halaman, feature, atau component membuat sistem styling sendiri tanpa alasan yang kuat.
+Setiap halaman, fitur, atau komponen **DILARANG** membuat sistem styling tersendiri tanpa justifikasi teknis yang terdokumentasi.
 
-Visual behavior seperti:
+Perilaku visual seperti:
 
 * colors
 * typography
@@ -31,45 +46,30 @@ Visual behavior seperti:
 * z-index
 * animation
 
-harus memiliki source of truth yang jelas dan konsisten.
+**HARUS** memiliki sumber kebenaran tunggal yang konsisten.
 
 Tujuan akhirnya adalah:
 
-```text
-Design Tokens
-      ↓
-Global CSS
-      ↓
-Shared UI Primitives
-      ↓
-Feature Components
-      ↓
-Pages
+```mermaid
+flowchart TD
+    TOK["Design Tokens"] --> GLOB["Global CSS"]
+    GLOB --> PRIM["Shared UI Primitives"]
+    PRIM --> FEAT["Feature Components"]
+    FEAT --> PAGE["Pages"]
 ```
 
-Bukan:
+Bukan pola berikut:
 
-```text
-Page
- ├── local styles
- ├── random colors
- ├── random spacing
- ├── random radius
- └── custom overrides
+- Halaman membuat local styles, warna acak, spacing acak, radius acak, dan custom override secara mandiri.
+- Komponen memakai warna, spacing, dan override yang berbeda tanpa sumber kebenaran bersama.
 
-Component
- ├── different colors
- ├── different spacing
- └── another set of overrides
-```
-
-Sistem styling harus mengalir dari pusat ke komponen, bukan berkembang secara acak dari komponen menuju seluruh application.
+Sistem styling **WAJIB** mengalir dari pusat ke komponen, bukan berkembang secara acak dari komponen ke seluruh aplikasi.
 
 ---
 
-# 2. Centralized Styling Architecture
+# 2. Arsitektur Styling Terpusat
 
-Struktur styling utama harus memiliki boundary yang jelas.
+Struktur styling utama **HARUS** memiliki boundary yang jelas.
 
 Contoh:
 
@@ -97,15 +97,15 @@ styles/
 └── themes
 ```
 
-Tidak boleh ada banyak file CSS global yang melakukan pekerjaan sama.
+**DILARANG** membuat banyak file CSS global yang melakukan pekerjaan sama.
 
-Global CSS harus sesedikit mungkin dan memiliki responsibility yang jelas.
+Global CSS **HARUS** sesedikit mungkin dan memiliki responsibility yang jelas.
 
 ---
 
-# 3. Design Tokens Are the Source of Truth
+# 3. Design Token sebagai Sumber Kebenaran
 
-Semua nilai visual yang bersifat reusable harus berasal dari design tokens.
+Semua nilai visual yang bersifat reusable **HARUS** berasal dari design tokens.
 
 Design token mencakup:
 
@@ -151,11 +151,20 @@ Contoh konsep:
 }
 ```
 
-Nilai sebenarnya harus disesuaikan dengan design system application.
+Nilai aktual **WAJIB** disesuaikan dengan design system aplikasi.
 
-Component tidak boleh membuat nilai baru secara sembarangan ketika token yang sesuai sudah tersedia.
+Komponen **DILARANG** membuat nilai baru apabila token yang setara telah tersedia.
 
-Buruk:
+Tata kelola token minimum:
+
+| Keputusan | Aturan | Bukti |
+|-----------|--------|-------|
+| Token baru | Hanya apabila tidak terdapat token setara dan kebutuhan terdokumentasi | Proposal token dan review desain |
+| Token semantik | **WAJIB** menjadi default untuk komponen | Mapping primitive ke semantik |
+| Perubahan token | **WAJIB** menilai dampak theme dan seluruh konsumen | Visual review dan regression test |
+| Penghapusan token | Hanya setelah migrasi konsumen selesai | Audit referensi dan changelog |
+
+Contoh yang **TIDAK DISARANKAN**:
 
 ```css
 margin: 13px;
@@ -164,15 +173,15 @@ border-radius: 7px;
 color: #8f8f8f;
 ```
 
-Lebih baik menggunakan semantic token atau utility yang berasal dari design system.
+**DISARANKAN** menggunakan semantic token atau utility yang berasal dari design system.
 
-Tujuannya bukan menghilangkan seluruh custom values, tetapi mencegah munculnya visual decisions yang tidak memiliki alasan.
+Tujuannya bukan meniadakan seluruh custom value, melainkan mencegah keputusan visual yang tidak memiliki dasar kebutuhan.
 
 ---
 
-# 4. Semantic Tokens Over Raw Values
+# 4. Token Semantik Mengungguli Nilai Mentah
 
-Component sebaiknya menggunakan semantic meaning, bukan mengetahui detail palette.
+Komponen **DISARANKAN** menggunakan makna semantik, bukan detail palet secara langsung.
 
 Contoh:
 
@@ -196,27 +205,24 @@ lebih baik daripada:
 --red-500
 ```
 
-Raw palette dapat tetap ada sebagai primitive token, tetapi component sebaiknya bergantung pada semantic tokens.
+Palet mentah dapat dipertahankan sebagai primitive token, tetapi komponen **DISARANKAN** bergantung pada semantic token.
 
 Contohnya:
 
-```text
-Primitive
-    ↓
-Semantic
-    ↓
-Component
+```mermaid
+flowchart TD
+    PRIM["Primitive"] --> SEM["Semantic"] --> COMP["Component"]
 ```
 
-Hal ini memungkinkan theme berubah tanpa harus mengedit seluruh component.
+Hal ini memungkinkan theme berubah tanpa memodifikasi seluruh komponen.
 
 ---
 
-# 5. Theme Architecture
+# 5. Arsitektur Theme
 
-Theme harus centralized.
+Theme **WAJIB** dikelola secara terpusat.
 
-Semua theme-specific values harus didefinisikan melalui token system.
+Seluruh nilai spesifik theme **WAJIB** didefinisikan melalui sistem token.
 
 Contohnya:
 
@@ -232,7 +238,7 @@ Contohnya:
 }
 ```
 
-Component tidak boleh memiliki:
+Komponen **DILARANG** mendefinisikan:
 
 ```css
 .dark .some-component {
@@ -240,27 +246,28 @@ Component tidak boleh memiliki:
 }
 ```
 
-untuk setiap component secara terpisah jika behavior tersebut sebenarnya dapat ditangani oleh token.
+untuk setiap komponen secara terpisah apabila perilaku tersebut dapat ditangani oleh token.
 
-Lebih baik:
+Pola yang disarankan:
 
-```text
-Theme
-  ↓
-Semantic tokens change
-  ↓
-All components adapt automatically
+```mermaid
+flowchart TD
+    TH["Theme"] --> SEM["Semantic tokens change"]
+    SEM --> ALL["All components adapt automatically"]
+    ALL --> VERIFY["Verifikasi Kontras, Focus, dan Reduced Motion"]
 ```
 
-Theme harus dapat dikembangkan tanpa membuat duplicate component styles.
+Matriks verifikasi theme minimum: mode terang dan gelap, kontras teks, focus-visible keyboard, serta reduced motion.
+
+Theme **HARUS** dapat dikembangkan tanpa menduplikasi style komponen.
 
 ---
 
-# 6. No Random Colors
+# 6. Larangan Warna Acak
 
-Jangan menulis warna langsung di component kecuali ada kebutuhan khusus yang benar-benar justified.
+**TIDAK DISARANKAN** penulisan nilai warna langsung pada komponen, kecuali terdapat kebutuhan khusus yang terdokumentasi dan tidak dapat dipenuhi oleh token yang tersedia.
 
-Buruk:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```tsx
 <div className="bg-[#111827] text-[#f9fafb]">
@@ -272,9 +279,9 @@ atau:
 color: #84cc16;
 ```
 
-ketika warna tersebut sebenarnya merupakan bagian dari design system.
+apabila warna tersebut merupakan bagian dari design system.
 
-Lebih baik menggunakan centralized token atau framework utility yang terhubung ke token.
+**DISARANKAN** menggunakan token terpusat atau framework utility yang terhubung ke token.
 
 Hal yang sama berlaku untuk:
 
@@ -292,11 +299,11 @@ disabled
 
 ---
 
-# 7. Centralized Typography
+# 7. Tipografi Terpusat
 
-Typography harus mempunyai hierarchy yang konsisten.
+Tipografi **WAJIB** memiliki hierarki yang konsisten.
 
-System harus mendefinisikan:
+Sistem **WAJIB** mendefinisikan:
 
 ```text
 Display
@@ -309,9 +316,9 @@ Caption
 Code
 ```
 
-Typography harus centralized melalui typography tokens atau shared typography primitives.
+Tipografi **WAJIB** dikelola secara terpusat melalui token tipografi atau primitif tipografi bersama.
 
-Jangan membuat:
+**TIDAK DISARANKAN** pola berikut:
 
 ```text
 Page A:
@@ -326,7 +333,7 @@ font-size: 32px
 
 tanpa alasan desain yang jelas.
 
-Typography system harus menentukan:
+Sistem tipografi **WAJIB** menentukan:
 
 ```text
 font family
@@ -340,9 +347,9 @@ secara konsisten.
 
 ---
 
-# 8. Centralized Spacing System
+# 8. Sistem Spacing Terpusat
 
-Spacing harus mengikuti spacing scale.
+Spacing **WAJIB** mengikuti skala spacing.
 
 Contoh:
 
@@ -358,9 +365,9 @@ space-10
 space-12
 ```
 
-Component sebaiknya tidak menggunakan arbitrary spacing values apabila token yang sesuai sudah tersedia.
+Komponen **TIDAK DISARANKAN** menggunakan nilai spacing arbitrary apabila token yang setara telah tersedia.
 
-Spacing harus konsisten antara:
+Spacing **HARUS** konsisten antara:
 
 ```text
 Page
@@ -374,13 +381,13 @@ Navigation
 Toolbar
 ```
 
-Dengan demikian UI terasa berasal dari satu system yang sama.
+Dengan demikian UI dirasakan berasal dari satu sistem yang sama.
 
 ---
 
-# 9. Centralized Layout Primitives
+# 9. Primitif Layout Terpusat
 
-Layout patterns yang sering dipakai harus menjadi reusable primitives.
+Pola layout yang sering digunakan **WAJIB** dijadikan primitif yang dapat digunakan ulang.
 
 Contoh:
 
@@ -401,46 +408,44 @@ Daripada setiap page membuat layout sendiri.
 
 Contoh konseptual:
 
-```text
-Page
- ├── PageHeader
- ├── Toolbar
- └── PageContent
-      ├── Grid
-      └── Card
+```mermaid
+flowchart TD
+    PAGE["Page"] --> PH["PageHeader"]
+    PAGE --> TB["Toolbar"]
+    PAGE --> PC["PageContent"]
+    PC --> GR["Grid"]
+    PC --> CD["Card"]
 ```
 
-Layout primitive harus menyelesaikan common layout problems tanpa membuat abstraction berlebihan.
+Primitif layout **WAJIB** menyelesaikan masalah layout umum tanpa abstraksi yang berlebihan.
 
 ---
 
-# 10. Page Layout Consistency
+# 10. Konsistensi Layout Halaman
 
-Setiap page harus memiliki struktur visual yang konsisten.
+Setiap page **HARUS** memiliki struktur visual yang konsisten.
 
 Umumnya:
 
-```text
-Page
-├── Header
-│   ├── Title
-│   ├── Description
-│   └── Actions
-│
-├── Filters / Toolbar
-│
-└── Content
+```mermaid
+flowchart TD
+    PAGE["Page"] --> HEAD["Header"]
+    HEAD --> TITLE["Title"]
+    HEAD --> DESC["Description"]
+    HEAD --> ACT["Actions"]
+    PAGE --> FILT["Filters / Toolbar"]
+    PAGE --> CONT["Content"]
 ```
 
-Page tertentu dapat memiliki struktur berbeda apabila memang dibutuhkan oleh UX.
+Halaman tertentu dapat memiliki struktur yang berbeda apabila kebutuhan UX memang mensyaratkannya.
 
-Namun perbedaan tersebut harus berasal dari kebutuhan produk, bukan karena masing-masing developer membuat layout sendiri.
+Namun perbedaan tersebut **WAJIB** berasal dari kebutuhan produk, bukan akibat setiap developer membuat layout secara mandiri.
 
 ---
 
-# 11. Shared UI Components
+# 11. Komponen UI Bersama
 
-Komponen generic harus berada di shared UI layer.
+Komponen generik **WAJIB** ditempatkan pada lapisan UI bersama.
 
 Contoh:
 
@@ -466,16 +471,16 @@ Dropdown
 Breadcrumb
 ```
 
-Shared component harus:
+Komponen bersama **WAJIB**:
 
-* reusable
-* predictable
-* composable
-* accessible
-* theme-aware
-* independent dari business domain
+* dapat digunakan ulang
+* berperilaku terprediksi
+* komposabel
+* aksesibel
+* adaptif terhadap theme
+* independen terhadap domain bisnis
 
-Shared UI tidak boleh mengetahui detail seperti:
+UI bersama **DILARANG** mengetahui detail seperti:
 
 ```text
 Project
@@ -486,13 +491,13 @@ Server
 User
 ```
 
-Komponen domain-specific harus berada di feature module.
+Komponen spesifik domain **WAJIB** ditempatkan pada modul fitur.
 
 ---
 
-# 12. Feature Styling
+# 12. Styling Fitur
 
-Feature-specific components boleh memiliki styling khusus.
+Komponen spesifik fitur dapat memiliki styling khusus.
 
 Contoh:
 
@@ -504,9 +509,9 @@ web/features/mcp/
 │   └── mcp-log-viewer
 ```
 
-Styling tersebut tetap harus menggunakan centralized tokens.
+Styling tersebut tetap **HARUS** menggunakan centralized tokens.
 
-Feature component boleh menentukan:
+Komponen fitur dapat menentukan:
 
 ```text
 layout
@@ -514,13 +519,13 @@ composition
 component-specific visual behavior
 ```
 
-tetapi tidak boleh membuat design system baru.
+tetapi **DILARANG** membuat design system baru.
 
 ---
 
-# 13. CSS Modules, Utility Classes, and Global CSS
+# 13. CSS Module, Utility Class, dan Global CSS
 
-Penggunaan styling mechanism harus mengikuti responsibility.
+Penggunaan mekanisme styling **WAJIB** mengikuti tanggung jawabnya.
 
 Global CSS digunakan untuk:
 
@@ -542,9 +547,9 @@ flex/grid
 responsive composition
 ```
 
-Component-scoped styling digunakan apabila component benar-benar membutuhkan style yang tidak cocok ditangani utility atau shared primitive.
+Styling lingkup komponen digunakan apabila komponen memang membutuhkan style yang tidak dapat ditangani oleh utility atau primitif bersama.
 
-Jangan membuat seluruh application bergantung pada global selectors seperti:
+**TIDAK DISARANKAN** ketergantungan seluruh aplikasi pada global selector, contohnya:
 
 ```css
 .card {}
@@ -553,15 +558,15 @@ Jangan membuat seluruh application bergantung pada global selectors seperti:
 .title {}
 ```
 
-karena selector generik dapat menghasilkan collision dan hidden coupling.
+karena selector generik dapat menimbulkan collision dan keterkaitan tersembunyi.
 
 ---
 
-# 14. No Global Selector Pollution
+# 14. Larangan Polusi Selector Global
 
-Global CSS tidak boleh memasukkan styling yang terlalu spesifik terhadap business component.
+Global CSS **DILARANG** memuat styling yang spesifik terhadap komponen bisnis.
 
-Buruk:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```css
 .project-card {
@@ -577,19 +582,19 @@ Buruk:
 }
 ```
 
-jika semuanya sebenarnya component-specific.
+apabila seluruhnya sebenarnya bersifat spesifik komponen.
 
-Global CSS harus tetap minimal.
+Global CSS **WAJIB** dipertahankan minimal.
 
-Business component styles harus tetap terisolasi melalui component architecture.
+Style komponen bisnis **WAJIB** diisolasi melalui arsitektur komponen.
 
 ---
 
-# 15. Avoid Deep CSS Nesting
+# 15. Hindari Nesting CSS yang Dalam
 
-Jangan membuat selector hierarchy yang terlalu dalam.
+**TIDAK DISARANKAN** membuat hierarki selector yang terlalu dalam.
 
-Buruk:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```css
 .dashboard .sidebar .navigation .item .icon span {
@@ -597,9 +602,9 @@ Buruk:
 }
 ```
 
-Semakin dalam selector, semakin besar coupling terhadap DOM structure.
+Semakin dalam selector, semakin besar keterkaitan terhadap struktur DOM.
 
-Prefer component ownership yang jelas.
+Utamakan kepemilikan komponen yang jelas.
 
 Contohnya:
 
@@ -610,25 +615,25 @@ NavigationItem
 Icon
 ```
 
-masing-masing memiliki responsibility sendiri.
+masing-masing memiliki tanggung jawab sendiri.
 
 ---
 
-# 16. Avoid !important
+# 16. Hindari !important
 
-`!important` tidak boleh digunakan sebagai solusi default.
+`!important` **DILARANG** digunakan sebagai solusi default.
 
-Penggunaan `!important` harus sangat jarang dan harus memiliki alasan teknis.
+Penggunaan `!important` **WAJIB** sangat jarang dan **WAJIB** memiliki dasar teknis.
 
-Jika `!important` sering muncul, berarti kemungkinan besar architecture CSS atau specificity strategy bermasalah.
+Apabila `!important` sering muncul, kemungkinan besar arsitektur CSS atau strategi spesifisitas bermasalah.
 
-Jangan menyelesaikan specificity problems dengan menambahkan specificity problems baru.
+Selesaikan masalah spesifisitas tanpa menambah masalah spesifisitas baru.
 
 ---
 
-# 17. Component States Must Be Centralized
+# 17. State Komponen Harus Terpusat
 
-Setiap interactive component harus memiliki state yang konsisten.
+Setiap komponen interaktif **WAJIB** memiliki state yang konsisten.
 
 Minimum:
 
@@ -643,7 +648,7 @@ selected
 error
 ```
 
-State visual harus mengikuti token dan shared component behavior.
+State visual **HARUS** mengikuti token dan shared component behavior.
 
 Contohnya button:
 
@@ -656,15 +661,24 @@ disabled
 loading
 ```
 
-Tidak boleh setiap feature menciptakan interpretation berbeda untuk state yang sama.
+Setiap fitur **DILARANG** membuat interpretasi yang berbeda untuk state yang sama.
 
 ---
 
-# 18. Accessibility Is Part of UI Architecture
+# 18. Aksesibilitas sebagai Bagian Arsitektur UI
 
-Accessibility bukan tahap akhir.
+Aksesibilitas merupakan bagian dari arsitektur, bukan tahap akhir.
 
-Seluruh UI harus mempertimbangkan:
+Tingkat verifikasi minimum:
+
+| Area | **WAJIB** Diuji | Bukti |
+|------|-------------|-------|
+| Keyboard | Navigasi penuh, focus-visible, dan focus trap dialog | Test keyboard saja |
+| Screen reader | Alur kritis, label formulir, dan status error | Review screen reader |
+| Visual | Kontras, zoom tinggi, dan text wrapping | Pengukuran kontras dan uji zoom |
+| Motion | Reduced motion dan target sentuh | Uji preferensi dan ukuran target |
+
+Seluruh UI **HARUS** mempertimbangkan:
 
 ```text
 keyboard navigation
@@ -679,9 +693,9 @@ form labeling
 error states
 ```
 
-Focus state tidak boleh dihilangkan hanya karena desain terlihat lebih bersih.
+Focus state **DILARANG** dihilangkan semata karena desain terlihat lebih bersih.
 
-Buruk:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```css
 outline: none;
@@ -699,11 +713,11 @@ untuk keyboard accessibility.
 
 ---
 
-# 19. Responsive Design Must Be Systematic
+# 19. Desain Responsif Harus Sistematis
 
-Responsive behavior harus mengikuti breakpoint system yang centralized.
+Perilaku responsif **WAJIB** mengikuti sistem breakpoint yang terpusat.
 
-Jangan membuat breakpoint acak:
+**TIDAK DISARANKAN** pendefinisian breakpoint secara acak:
 
 ```css
 @media (max-width: 1377px)
@@ -711,11 +725,11 @@ Jangan membuat breakpoint acak:
 @media (max-width: 931px)
 ```
 
-kecuali terdapat kebutuhan desain yang benar-benar terukur.
+kecuali terdapat kebutuhan desain yang terukur.
 
-Gunakan breakpoint yang konsisten dan responsive composition.
+Gunakan breakpoint yang konsisten serta komposisi responsif.
 
-UI harus dipikirkan untuk:
+UI **HARUS** dipikirkan untuk:
 
 ```text
 mobile
@@ -724,9 +738,9 @@ desktop
 large desktop
 ```
 
-Tetapi jangan sekadar mengecilkan desktop UI.
+Namun hindari sekadar mengecilkan tampilan desktop.
 
-Layout harus mampu berubah secara struktural.
+Layout **HARUS** mampu berubah secara struktural.
 
 Contoh:
 
@@ -740,18 +754,18 @@ Topbar + drawer navigation + content
 
 ---
 
-# 20. Avoid Hardcoded Dimensions
+# 20. Hindari Dimensi Hardcoded
 
-Jangan berlebihan menggunakan fixed dimensions:
+**TIDAK DISARANKAN** penggunaan dimensi tetap secara berlebihan:
 
 ```css
 width: 723px;
 height: 412px;
 ```
 
-ketika content bersifat dynamic.
+apabila konten bersifat dinamis.
 
-Prefer:
+**DISARANKAN**:
 
 ```text
 max-width
@@ -763,31 +777,31 @@ responsive grid
 flex
 ```
 
-Fixed dimensions hanya digunakan ketika component memang membutuhkan ukuran tertentu.
+Dimensi tetap hanya digunakan apabila komponen memang membutuhkan ukuran tertentu.
 
 ---
 
-# 21. Centralized Z-Index
+# 21. Z-Index Terpusat
 
-Z-index harus memiliki layering strategy.
+Z-index **WAJIB** memiliki strategi pelapisan.
 
-Jangan:
+**TIDAK DISARANKAN** praktik berikut:
 
 ```css
 z-index: 999999;
 ```
 
-di satu component.
+pada satu komponen.
 
-Dan:
+Serta:
 
 ```css
 z-index: 99999;
 ```
 
-di component lain.
+pada komponen lain.
 
-Gunakan centralized layer hierarchy:
+Gunakan hierarki lapisan terpusat:
 
 ```text
 base
@@ -800,15 +814,15 @@ toast
 critical overlay
 ```
 
-Masing-masing harus mempunyai purpose yang jelas.
+Masing-masing **WAJIB** memiliki tujuan yang jelas.
 
 ---
 
-# 22. Centralized Motion
+# 22. Motion Terpusat
 
-Animation dan transition harus mengikuti motion system.
+Animasi dan transisi **WAJIB** mengikuti sistem motion.
 
-Centralize:
+Kelola secara terpusat:
 
 ```text
 duration
@@ -819,9 +833,9 @@ scale
 slide
 ```
 
-Tidak setiap component perlu memiliki transition yang berbeda.
+Setiap komponen tidak perlu memiliki transisi yang berbeda.
 
-Motion harus membantu:
+Motion **HARUS** membantu:
 
 ```text
 feedback
@@ -832,21 +846,21 @@ hierarchy
 
 bukan sekadar dekorasi.
 
-Respect:
+Hormati:
 
 ```css
 prefers-reduced-motion
 ```
 
-untuk user yang meminta reduced motion.
+untuk pengguna yang meminta reduced motion.
 
 ---
 
-# 23. Avoid Duplicate CSS
+# 23. Hindari Duplikasi CSS
 
-Tidak boleh terdapat duplicate style declarations yang melakukan pekerjaan sama.
+**DILARANG** terdapat deklarasi style duplikat yang mengerjakan hal yang sama.
 
-Contoh yang harus dihindari:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```text
 feature-a:
@@ -859,43 +873,38 @@ feature-c:
 padding: 16px
 ```
 
-Apabila konsep tersebut memang reusable, gunakan shared token atau primitive.
+Apabila konsep tersebut memang dapat digunakan ulang, gunakan shared token atau primitif.
 
-Tetapi jangan membuat abstraction hanya karena dua baris CSS kebetulan identik.
+Namun pembuatan abstraksi semata karena dua baris CSS kebetulan identik **TIDAK DISARANKAN**.
 
-Abstraction harus berdasarkan semantic reuse.
+Abstraksi **WAJIB** didasarkan pada penggunaan ulang semantik.
 
 ---
 
-# 24. Avoid Style Overrides Chain
+# 24. Hindari Rantai Override Style
 
-Hindari pola:
+**TIDAK DISARANKAN** pola:
 
-```text
-base style
- ↓
-feature override
- ↓
-page override
- ↓
-responsive override
- ↓
-dark-mode override
- ↓
-!important
+```mermaid
+flowchart TD
+    B["base style"] --> F["feature override"]
+    F --> P["page override"]
+    P --> R["responsive override"]
+    R --> D["dark-mode override"]
+    D --> IMP["!important"]
 ```
 
-Apabila satu component memerlukan terlalu banyak override, architecture component tersebut harus dievaluasi kembali.
+Apabila satu komponen memerlukan terlalu banyak override, arsitektur komponen tersebut **WAJIB** dievaluasi kembali.
 
-Style harus mempunyai single clear owner.
+Setiap style **WAJIB** memiliki pemilik tunggal yang jelas.
 
 ---
 
-# 25. No Dead CSS
+# 25. Larangan Dead CSS
 
-Setiap CSS rule harus memiliki consumer yang valid.
+Setiap rule CSS **WAJIB** memiliki konsumen yang valid.
 
-Dead CSS harus dihapus.
+Dead CSS **HARUS** dihapus.
 
 Termasuk:
 
@@ -909,15 +918,15 @@ legacy responsive rule
 unused component style
 ```
 
-Jangan mempertahankan CSS "untuk jaga-jaga".
+Hapus CSS yang tidak memiliki konsumen valid.
 
-Version control sudah menyimpan masa lalu.
+Riwayat perubahan telah tercatat pada version control.
 
 ---
 
-# 26. No Duplicate Tokens
+# 26. Larangan Duplikasi Token
 
-Jangan membuat:
+**TIDAK DISARANKAN** pola berikut:
 
 ```css
 --card-radius: 12px;
@@ -925,17 +934,17 @@ Jangan membuat:
 --dialog-radius: 12px;
 ```
 
-kalau semuanya memiliki semantic role yang sama dan memang tidak ada alasan berbeda.
+apabila seluruhnya memiliki peran semantik yang sama dan tidak terdapat alasan untuk membedakannya.
 
-Namun semantic separation boleh digunakan jika behavior masa depan memang perlu berbeda.
+Namun pemisahan semantik dapat digunakan apabila perilaku pada masa depan memang perlu dibedakan.
 
-Token harus mempunyai tujuan yang jelas.
+Token **HARUS** mempunyai tujuan yang jelas.
 
 ---
 
-# 27. UI Component Ownership
+# 27. Kepemilikan Komponen UI
 
-Ownership harus jelas.
+Kepemilikan **WAJIB** didefinisikan secara jelas.
 
 Shared:
 
@@ -955,17 +964,17 @@ Page-specific:
 di dalam feature/page composition
 ```
 
-Jangan memindahkan component ke shared hanya karena component tersebut digunakan lebih dari satu kali.
+Pindahkan komponen ke lapisan shared hanya apabila terdapat kepemilikan semantik bersama yang jelas. Frekuensi penggunaan semata bukan dasar yang memadai.
 
-Reusable dan shared adalah konsep yang berbeda.
+Dapat digunakan ulang dan shared merupakan konsep yang berbeda.
 
-Component harus berada pada layer yang memiliki ownership paling tepat.
+Komponen **WAJIB** ditempatkan pada lapisan dengan kepemilikan yang paling tepat.
 
 ---
 
-# 28. UI State Architecture
+# 28. Arsitektur State UI
 
-Visual state dan application state harus dipisahkan.
+Visual state dan application state **WAJIB** dipisahkan.
 
 Application state:
 
@@ -989,15 +998,15 @@ focus
 animation state
 ```
 
-Jangan menyimpan state UI secara global apabila state tersebut hanya dibutuhkan oleh satu component.
+Batasi state UI pada lingkup komponen apabila state tersebut hanya dibutuhkan oleh satu komponen.
 
-Global state harus benar-benar global.
+State global hanya untuk data yang benar-benar bersifat global.
 
 ---
 
-# 29. Loading, Empty, Error, and Success States
+# 29. State Loading, Empty, Error, dan Success
 
-Setiap feature yang mengambil data harus mendefinisikan minimal:
+Setiap fitur yang mengambil data **WAJIB** mendefinisikan minimal:
 
 ```text
 Loading
@@ -1006,7 +1015,7 @@ Empty
 Error
 ```
 
-UI tidak boleh hanya dirancang untuk happy path.
+UI **DILARANG** hanya dirancang untuk happy path.
 
 Contohnya:
 
@@ -1018,35 +1027,34 @@ Projects
 └── Error
 ```
 
-State tersebut harus menggunakan shared visual patterns.
+State tersebut **HARUS** menggunakan shared visual patterns.
 
 ---
 
-# 30. Skeletons Must Be Structural
+# 30. Skeleton Harus Struktural
 
-Skeleton harus merepresentasikan struktur content yang sebenarnya.
+Skeleton **WAJIB** merepresentasikan struktur konten yang sebenarnya.
 
-Jangan membuat skeleton generik jika layout sebenarnya sangat berbeda.
+**TIDAK DISARANKAN** skeleton generik apabila struktur layout aktual berbeda secara signifikan.
 
 Contohnya:
 
-```text
-ProjectCard
-    ↓
-ProjectCardSkeleton
+```mermaid
+flowchart TD
+    PC["ProjectCard"] --> PCS["ProjectCardSkeleton"]
 ```
 
-bukan seluruh page berubah menjadi satu gray rectangle.
+bukan seluruh halaman berubah menjadi satu persegi abu-abu.
 
-Skeleton harus membantu user memahami layout yang akan muncul.
+Skeleton **WAJIB** membantu pengguna memahami layout yang akan tampil.
 
 ---
 
-# 31. Forms
+# 31. Formulir
 
-Form harus memiliki standardized behavior.
+Formulir **WAJIB** memiliki perilaku yang terstandarisasi.
 
-Setiap form harus memiliki:
+Setiap formulir **WAJIB** memiliki:
 
 ```text
 label
@@ -1059,17 +1067,17 @@ success state
 disabled state
 ```
 
-Error harus ditempatkan dekat dengan field yang bermasalah.
+Error **WAJIB** ditempatkan berdekatan dengan field yang bermasalah.
 
-Form harus memiliki keyboard navigation yang benar.
+Formulir **WAJIB** memiliki navigasi keyboard yang benar.
 
 ---
 
-# 32. Tables and Data-Dense UI
+# 32. Tabel dan UI Padat Data
 
-Dashboard sering mempunyai data dalam jumlah besar.
+Dashboard sering memuat data dalam jumlah besar.
 
-Table harus mempertimbangkan:
+Tabel **WAJIB** mempertimbangkan:
 
 ```text
 sorting
@@ -1084,15 +1092,15 @@ row actions
 selection
 ```
 
-Table component generic harus berada di shared UI layer.
+Komponen tabel generik **WAJIB** ditempatkan pada lapisan UI bersama.
 
-Domain-specific columns tetap berada di feature.
+Kolom spesifik domain tetap berada pada fitur.
 
 ---
 
-# 33. Sidebar and Navigation
+# 33. Sidebar dan Navigasi
 
-Navigation harus centralized.
+Navigasi **WAJIB** dikelola secara terpusat.
 
 Route information:
 
@@ -1112,9 +1120,9 @@ permission:
 permissions
 ```
 
-jangan dicampurkan ke component secara manual.
+dilarang dicampurkan ke komponen secara manual.
 
-Navigation harus dapat menentukan:
+Navigasi **WAJIB** dapat menentukan:
 
 ```text
 label
@@ -1126,19 +1134,19 @@ badge
 active state
 ```
 
-dari centralized configuration.
+dari konfigurasi terpusat.
 
 ---
 
-# 34. Icon System
+# 34. Sistem Ikon
 
-Icon usage harus konsisten.
+Penggunaan ikon **WAJIB** konsisten.
 
-Jangan mencampurkan banyak icon library tanpa alasan.
+**TIDAK DISARANKAN** pencampuran beberapa pustaka ikon tanpa justifikasi teknis yang terdokumentasi.
 
-Gunakan satu primary icon system apabila memungkinkan.
+Gunakan satu sistem ikon utama apabila memungkinkan.
 
-Icon harus:
+Ikon **WAJIB** memiliki:
 
 ```text
 consistent stroke/fill style
@@ -1146,39 +1154,37 @@ consistent sizing
 accessible labeling
 ```
 
-Icon dekoratif harus tidak mengganggu screen reader.
+Ikon dekoratif **WAJIB** tidak mengganggu screen reader.
 
 ---
 
-# 35. Content Width
+# 35. Lebar Konten
 
-Dashboard tidak harus selalu full-width.
+Dashboard tidak **HARUS** selalu full-width.
 
-Gunakan content containers yang memiliki maximum width yang masuk akal.
+Gunakan kontainer konten dengan lebar maksimum yang wajar.
 
 Contoh konsep:
 
-```text
-Full dashboard
-    ↓
-Page container
-    ↓
-Content max-width
+```mermaid
+flowchart TD
+    FD["Full dashboard"] --> PC["Page container"]
+    PC --> CM["Content max-width"]
 ```
 
-Data-heavy pages dapat menggunakan wider container.
+Halaman dengan data padat dapat menggunakan kontainer yang lebih lebar.
 
-Forms dan settings dapat menggunakan narrower container.
+Formulir dan pengaturan dapat menggunakan kontainer yang lebih sempit.
 
-Width harus mengikuti content type.
+Lebar **WAJIB** mengikuti jenis konten.
 
 ---
 
-# 36. Visual Hierarchy
+# 36. Hierarki Visual
 
-Setiap page harus memiliki hierarchy yang dapat dipahami tanpa membaca seluruh text.
+Setiap halaman **WAJIB** memiliki hierarki yang dapat dipahami tanpa membaca seluruh teks.
 
-Hierarchy dapat menggunakan:
+Hierarki dapat menggunakan:
 
 ```text
 size
@@ -1189,13 +1195,13 @@ position
 grouping
 ```
 
-Jangan menggunakan warna sebagai satu-satunya cara menunjukkan hierarchy.
+Pastikan hierarki tidak hanya disampaikan melalui warna.
 
 ---
 
-# 37. Color Semantics
+# 37. Semantik Warna
 
-Status color harus memiliki makna konsisten:
+Warna status **WAJIB** memiliki makna yang konsisten:
 
 ```text
 Success
@@ -1205,17 +1211,17 @@ Info
 Neutral
 ```
 
-Jangan menggunakan warna merah untuk dekorasi pada satu tempat lalu berarti error di tempat lain.
+Pertahankan konsistensi makna warna. Warna yang menandakan error pada satu konteks **DILARANG** digunakan sebagai dekorasi pada konteks lain.
 
-Warna memiliki semantic meaning.
+Warna memiliki makna semantik.
 
 ---
 
-# 38. Density
+# 38. Densitas
 
-Dashboard application biasanya membutuhkan information density lebih tinggi daripada marketing website.
+Aplikasi dashboard umumnya membutuhkan densitas informasi yang lebih tinggi daripada website marketing.
 
-Namun density harus tetap mempunyai rhythm.
+Namun densitas **WAJIB** tetap memiliki ritme.
 
 Gunakan kombinasi:
 
@@ -1225,25 +1231,25 @@ normal
 comfortable
 ```
 
-sesuai context.
+sesuai konteks.
 
 Misalnya:
 
-```text
-Data table → tight
-Dashboard cards → normal
-Settings forms → comfortable
-```
+| Konteks | Densitas |
+|---------|----------|
+| Data table | tight |
+| Dashboard cards | normal |
+| Settings forms | comfortable |
 
-Jangan membuat semuanya compact atau semuanya oversized.
+Sesuaikan densitas dengan konteks. Penyeragaman compact atau oversized pada seluruh antarmuka **TIDAK DISARANKAN**.
 
 ---
 
-# 39. Visual Consistency Over Individual Component Beauty
+# 39. Konsistensi Visual Mengungguli Keindahan Komponen Individual
 
-Component harus dinilai dalam konteks keseluruhan product.
+Komponen **WAJIB** dinilai dalam konteks keseluruhan produk.
 
-Sebuah button yang terlihat bagus sendiri tetapi tidak konsisten dengan button lain tetap merupakan design failure.
+Tombol yang terlihat baik secara mandiri tetapi tidak konsisten dengan tombol lain tetap merupakan kegagalan desain.
 
 Prioritas:
 
@@ -1253,17 +1259,17 @@ System consistency
 Component novelty
 ```
 
-Jangan menciptakan design baru hanya untuk membuat satu page terlihat "beda".
+**TIDAK DISARANKAN** pembuatan desain baru yang semata bertujuan membedakan tampilan satu halaman.
 
 ---
 
-# 40. CSS and Tailwind
+# 40. CSS dan Tailwind
 
-Apabila application menggunakan Tailwind CSS, Tailwind harus tetap mengikuti centralized design system.
+Apabila aplikasi menggunakan Tailwind CSS, Tailwind **WAJIB** tetap mengikuti design system terpusat.
 
-Jangan menggunakan Tailwind sebagai alasan untuk mengabaikan architecture.
+Penggunaan Tailwind tidak meniadakan kewajiban mengikuti arsitektur design system.
 
-Hindari class string yang sangat panjang dan penuh arbitrary values apabila component tersebut sebenarnya membutuhkan abstraction.
+**TIDAK DISARANKAN** string class yang sangat panjang dan penuh nilai arbitrary apabila komponen tersebut sebenarnya membutuhkan abstraksi.
 
 Contoh:
 
@@ -1277,30 +1283,30 @@ className="
 "
 ```
 
-adalah indikasi bahwa design decision belum masuk ke design system.
+merupakan indikasi bahwa keputusan desain belum masuk ke design system.
 
-Tailwind harus digunakan sebagai implementation mechanism, bukan sebagai pengganti design system.
-
----
-
-# 41. Arbitrary Values
-
-Arbitrary values boleh digunakan apabila:
-
-* kebutuhan visual benar-benar unik
-* tidak cocok dengan token system
-* memiliki alasan desain
-* tidak merupakan pola reusable
-
-Jangan menggunakan arbitrary values untuk menggantikan token yang sudah tersedia.
+Tailwind **WAJIB** digunakan sebagai mekanisme implementasi, bukan sebagai pengganti design system.
 
 ---
 
-# 42. CSS Naming
+# 41. Nilai Arbitrary
 
-Nama class atau component harus menggambarkan semantic responsibility.
+Nilai arbitrary dapat digunakan apabila:
 
-Hindari:
+* kebutuhan visual bersifat unik
+* tidak sesuai dengan sistem token
+* memiliki dasar desain
+* bukan merupakan pola yang dapat digunakan ulang
+
+**TIDAK DISARANKAN** nilai arbitrary sebagai pengganti token yang telah tersedia.
+
+---
+
+# 42. Penamaan CSS
+
+Nama class atau komponen **WAJIB** menggambarkan tanggung jawab semantik.
+
+**TIDAK DISARANKAN**:
 
 ```text
 .box
@@ -1311,7 +1317,7 @@ Hindari:
 .green-section
 ```
 
-Prefer:
+**DISARANKAN**:
 
 ```text
 PageHeader
@@ -1321,15 +1327,15 @@ StatusBadge
 Toolbar
 ```
 
-Naming harus merepresentasikan purpose, bukan appearance semata.
+Penamaan **WAJIB** merepresentasikan tujuan, bukan semata tampilan.
 
 ---
 
-# 43. No Appearance-Based Architecture
+# 43. Larangan Arsitektur Berbasis Tampilan
 
-Hindari component architecture berdasarkan warna atau visual style.
+**TIDAK DISARANKAN** arsitektur komponen berdasarkan warna atau gaya visual.
 
-Buruk:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```text
 GreenCard
@@ -1338,7 +1344,7 @@ SmallPanel
 BigBox
 ```
 
-Lebih baik:
+**DISARANKAN**:
 
 ```text
 SuccessCard
@@ -1346,50 +1352,38 @@ ServerStatusPanel
 ResourceSummary
 ```
 
-Component harus mengkomunikasikan semantic purpose.
+Komponen **WAJIB** mengomunikasikan tujuan semantik.
 
 ---
 
-# 44. CSS Layering
+# 44. Layering CSS
 
-CSS architecture harus memiliki ordering yang predictable.
+Arsitektur CSS **WAJIB** memiliki urutan yang terprediksi.
 
 Secara konsep:
 
-```text
-Tokens
-  ↓
-Reset / Base
-  ↓
-Utilities
-  ↓
-Shared Components
-  ↓
-Feature Components
-  ↓
-Page Composition
+```mermaid
+flowchart TD
+    TOK["Tokens"] --> BASE["Reset / Base"]
+    BASE --> UTIL["Utilities"]
+    UTIL --> SHARED["Shared Components"]
+    SHARED --> FEAT["Feature Components"]
+    FEAT --> PAGE["Page Composition"]
 ```
 
-Layer yang lebih rendah tidak boleh bergantung pada layer yang lebih tinggi.
+Lapisan yang lebih rendah **DILARANG** bergantung pada lapisan yang lebih tinggi.
 
 Contohnya:
 
-```text
-token
-    tidak mengenal component
-
-shared component
-    tidak mengenal feature
-
-feature
-    tidak mengubah global primitive secara sembarangan
-```
+- Token tidak mengenal komponen.
+- Komponen bersama tidak mengenal fitur.
+- Fitur tidak mengubah primitif global secara sembarangan.
 
 ---
 
-# 45. No Feature-Specific Global CSS
+# 45. Larangan Global CSS Spesifik Fitur
 
-Feature tidak boleh mengubah behavior global seperti:
+Fitur **DILARANG** mengubah perilaku global seperti:
 
 ```css
 body {}
@@ -1398,33 +1392,28 @@ input {}
 h1 {}
 ```
 
-melalui feature-specific stylesheet.
+melalui stylesheet spesifik fitur.
 
-Global behavior hanya boleh berada pada global styling layer.
+Perilaku global hanya boleh berada pada lapisan styling global.
 
 ---
 
-# 46. Design System Evolution
+# 46. Evolusi Design System
 
-Design system harus mampu berkembang.
+Design system **HARUS** mampu berkembang.
 
 Ketika diperlukan component baru:
 
-```text
-Need
- ↓
-Check existing component
- ↓
-Check existing primitive
- ↓
-Check existing token
- ↓
-Extend existing system
- ↓
-Create new abstraction only when justified
+```mermaid
+flowchart TD
+    N["Need"] --> C1["Check existing component"]
+    C1 --> C2["Check existing primitive"]
+    C2 --> C3["Check existing token"]
+    C3 --> E["Extend existing system"]
+    E --> NC["Create new abstraction only when justified"]
 ```
 
-Jangan membuat component baru apabila component existing hanya membutuhkan variant.
+Utamakan penambahan varian pada komponen yang ada sebelum membuat komponen baru.
 
 Misalnya:
 
@@ -1450,13 +1439,13 @@ DangerButton
 CompactButton
 ```
 
-jika semuanya sebenarnya merupakan satu component dengan variants.
+apabila seluruhnya sebenarnya merupakan satu komponen dengan varian.
 
 ---
 
-# 47. Variants Must Be Semantic
+# 47. Varian Harus Semantik
 
-Variants sebaiknya menggambarkan semantic purpose:
+Varian **DISARANKAN** menggambarkan tujuan semantik:
 
 ```text
 primary
@@ -1475,15 +1464,15 @@ small-green
 dark-border
 ```
 
-Hal ini menjaga API component tetap stabil ketika theme berubah.
+Hal ini menjaga API komponen tetap stabil ketika theme berubah.
 
 ---
 
-# 48. Component API Should Stay Small
+# 48. API Komponen Harus Ringkas
 
-Component tidak boleh memiliki puluhan styling props yang tidak jelas.
+Komponen **DILARANG** memiliki puluhan props styling yang tidak jelas.
 
-Buruk:
+Contoh yang **TIDAK DISARANKAN**:
 
 ```text
 color
@@ -1499,15 +1488,15 @@ height
 ...
 ```
 
-Shared component sebaiknya mempunyai API yang fokus.
+Komponen bersama **DISARANKAN** memiliki API yang fokus.
 
-Styling complexity harus ditangani oleh design system dan composition, bukan dengan menambah props tanpa batas.
+Kompleksitas styling **WAJIB** ditangani oleh design system dan komposisi, bukan dengan penambahan props tanpa batas.
 
 ---
 
-# 49. Maintainability
+# 49. Maintainabilitas
 
-Setiap perubahan UI harus dapat dijelaskan melalui satu atau beberapa layer yang jelas.
+Setiap perubahan UI **HARUS** dapat dijelaskan melalui satu atau beberapa layer yang jelas.
 
 Contoh:
 
@@ -1535,36 +1524,26 @@ Jika ingin mengubah tampilan MCP server:
 MCP feature component
 ```
 
-Perubahan tidak boleh membutuhkan editing puluhan file yang tidak berhubungan.
+Perubahan **DILARANG** membutuhkan penyuntingan puluhan file yang tidak berhubungan.
 
 ---
 
-# 50. Final CSS Architecture Rule
+# 50. Aturan Final Arsitektur CSS
 
-Source of truth harus dapat dijelaskan seperti ini:
+Sumber kebenaran **WAJIB** dapat dijelaskan sebagai berikut:
 
-```text
-               DESIGN TOKENS
-                     │
-                     ▼
-               GLOBAL THEME
-                     │
-                     ▼
-              UI PRIMITIVES
-                     │
-          ┌──────────┴──────────┐
-          ▼                     ▼
-     LAYOUT SYSTEM          COMPONENTS
-          │                     │
-          └──────────┬──────────┘
-                     ▼
-              FEATURE UI
-                     │
-                     ▼
-                  PAGES
+```mermaid
+flowchart TD
+    TOK["DESIGN TOKENS"] --> THEME["GLOBAL THEME"]
+    THEME --> PRIM["UI PRIMITIVES"]
+    PRIM --> LAY["LAYOUT SYSTEM"]
+    PRIM --> COMP["COMPONENTS"]
+    LAY --> FEAT["FEATURE UI"]
+    COMP --> FEAT
+    FEAT --> PAGES["PAGES"]
 ```
 
-Setiap layer mempunyai responsibility sendiri.
+Setiap lapisan mempunyai tanggung jawab sendiri.
 
 ```text
 Tokens
@@ -1586,27 +1565,25 @@ Pages
     = composition
 ```
 
-Tidak boleh ada dependency terbalik seperti:
+**DILARANG** terdapat ketergantungan terbalik sebagai berikut:
 
-```text
-global CSS
-    ↓
-feature-specific implementation
+```mermaid
+flowchart TD
+    G["global CSS"] --> F["feature-specific implementation"]
 ```
 
 atau:
 
-```text
-shared UI
-    ↓
-business feature
+```mermaid
+flowchart TD
+    S["shared UI"] --> B["business feature"]
 ```
 
-Shared infrastructure tidak boleh bergantung pada feature-specific styling.
+Infrastruktur shared **DILARANG** bergantung pada styling spesifik fitur.
 
 ---
 
-# 51. Definition of Done for UI/UX
+# 51. Definition of Done untuk UI/UX
 
 UI dianggap selesai apabila:
 
@@ -1643,39 +1620,27 @@ UI dianggap selesai apabila:
 
 ---
 
-# 52. Ultimate Principle
+# 52. Prinsip Utama
 
-UI/UX harus diperlakukan sebagai system.
+UI/UX **WAJIB** diperlakukan sebagai suatu sistem.
 
-Bukan kumpulan halaman.
+UI/UX bukan sekumpulan halaman, bukan sekumpulan komponen, bukan sekumpulan class Tailwind, dan bukan sekumpulan file CSS.
 
-Bukan kumpulan component.
+Keseluruhan aplikasi **WAJIB** dirasakan sebagai hasil satu sistem engineering dan desain yang sama, meskipun dikembangkan oleh banyak fitur dan banyak developer.
 
-Bukan kumpulan Tailwind class.
+Setiap keputusan visual **WAJIB** memiliki tempat yang tepat:
 
-Bukan kumpulan CSS files.
-
-Keseluruhan application harus terasa seperti dibuat oleh satu engineering dan design system yang sama meskipun dikembangkan oleh banyak feature dan banyak developer.
-
-Setiap visual decision harus mempunyai tempat yang tepat:
-
-```text
-Global visual rule
-    → Design Tokens / Global CSS
-
-Reusable UI rule
-    → Shared Component
-
-Domain-specific UI rule
-    → Feature Component
-
-Page-specific composition
-    → Page / Feature Composition
+```mermaid
+flowchart LR
+    G["Global visual rule"] --> T["Design Tokens / Global CSS"]
+    R["Reusable UI rule"] --> S["Shared Component"]
+    D["Domain-specific UI rule"] --> F["Feature Component"]
+    P["Page-specific composition"] --> C["Page / Feature Composition"]
 ```
 
-Ketika suatu style dapat dipindahkan ke layer yang lebih tepat tanpa kehilangan semantic ownership, pindahkan.
+Apabila suatu style dapat dipindahkan ke lapisan yang lebih tepat tanpa kehilangan kepemilikan semantik, pindahkan.
 
-Ketika suatu abstraction hanya dibuat untuk menghindari beberapa baris CSS dan tidak mempunyai semantic value, jangan dibuat.
+Apabila suatu abstraksi hanya dibuat untuk menghindari beberapa baris CSS dan tidak memiliki nilai semantik, abstraksi tersebut tidak perlu dibuat.
 
 Target akhir adalah:
 
@@ -1689,4 +1654,49 @@ Maintainable
 Scalable
 ```
 
-dengan satu centralized visual system yang menjadi sumber kebenaran untuk seluruh application.
+dengan satu sistem visual terpusat sebagai sumber kebenaran tunggal untuk seluruh aplikasi.
+
+---
+
+# 53. Konten, Keamanan, Performa, dan Pengujian
+
+## 53.1 Content dan Interaction
+
+Copy **WAJIB** ringkas, spesifik, mudah dipindai, dan menyebutkan tindakan berikutnya.
+Label, heading, error, empty state, dan konfirmasi **WAJIB** memakai istilah yang konsisten dengan route, API, MCP, dan domain. Status penting **DILARANG** hanya disampaikan melalui warna atau ikon. Pesan error **WAJIB** menjelaskan masalah, dampak, dan langkah pemulihan tanpa membocorkan secret, stack trace, atau data pengguna lain.
+
+## 53.2 Accessibility Operasional
+
+Setiap perubahan UI **WAJIB** diverifikasi hanya dengan keyboard, screen reader pada alur kritis, kontras yang memadai, focus-visible, semantic HTML, label formulir, focus trap pada dialog, dan ukuran target sentuh. Komponen **WAJIB** tetap dapat digunakan pada zoom tinggi, text wrapping, dan reduced motion. ARIA hanya digunakan apabila semantic HTML tidak memadai, bukan sebagai pengganti struktur HTML yang benar.
+
+## 53.3 Responsive Behavior
+
+Uji mobile, tablet, desktop, dan large desktop pada konten nyata, termasuk string panjang, daftar kosong, error, dan data padat. Pertahankan konten penting secara utuh. Hindari pemotongan konten semata untuk mempertahankan tata letak satu baris. Sidebar dapat berubah menjadi topbar dan drawer pada mobile. Tabel **WAJIB** memiliki strategi kolom, scroll, atau kartu alternatif yang jelas.
+
+## 53.4 Performance dan Security
+
+UI **WAJIB** menghindari layout shift, fetch berulang, bundle besar yang tidak diperlukan, render ulang global, dan animasi yang mahal. Gunakan loading boundary dan skeleton struktural tanpa memalsukan data. **DILARANG** menempatkan secret, konfigurasi privileged, atau keputusan otorisasi pada browser. Seluruh data dari API **WAJIB** dianggap tidak tepercaya, di-escape sesuai konteks, dan ditampilkan melalui kontrak yang tervalidasi.
+
+## 53.5 Testing Visual dan Perilaku
+
+Perubahan **WAJIB** memiliki component test atau integration test untuk perilaku interaktif yang berubah, regression test untuk defect, dan E2E untuk flow kritis. Review visual **WAJIB** mencakup state default, hover, focus-visible, active, disabled, loading, selected, error, empty, dark theme apabila tersedia, serta breakpoint utama. Snapshot **DILARANG** menggantikan assertion perilaku.
+
+## 53.6 Checklist Implementasi
+
+- [ ] Token dan ownership style sudah ditemukan sebelum code ditulis.
+- [ ] Tidak ada selector global feature-specific atau nilai arbitrary tanpa alasan.
+- [ ] Semua state loading, success, empty, error, disabled, dan focus tersedia.
+- [ ] Keyboard, screen reader, contrast, zoom, reduced motion, dan touch diuji.
+- [ ] Layout diuji pada mobile, tablet, desktop, dan large desktop.
+- [ ] Copy konsisten, actionable, dan bebas dari secret atau data sensitif.
+- [ ] Tidak ada direct privileged data access dari browser.
+- [ ] Tidak ada layout shift atau fetch berulang yang tidak diperlukan.
+- [ ] Test behavior dan E2E kritis diperbarui.
+- [ ] Scan no-em-dash dan pemeriksaan typecheck, lint, serta build selesai.
+
+## 53.7 Definition of Done
+
+UI selesai apabila design token menjadi sumber kebenaran tunggal, kepemilikan komponen jelas, seluruh state penting terwakili, aksesibilitas dan perilaku responsif tervalidasi, konten aman dan dapat dipahami, performa tidak mengalami regresi yang tidak dapat diterima, boundary keamanan tetap berada pada server-side, dan bukti pengujian tercatat.
+
+---
+
