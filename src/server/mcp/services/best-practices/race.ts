@@ -27,7 +27,9 @@ export async function raceUrls(
   }
 
   if (hits.length === 0) return null;
-  if (hits.length === 1) return { ...hits[0]!, extraUrls: [] };
+  const single = hits[0];
+  if (!single) return null;
+  if (hits.length === 1) return { ...single, extraUrls: [] };
 
   // Merge the top pages: topic relevance dominates, content quality (headings,
   // code blocks, length) breaks ties. Quality alone let the vitest SNAPSHOT
@@ -66,9 +68,11 @@ export async function raceUrls(
       return `## Source: ${h.url}\n\n${body}`;
     })
     .join("\n\n---\n\n");
+  const lead = top[0];
+  if (!lead) return null;
   return {
     content: merged,
-    url: top[0]!.url,
+    url: lead.url,
     extraUrls: top.slice(1).map((h) => h.url),
   };
 }

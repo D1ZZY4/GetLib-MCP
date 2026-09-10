@@ -53,15 +53,20 @@ export function isBlockedIP(address: string): boolean {
         const isV4Mapped = groups.slice(0, 5).every((g) => g === 0) && groups[5] === 0xffff;
         if (isLoopback || isUnspecified) return true;
         if (isV4Mapped) {
-          const v4 = `${(groups[6]! >> 8) & 0xff}.${groups[6]! & 0xff}.${(groups[7]! >> 8) & 0xff}.${groups[7]! & 0xff}`;
+          const g6 = groups[6];
+          const g7 = groups[7];
+          if (g6 === undefined || g7 === undefined) return true;
+          const v4 = `${(g6 >> 8) & 0xff}.${g6 & 0xff}.${(g7 >> 8) & 0xff}.${g7 & 0xff}`;
           return isBlockedIP(v4);
         }
+        const g0 = groups[0];
+        if (g0 === undefined) return true;
         // ULA fc00::/7 → first byte high bit pattern 1111110x
-        if ((groups[0]! & 0xfe00) === 0xfc00) return true;
+        if ((g0 & 0xfe00) === 0xfc00) return true;
         // Link-local fe80::/10
-        if ((groups[0]! & 0xffc0) === 0xfe80) return true;
+        if ((g0 & 0xffc0) === 0xfe80) return true;
         // Multicast ff00::/8
-        if ((groups[0]! & 0xff00) === 0xff00) return true;
+        if ((g0 & 0xff00) === 0xff00) return true;
       }
     } catch {
       // If parsing fails on something unusual, refuse by default
@@ -98,7 +103,10 @@ export function installSsrfGuard(): void {
             // net.LookupFunction type omits the all-addresses overload; cast is required.
             return (callback as unknown as (err: null, addrs: LookupAddress[]) => void)(null, safe);
           }
-          const first = safe[0]!;
+          const first = safe[0];
+          if (!first) {
+            return callback(new Error(`SSRF blocked: ${hostname} resolves to private/blocked IP`), "", 4);
+          }
           callback(null, first.address, first.family);
         });
       },

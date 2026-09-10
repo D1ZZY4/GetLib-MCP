@@ -35,7 +35,8 @@ export interface AuditReport {
 }
 
 function renderSection(title: string, issues: Issue[], bpMap: Map<string, string>): string {
-  const first = issues[0]!;
+  const first = issues[0];
+  if (!first) return "";
   const locations = issues
     .slice(0, 10)
     .map((i) => `  - \`${i.file}:${i.line}\``)

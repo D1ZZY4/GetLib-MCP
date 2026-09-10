@@ -158,7 +158,7 @@ export function DevelopmentsPage() {
           }}
         />
       ) : runtime.environment !== "development" ? (
-        <Card>
+        <Card role="status" aria-label="Development unavailable in production">
           <Card.Header>
             <Card.Title>Not available in production</Card.Title>
             <Card.Description>

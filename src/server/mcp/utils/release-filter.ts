@@ -15,7 +15,8 @@ export function filterReleasesByVersion(raw: string, fromVersion?: string, toVer
   const low = fromMajor ?? -Infinity;
   const high = toMajor ?? Infinity;
   const parts = raw.split(/\n(?=###\s)/);
-  const header = parts.length > 0 && !parts[0]!.startsWith("###") ? parts.shift()! : "";
+  const head = parts[0];
+  const header = parts.length > 0 && head !== undefined && !head.startsWith("###") ? (parts.shift() ?? "") : "";
   // Headerless fragments (release-please style "### Features"/"### Bug Fixes"
   // sub-headers under a versioned release) inherit the preceding versioned
   // fragment's decision instead of being dropped - dropping them stripped the

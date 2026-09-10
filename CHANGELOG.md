@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Normalize use-case inputs, fix resolved flags and outage
   severity, widen durable reads, and reset health probes on mode
   changes.
+- Replace unsafe non-null indexing with explicit guards, bound the
+  shutdown drain with a timeout, and expose the production notice
+  to assistive tech.
 
 ### Changed
 

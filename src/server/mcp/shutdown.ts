@@ -16,7 +16,14 @@ export async function shutdownApplication(): Promise<void> {
   shuttingDown = true;
   log({ level: "info", msg: "shutdown.start" });
   try {
-    await Promise.allSettled([closeAllHttpSessions(), closeAllSseSessions()]);
+    const sessions = Promise.allSettled([closeAllHttpSessions(), closeAllSseSessions()]);
+    const timeout = new Promise<never>((_, reject) => {
+      const timer = setTimeout(() => reject(new Error("shutdown sessions timeout")), 5_000);
+      if (typeof timer.unref === "function") timer.unref();
+    });
+    await Promise.race([sessions, timeout]).catch((error: unknown) => {
+      log({ level: "warn", msg: "shutdown.sessions-timeout", error: String(error) });
+    });
   } catch (error) {
     log({ level: "warn", msg: "shutdown.sessions-failed", error: String(error) });
   }

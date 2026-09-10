@@ -29,7 +29,9 @@ export async function searchNpm(query: string): Promise<LibraryMatch | null> {
     const objects = data?.objects;
     if (!objects || objects.length === 0) return null;
 
-    const pkg = objects[0]!.package;
+    const firstObject = objects[0];
+    if (!firstObject) return null;
+    const pkg = firstObject.package;
     const homepage = (pkg.links?.homepage ?? "").replace(/\/+$/, "");
     const repoUrl = pkg.links?.repository;
     const githubUrl = repoUrl?.includes("github.com") ? repoUrl : undefined;
@@ -81,7 +83,8 @@ export async function searchGitHub(query: string): Promise<LibraryMatch | null> 
     const items = data?.items;
     if (!items || items.length === 0) return null;
 
-    const repo = items[0]!;
+    const repo = items[0];
+    if (!repo) return null;
     const homepage = (repo.homepage ?? "").replace(/\/+$/, "");
     const docsUrl = homepage || repo.html_url;
 
