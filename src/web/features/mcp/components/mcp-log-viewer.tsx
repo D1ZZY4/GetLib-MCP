@@ -12,7 +12,7 @@ import { formatLogTime } from "@/web/lib/format";
 import { fetchLogs } from "../services/mcp.service";
 import { SearchIcon } from "@/web/components/ui/icons";
 
-const LOAD_ERROR = "We couldn't load recent logs. Check your connection and try again.";
+const LOAD_ERROR = "We couldn't load recent logs. Try again in a moment.";
 
 type StatusFilter = "all" | "ok" | "fail";
 
@@ -135,10 +135,6 @@ export function McpLogViewer() {
       {loading ? (
         <Card role="status" aria-label="Loading logs">
           <Card.Content>
-            <div className="mb-2 flex items-center gap-2" aria-hidden="true">
-              <Skeleton className="h-8 flex-1 rounded-xl" />
-              <Skeleton className="h-8 w-24 rounded-xl" />
-            </div>
             <div className="divide-y divide-border" aria-hidden="true">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="flex items-center justify-between gap-3 py-2">

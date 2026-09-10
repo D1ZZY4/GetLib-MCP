@@ -39,10 +39,10 @@ export function McpHealth() {
       {loading ? (
         <div role="status" aria-label="Loading health" className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
+            <StatCardSkeleton compact />
+            <StatCardSkeleton compact />
+            <StatCardSkeleton compact />
+            <StatCardSkeleton compact />
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
@@ -97,7 +97,7 @@ export function McpHealth() {
                 </Card.Description>
               </Card.Header>
               <Card.Content>
-                <dl className="grid grid-cols-3 gap-2 text-sm">
+                <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
                   <div>
                     <dt className="text-xs text-muted">Success</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">
@@ -125,7 +125,7 @@ export function McpHealth() {
                 <Card.Description>Per-domain fetch protection</Card.Description>
               </Card.Header>
               <Card.Content>
-                <dl className="grid grid-cols-3 gap-2 text-sm">
+                <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
                   <div>
                     <dt className="text-xs text-muted">Open</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">{health.circuits.open}</dd>

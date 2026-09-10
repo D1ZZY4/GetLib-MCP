@@ -1,10 +1,7 @@
 import { fetchJson } from "@/web/lib/api-client";
 import type { LibraryFetch } from "@/web/lib/ranking";
 
-// Re-exported from the shared ranking boundary so existing feature
-// imports keep working while the single implementation lives in web/lib.
-export { rankLibraryFetches } from "@/web/lib/ranking";
-export type { LibraryFetch } from "@/web/lib/ranking";
+export type { LibraryFetch };
 
 export interface UsageDay {
   date: string;

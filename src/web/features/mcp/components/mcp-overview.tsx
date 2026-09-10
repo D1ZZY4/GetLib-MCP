@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Card } from "@heroui/react";
+import { Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -16,6 +16,7 @@ const SECTIONS = [
   { href: "/mcp/servers", title: "Servers", description: "Registered servers with live counts." },
   { href: "/mcp/tools", title: "Tools", description: "List and run every registered tool." },
   { href: "/mcp/playground", title: "Playground", description: "Run tools with custom arguments." },
+  { href: "/mcp/api-keys", title: "API keys", description: "Long-lived Bearer keys for MCP clients." },
   { href: "/mcp/resources", title: "Resources", description: "Browse readable MCP resources." },
   { href: "/mcp/prompts", title: "Prompts", description: "Inspect reusable prompt templates." },
   { href: "/mcp/clients", title: "Clients", description: "Connected AI clients." },
@@ -72,11 +73,26 @@ export function McpOverview() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading MCP overview" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
+        <div role="status" aria-label="Loading MCP overview" className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCardSkeleton compact />
+            <StatCardSkeleton compact />
+            <StatCardSkeleton compact />
+            <StatCardSkeleton compact />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="h-full">
+                <Card.Header>
+                  <Skeleton className="h-4 w-28 rounded" />
+                  <Skeleton className="h-3 w-48 max-w-full rounded" />
+                </Card.Header>
+                <Card.Footer>
+                  <Skeleton className="h-9 w-full rounded-xl" />
+                </Card.Footer>
+              </Card>
+            ))}
+          </div>
         </div>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retryAll} />

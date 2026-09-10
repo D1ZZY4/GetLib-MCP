@@ -16,21 +16,9 @@ export function statusTone(status: string): string {
 }
 
 /**
- * Canonical severity-to-tone mapping for attention and audit surfaces.
- * High maps to danger, medium to warning, low to success. Unknown
- * severities fall back to the neutral tone instead of guessing.
- */
-export function severityTone(severity: string): string {
-  if (severity === "high") return "bg-danger/10 text-danger";
-  if (severity === "medium") return "bg-warning/10 text-warning";
-  if (severity === "low") return "bg-success/10 text-success";
-  return "bg-surface-tertiary text-muted";
-}
-
-/**
  * Canonical severity-to-surface mapping for filled attention banners.
- * Same severity taxonomy as severityTone, extended with the border
- * treatment attention banners need.
+ * High maps to danger, medium to warning, low to success, extended
+ * with the border treatment attention banners need.
  */
 export function severityFill(severity: string): string {
   if (severity === "high") return "border-danger/20 bg-danger/10";

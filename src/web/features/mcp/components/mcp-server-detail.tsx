@@ -61,7 +61,7 @@ export function McpServerDetail({ serverId }: { serverId: string }) {
               <Card.Description>Live primitive counts from the shared registry.</Card.Description>
             </Card.Header>
             <Card.Content>
-              <dl className="grid grid-cols-3 gap-2 text-sm">
+              <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-xs text-muted">Tools</dt>
                   <dd className="mt-0.5 font-semibold tabular-nums">{server.counts.tools}</dd>

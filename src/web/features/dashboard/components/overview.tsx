@@ -35,16 +35,18 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
           <Card.Description>Request activity and top fetches.</Card.Description>
         </Card.Header>
         <Card.Content>
-          <Skeleton className="h-55 rounded-xl" />
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <Skeleton className="h-19 rounded-xl" />
-            <Skeleton className="h-19 rounded-xl" />
-            <Skeleton className="h-19 rounded-xl" />
-          </div>
-          <div className="mt-4 space-y-2.5" aria-hidden="true">
-            <Skeleton className="h-4 rounded" style={{ width: "64%" }} />
-            <Skeleton className="h-4 rounded" style={{ width: "48%" }} />
-            <Skeleton className="h-4 rounded" style={{ width: "56%" }} />
+          <div role="status" aria-label="Loading overview">
+            <Skeleton className="h-55 rounded-xl" />
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <Skeleton className="h-19 rounded-xl" />
+              <Skeleton className="h-19 rounded-xl" />
+              <Skeleton className="h-19 rounded-xl" />
+            </div>
+            <div className="mt-4 space-y-2.5" aria-hidden="true">
+              <Skeleton className="h-4 rounded" style={{ width: "64%" }} />
+              <Skeleton className="h-4 rounded" style={{ width: "48%" }} />
+              <Skeleton className="h-4 rounded" style={{ width: "56%" }} />
+            </div>
           </div>
         </Card.Content>
       </Card>

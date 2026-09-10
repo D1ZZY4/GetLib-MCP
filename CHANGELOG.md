@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adopt shared structural skeletons across every loading state.
 - Route logs by host truthfully, survive deleted working
   directories, and ignore local credentials.
+- Drop the unused severity tone and tighten loading semantics,
+  grids, and ranking imports.
 
 </details>
 
