@@ -19,6 +19,7 @@ cp .env.example .env   # set GET_LIB_MODE=development for local work
 bun run dev      # dashboard with Turbopack
 bun run mcp      # MCP server over stdio (14 tools, 2 resources, 6 prompts)
 bun run build:mcp # emit the modular npx/CLI entry to dist/index.js (runs on prepublishOnly)
+bun run db:push -- --database-url "$DATABASE_URL" --target development  # apply supabase/migrations in order
 bun run build
 bun run start    # also serves Streamable HTTP at /api/mcp/http and SSE at /api/mcp/sse
 bun run typecheck

@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Changed
+
+- Add a db:push script that applies Supabase migrations in order
+  with production guardrails.
+
 </details>
 
 ## [1.2.2] - 2026-09-10
