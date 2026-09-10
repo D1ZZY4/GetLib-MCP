@@ -3,6 +3,8 @@ import { config } from "@/server/mcp/config";
 import { fetchWithTimeout, githubAuthHeaders } from "@/server/mcp/services/fetcher";
 import { readBodyCapped } from "@/server/mcp/services/http/request";
 import { diskDocCache, docCache } from "@/server/mcp/services/cache";
+import { lookupByAlias, lookupById } from "@/server/mcp/sources/registry";
+import { buildIndex } from "@/server/mcp/services/snippets/build-index";
 
 /**
  * Live infrastructure binding for the examples use case. The tool
@@ -22,5 +24,10 @@ export const liveExamplesDeps: ExamplesDeps = {
   diskCacheGet: (key) => diskDocCache.get(key),
   diskCacheSet: (key, value, ttlMs) => {
     void diskDocCache.set(key, value, ttlMs);
+  },
+  fallback: {
+    lookupById,
+    lookupByAlias,
+    buildIndex,
   },
 };

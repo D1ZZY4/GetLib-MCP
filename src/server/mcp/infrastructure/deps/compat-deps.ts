@@ -6,7 +6,7 @@ import {
   fetchCaniuse,
   fetchMdnSearchPage,
 } from "@/server/mcp/services/compat-sources";
-import { docCache } from "@/server/mcp/services/cache";
+import { docCacheBinding } from "@/server/mcp/services/cache";
 
 /**
  * Live infrastructure binding for the compat use case. The tool adapter
@@ -19,8 +19,5 @@ export const liveCompatDeps: CompatDeps = {
   fetchRenderedMdn,
   fetchCaniuse,
   fetchMdnSearchPage,
-  cacheGet: (key) => docCache.get(key),
-  cacheSet: (key, value) => {
-    docCache.set(key, value);
-  },
+  ...docCacheBinding(),
 };
