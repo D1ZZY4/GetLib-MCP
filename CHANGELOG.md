@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+</details>
+
+## [1.2.2] - 2026-09-10
+
+<details>
+<summary>1.2.2 changes (click to expand)</summary>
+
 ### Added
 
 - Replace API key revocation with permanent deletion behind a
