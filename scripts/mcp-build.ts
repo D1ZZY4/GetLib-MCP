@@ -1,15 +1,3 @@
-/**
- * Modular MCP build for npm publish.
- *
- * Emits readable per-module ESM to dist/ (dist/server, dist/application,
- * dist/domain) via tsc, then rewrites path aliases and extensionless
- * relative imports to Node ESM compatible specifiers:
- * - "@/x" becomes a relative specifier with .js
- * - "./y" without extension becomes "./y.js" (or "/index.js" for dirs)
- * Bare specifiers (zod, undici, @modelcontextprotocol/sdk) stay external
- * so the published tarball stays small and auditable like the reference
- * packages, instead of one minified bundle blob.
- */
 import { execSync } from "child_process";
 import { chmodSync, existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
 import { dirname, join, relative, resolve, sep } from "path";
@@ -82,10 +70,6 @@ const entry = join(DIST, "server", "mcp", "stdio-entry.js");
 if (!existsSync(entry)) {
   throw new Error(`modular build entry missing: ${entry}`);
 }
-// Promote the entry to dist/index.js with full logic (like the reference
-// packages) instead of a thin wrapper: rebase its relative specifiers from
-// dist/server/mcp/ to dist/ so dist/index.js reads as the real CLI entry
-// while dist/ keeps the modular per-module tree.
 const entrySource = readFileSync(entry, "utf-8");
 const entryDir = dirname(entry);
 const promoted = entrySource.replace(

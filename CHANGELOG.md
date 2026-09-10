@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   report and dashboard surfaces.
 - Rename the MCP build script to scripts/mcp-build.ts with no
   behavior change.
+- Strip comments from the MCP build script with no behavior change.
 
 </details>
 
