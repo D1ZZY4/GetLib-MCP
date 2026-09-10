@@ -22,9 +22,9 @@ bun run build:mcp # bundle the npx/CLI entry to dist/mcp.js (runs on prepublishO
 bun run build
 bun run start    # also serves Streamable HTTP at /api/mcp/http and SSE at /api/mcp/sse
 bun run typecheck
-bun run lint     # typecheck + no-em-dash repository check
-bun run validate # typecheck + no-em-dash check + tests
-bun test         # server unit tests (bun:test)
+bun run lint     # typecheck + no-em-dash repository check + architecture boundary check
+bun run validate # typecheck + no-em-dash check + boundary check + tests + production build
+bun test         # unit + integration tests across application, domain, and server (bun:test)
 ```
 
 ## Layout
@@ -35,12 +35,18 @@ src/
                # api/_lib (shared route helpers: error model, body limits, request IDs)
   web/         # Dashboard UI: features, components, hooks, lib/api-client,
                # styles/tokens.css, types (web-owned control-plane contracts)
-  application/ # Use cases: health, clients, mcp catalog, sources, dashboard,
-               # statistics, install, runtime, development (used by API routes)
-  domain/      # Pure business rules (no I/O): auth policy
+  application/ # Use cases: library (search, resolve, docs, best-practices,
+               # snippets, examples, compare, changelog, migration,
+               # batch-resolve), scan, audit, compat, dispatch, health,
+               # clients, mcp catalog, sources, dashboard, statistics,
+               # install, runtime, development, settings, auth (used by
+               # API routes). Capability seams are injected Deps interfaces;
+               # live bindings sit in server/mcp/infrastructure/deps.
+  domain/      # Pure business rules (no I/O): auth policy, MCP catalog contracts
   server/mcp   # MCP module: registry, tools, services, sources, utils,
                # resources, prompts, transport, runtime, init,
-               # infrastructure/database, infrastructure/supabase, tests
+               # infrastructure/database, infrastructure/supabase,
+               # infrastructure/deps (live use-case bindings), tests
 ```
 
 ## Architecture
@@ -73,7 +79,9 @@ circumventions are additionally rejected in user-facing `src/app` and
 `src/web` output, while backend detection patterns may still match em
 dashes inside untrusted external content. `AGENTS.md` is
 excluded because Next.js tooling regenerates that file, and `bun.lock`
-because it is a generated lockfile). All
+because it is a generated lockfile) and the architecture boundary check
+(`scripts/check-boundaries.ts`: dependency direction across web, app,
+application, domain, infrastructure, and MCP layers). All
 `GETLIB_*` environment variables are validated in
 `src/server/mcp/config.ts`, the single configuration boundary.
 

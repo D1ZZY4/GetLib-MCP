@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tools into adapters over live bindings.
 - Wire routes, init, and the registry backstop to live bindings
   with bounded bootstrap I/O and a shared envelope reader.
+- Enforce architecture boundaries in lint and cover transport
+  auth plus migration contracts with tests.
 - Adopt shared input schemas in every route and await the async
   health and statistics snapshots.
 - Extract compat and dispatch use cases with injected seams so
