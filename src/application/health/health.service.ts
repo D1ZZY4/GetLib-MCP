@@ -111,12 +111,6 @@ async function probeDatabase(
   return inflightProbe;
 }
 
-/** Test hook - clears the cached probe so tests observe a live result. */
-export function resetHealthProbeCache(): void {
-  cachedProbe = null;
-  inflightProbe = null;
-}
-
 function databaseCheck(status: DatabaseStatus, isMock: boolean): DependencyCheck {
   if (isMock || status.health === "mock" || status.health === "healthy") {
     // Mock mode is healthy-by-definition; "mock" from the repository

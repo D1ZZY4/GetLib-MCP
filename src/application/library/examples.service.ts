@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isExtractionAttempt, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 import { parseExternal, externalSchemas } from "@/server/mcp/utils/validate-external";
-import { docsFallbackResponse } from "./examples-fallback";
+import { docsFallbackResponse, type ExamplesFallbackDeps } from "./examples-fallback";
 import { renderCodeSearch, type CodeSearchItem } from "./examples-render";
 
 const codeSearchItemSchema = z.object({
@@ -18,10 +18,11 @@ const codeSearchItemSchema = z.object({
 
 /**
  * Capability seams of the examples use case. GitHub code search, the
- * caches, and the token presence are infrastructure injected here. The
- * docs-derived fallback and result rendering are application-owned
- * siblings imported directly; shared protection and external-payload
- * validation stay imported as cross-cutting technical infrastructure.
+ * caches, the token presence, and the docs-fallback retrieval seams are
+ * infrastructure injected here. Result rendering is an
+ * application-owned sibling imported directly; shared protection and
+ * external-payload validation stay imported as cross-cutting technical
+ * infrastructure.
  */
 export interface ExamplesDeps {
   githubToken: string | undefined;
@@ -32,6 +33,7 @@ export interface ExamplesDeps {
   cacheSet: (key: string, value: string, ttlMs: number) => void;
   diskCacheGet: (key: string) => Promise<string | undefined>;
   diskCacheSet: (key: string, value: string, ttlMs: number) => void;
+  fallback: ExamplesFallbackDeps;
 }
 
 export interface ExamplesInput {
@@ -92,14 +94,17 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
     reason: string,
     emptyText?: string,
   ): Promise<ExamplesApplicationResult> =>
-    docsFallbackResponse({
-      library,
-      pattern,
-      language,
-      maxResults,
-      reason,
-      ...(emptyText !== undefined ? { emptyText } : {}),
-    }).then((response) => ({ response, resolved: true }));
+    docsFallbackResponse(
+      {
+        library,
+        pattern,
+        language,
+        maxResults,
+        reason,
+        ...(emptyText !== undefined ? { emptyText } : {}),
+      },
+      deps.fallback,
+    ).then((response) => ({ response, resolved: true }));
 
   // GitHub code search is authenticated-only: without a token the call
   // is a guaranteed 401/403. Skip straight to the docs-derived path

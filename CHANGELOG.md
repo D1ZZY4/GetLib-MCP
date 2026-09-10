@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dedicated table plus migration.
 - Accept API keys on every guarded route through the same live
   verification seam.
+- Inject the examples fallback seams and re-export the sources
+  error from the application layer.
 - Verify API keys by indexed hash lookup, redact key material
   and emails from logs, harden the keys UI, and constrain hashes
   unique.

@@ -1,6 +1,6 @@
 import { withNotice } from "@/server/mcp/utils/guard";
-import { lookupById, lookupByAlias } from "@/server/mcp/sources/registry";
-import { buildIndex } from "@/server/mcp/services/snippets/build-index";
+import type { LibraryEntry } from "@/server/mcp/types";
+import type { SnippetIndex } from "@/server/mcp/types";
 import { rankSnippets, renderSnippets } from "@/server/mcp/utils/snippet-extract";
 
 export interface ExamplesResponse {
@@ -10,27 +10,49 @@ export interface ExamplesResponse {
 }
 
 /**
+ * Capability seams of the docs-derived examples fallback. Registry
+ * lookup and snippet-index building are infrastructure injected here
+ * so the fallback stays testable without network or registry state.
+ */
+export interface ExamplesFallbackDeps {
+  lookupById: (id: string) => LibraryEntry | null | undefined;
+  lookupByAlias: (alias: string) => LibraryEntry | null | undefined;
+  buildIndex: (
+    library: string,
+    version: string | undefined,
+    docsUrl: string,
+    llmsTxtUrl: string | undefined,
+    llmsFullTxtUrl: string | undefined,
+    githubUrl: string | undefined,
+    topic: string,
+  ) => Promise<SnippetIndex | null>;
+}
+
+/**
  * GitHub code search is auth-only - without GETLIB_GITHUB_TOKEN it always returns
  * 401. Instead of dead-ending, serve ranked code examples from the library's
  * official documentation and say so.
  */
 async function docsExamples(
+  deps: ExamplesFallbackDeps,
   library: string,
   pattern: string | undefined,
   maxResults: number,
   reason: string,
 ): Promise<{ text: string; sourceUrl: string; count: number } | null> {
-  const entry = lookupById(library) ?? lookupByAlias(library);
+  const entry = deps.lookupById(library) ?? deps.lookupByAlias(library);
   if (!entry) return null;
-  const index = await buildIndex(
-    entry.id,
-    undefined,
-    entry.docsUrl,
-    entry.llmsTxtUrl,
-    entry.llmsFullTxtUrl,
-    entry.githubUrl,
-    pattern ?? "",
-  ).catch(() => null);
+  const index = await deps
+    .buildIndex(
+      entry.id,
+      undefined,
+      entry.docsUrl,
+      entry.llmsTxtUrl,
+      entry.llmsFullTxtUrl,
+      entry.githubUrl,
+      pattern ?? "",
+    )
+    .catch(() => null);
   if (!index || index.snippets.length === 0) return null;
   const ranked = rankSnippets(index.snippets, pattern ?? "", undefined, maxResults);
   if (ranked.length === 0) return null;
@@ -49,17 +71,20 @@ async function docsExamples(
 }
 
 /** Documentation-derived examples, or an actionable message when there are none. */
-export async function docsFallbackResponse(params: {
-  library: string;
-  pattern: string | undefined;
-  language: string | undefined;
-  maxResults: number;
-  reason: string;
-  /** Message when the docs fallback also came up empty. Defaults to the generic hint. */
-  emptyText?: string;
-}): Promise<ExamplesResponse> {
+export async function docsFallbackResponse(
+  params: {
+    library: string;
+    pattern: string | undefined;
+    language: string | undefined;
+    maxResults: number;
+    reason: string;
+    /** Message when the docs fallback also came up empty. Defaults to the generic hint. */
+    emptyText?: string;
+  },
+  deps: ExamplesFallbackDeps,
+): Promise<ExamplesResponse> {
   const { library, pattern, language, maxResults, reason, emptyText } = params;
-  const fallback = await docsExamples(library, pattern, maxResults, reason).catch(() => null);
+  const fallback = await docsExamples(deps, library, pattern, maxResults, reason).catch(() => null);
   if (fallback) {
     return {
       content: [{ type: "text", text: fallback.text }],

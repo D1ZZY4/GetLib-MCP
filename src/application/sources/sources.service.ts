@@ -1,5 +1,8 @@
 import type { SourceSettingsState } from "@/server/mcp/services/source-settings";
 
+/** Re-exported so route error mapping stays in the application layer. */
+export { SourceSettingsValidationError } from "@/server/mcp/services/source-settings";
+
 export interface SourceSummaryItem {
   id: string;
   name: string;
