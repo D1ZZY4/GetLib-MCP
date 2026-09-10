@@ -2,14 +2,7 @@ import { fuzzySearch, lookupByAlias } from "@/server/mcp/sources/registry";
 import type { LibraryMatch } from "@/server/mcp/types";
 import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 import { isLibraryBlocked, isSourceEnabled } from "@/server/mcp/services/source-settings";
-import {
-  resolveFromNpm,
-  resolveFromPypi,
-  resolveFromCrates,
-  resolveFromGo,
-  searchNpm,
-  searchGitHub,
-} from "@/server/mcp/services/resolve";
+import { resolveBareNameCandidates } from "@/server/mcp/services/resolve";
 
 export const RESOLVE_NAME_MAX = 200;
 export const RESOLVE_QUERY_MAX = 500;
@@ -126,34 +119,16 @@ export async function resolveLibraryUseCase(input: ResolveInput): Promise<Resolv
     }
   }
 
-  // 3. Fallback to package registries (npm, PyPI, crates.io, Go) - only when
-  // the registry gave nothing, or very few low-quality fuzzy hits. Multiple
-  // decent fuzzy results suppress the external round-trips (a well-aliased
-  // entry should not trigger npm/pypi lookups just for scoring < 90).
+  // 3. Fallback to package registries via the shared bare-name pipeline.
+  // Only runs when the registry gave nothing, or very few low-quality fuzzy
+  // hits. Multiple decent fuzzy results suppress the external round-trips
+  // (a well-aliased entry should not trigger npm/pypi lookups just for
+  // scoring < 90). Single ownership in services/resolve.ts keeps the
+  // npm/pypi then crates/go then search sequence from drifting.
   if (matches.length === 0 || (matches.length < 3 && matches.every((m) => m.source === "registry" && m.score < 85))) {
-    const [npmResult, pypiResult] = await Promise.all([
-      resolveFromNpm(name),
-      resolveFromPypi(name),
-    ]);
-    if (npmResult && !matches.some((m) => m.id === npmResult.id)) matches.push(npmResult);
-    if (pypiResult && !matches.some((m) => m.id === pypiResult.id)) matches.push(pypiResult);
-
-    if (matches.length === 0) {
-      const [cratesResult, goResult] = await Promise.all([
-        resolveFromCrates(name),
-        resolveFromGo(name),
-      ]);
-      if (cratesResult && !matches.some((m) => m.id === cratesResult.id)) matches.push(cratesResult);
-      if (goResult && !matches.some((m) => m.id === goResult.id)) matches.push(goResult);
-    }
-
-    if (matches.length === 0) {
-      const [npmSearchResult, githubResult] = await Promise.all([
-        searchNpm(name),
-        searchGitHub(name),
-      ]);
-      if (npmSearchResult) matches.push(npmSearchResult);
-      if (githubResult && !matches.some((m) => m.id === githubResult.id)) matches.push(githubResult);
+    const candidates = await resolveBareNameCandidates(name);
+    for (const candidate of candidates) {
+      if (!matches.some((m) => m.id === candidate.id)) matches.push(candidate);
     }
   }
 

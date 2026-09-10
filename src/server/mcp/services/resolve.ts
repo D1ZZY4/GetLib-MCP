@@ -32,6 +32,48 @@ function buildResolved(
 }
 
 /**
+ * Shared bare-name fallback pipeline used by both resolveDynamic and the
+ * application resolve use case. Single ownership prevents the two npm/pypi
+ * then crates/go then search sequences from drifting apart.
+ *
+ * Returns ordered candidates (npm, pypi, crates, go, npm-search, github)
+ * with registry duplicates removed. Callers decide how many to keep.
+ */
+export async function resolveBareNameCandidates(name: string): Promise<LibraryMatch[]> {
+  const candidates: LibraryMatch[] = [];
+  const pushUnique = (match: LibraryMatch | null): void => {
+    if (match && !candidates.some((m) => m.id === match.id)) candidates.push(match);
+  };
+
+  const [npmResult, pypiResult] = await Promise.all([
+    resolveFromNpm(name),
+    resolveFromPypi(name),
+  ]);
+  pushUnique(npmResult);
+  pushUnique(pypiResult);
+
+  if (candidates.length === 0) {
+    const [cratesResult, goResult] = await Promise.all([
+      resolveFromCrates(name),
+      resolveFromGo(name),
+    ]);
+    pushUnique(cratesResult);
+    pushUnique(goResult);
+  }
+
+  if (candidates.length === 0) {
+    const [npmSearchResult, githubResult] = await Promise.all([
+      searchNpm(name),
+      searchGitHub(name),
+    ]);
+    pushUnique(npmSearchResult);
+    pushUnique(githubResult);
+  }
+
+  return candidates;
+}
+
+/**
  * Resolve a dynamic library ID (npm:pkg, pypi:pkg, crates:pkg, go:module, URL, or bare name)
  * to docs metadata. Returns null if resolution fails entirely.
  */
@@ -72,30 +114,8 @@ export async function resolveDynamic(libraryId: string): Promise<ResolvedLibrary
     const llmsProbe = await probeLlmsTxt(url);
     return buildResolved(url, libraryId, undefined, llmsProbe.llmsTxtUrl, llmsProbe.llmsFullTxtUrl);
   } else {
-    // Bare name: try npm first, then pypi
-    const [npmResult, pypiResult] = await Promise.all([
-      resolveFromNpm(libraryId),
-      resolveFromPypi(libraryId),
-    ]);
-    match = npmResult ?? pypiResult;
-
-    if (!match) {
-      // Try crates.io and Go as last resort
-      const [cratesResult, goResult] = await Promise.all([
-        resolveFromCrates(libraryId),
-        resolveFromGo(libraryId),
-      ]);
-      match = cratesResult ?? goResult;
-    }
-
-    if (!match) {
-      // Fuzzy search: npm text search + GitHub repo search
-      const [npmSearchResult, githubResult] = await Promise.all([
-        searchNpm(libraryId),
-        searchGitHub(libraryId),
-      ]);
-      match = npmSearchResult ?? githubResult;
-    }
+    const candidates = await resolveBareNameCandidates(libraryId);
+    match = candidates[0] ?? null;
   }
 
   if (!match) return null;

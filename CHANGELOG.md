@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Validate every fetch response through shared schemas with
   capped bodies instead of unchecked casts.
+- Share one bare-name fallback pipeline between dynamic resolve
+  and the resolve use case.
 
 ### Added
 
