@@ -1406,11 +1406,11 @@ Ketika diperlukan component baru:
 
 ```mermaid
 flowchart TD
-    N["Need"] --> C1["Check existing component"]
-    C1 --> C2["Check existing primitive"]
-    C2 --> C3["Check existing token"]
-    C3 --> E["Extend existing system"]
-    E --> NC["Create new abstraction only when justified"]
+    N["Kebutuhan"] --> C1["Periksa komponen yang ada"]
+    C1 --> C2["Periksa primitif yang ada"]
+    C2 --> C3["Periksa token yang ada"]
+    C3 --> E["Perluas sistem yang ada"]
+    E --> NC["Buat abstraksi baru hanya bila terjustifikasi"]
 ```
 
 Utamakan penambahan varian pada komponen yang ada sebelum membuat komponen baru.

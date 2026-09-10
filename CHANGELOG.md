@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add a db:push script that applies Supabase migrations in order
   with production guardrails.
+- Land pending rule refinements (backup, review quorum, dependency
+  updates) while keeping SSPL-1.0 declarations.
 
 </details>
 

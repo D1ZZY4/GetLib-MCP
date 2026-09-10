@@ -114,3 +114,18 @@ Token budget **WAJIB** dikonfigurasi secara terpusat. Feature code DILARANG mend
 
 ---
 
+# 2. Update Dependency dan Vulnerability
+
+Update dependency, terutama major version, diperlakukan sebagai perubahan berisiko dan mengikuti modul governance untuk compatibility dan rollback.
+
+## Aturan
+
+- **WAJIB** membaca changelog dan panduan migrasi versi target sebelum upgrade major.
+- **WAJIB** menjaga lockfile konsisten dan me-review diff dependency sebelum commit.
+- **WAJIB** menjalankan typecheck, test, dan build penuh setelah update dependency.
+- Apabila terdapat advisory keamanan, prioritaskan patch sesuai tingkat risiko dan catat pada decision record.
+- **DILARANG** upgrade major tanpa compatibility test dan rollback plan.
+- **DILARANG** menyembunyikan advisory keamanan yang belum ditangani.
+
+---
+

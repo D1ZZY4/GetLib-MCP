@@ -689,3 +689,18 @@ Browser, process memory, dan local filesystem hanya boleh menjadi cache atau sta
 
 ---
 
+# 17. Backup dan Restore Database
+
+Backup production **WAJIB** tersedia dan restore **WAJIB** terverifikasi berkala. Backup yang tidak pernah diuji restore-nya dianggap tidak ada.
+
+## Aturan
+
+- **WAJIB** mengandalkan backup otomatis platform sebagai baseline, bukan dump manual ad hoc.
+- **WAJIB** memverifikasi restore pada environment non-production secara berkala dan mencatat buktinya.
+- **WAJIB** memisahkan data backup production dari data development dan membatasi aksesnya.
+- **WAJIB** memiliki rencana restore yang terdokumentasi: urutan restore, verifikasi integritas, dan kriteria selesai.
+- **DILARANG** melakukan restore ke production tanpa backup terbaru yang terverifikasi dan tanpa jendela maintenance yang disepakati.
+- **WAJIB** menjaga seed data development terpisah dari backup production dan **DILARANG** me-restore backup production ke development tanpa sanitasi secret dan data sensitif.
+
+---
+

@@ -26,7 +26,7 @@ Blueprint tidak menggantikan modul fokus. Semua implementasi **HARUS** memenuhi 
 | `mcp-and-protocols.md` | MCP control center, registry, tools, resources, prompts, clients, playground, logs, health, transport, execution | Mengubah MCP atau protocol |
 | `database-auth-and-deployment.md` | Supabase, PostgreSQL, migration, RLS, authentication, authorization, account, settings, deployment | Mengubah data, identity, secret, atau deployment |
 | `api-observability-and-testing.md` | Search, normalization, HTTP semantics, error, logging, metrics, security, testing, validation, production readiness | Mengubah API, telemetry, security, atau quality gate |
-| `library-documentation.md` | Context7, dokumentasi version-aware, freshness, fallback, coverage, token budget | Menggunakan library atau framework dependency-specific |
+| `library-documentation.md` | Kapabilitas dokumentasi seperti Context7, version-aware, freshness, fallback, coverage, token budget | Menggunakan library atau framework dependency-specific |
 | `ui-ux.md` | UI/UX, accessibility, responsive behavior, design tokens, CSS, Tailwind, state, performance | Mengubah UI, copy, styling, atau interaction |
 | `no-em-dashes.md` | Larangan karakter em dash, normalisasi output, quality gate | Membuat atau mengubah content apa pun |
 | `security-and-privacy.md` | Threat model, secret, privacy, SSRF, abuse prevention, audit, incident response | Mengubah security boundary atau data sensitif |
@@ -141,12 +141,11 @@ Kedalaman membaca:
 | MCP capability | MCP dan protocol | Registry, schema, collision, permission, transport test | Sedang sampai tinggi |
 | Library atau framework | Library documentation | Version lookup, authoritative source, typecheck, build | Rendah sampai sedang |
 | Logging atau metrics | API dan observability | Correlation, redaction, metric definition, privacy review | Sedang |
-| Performance atau background job | Flow dan runtime | Measurement, bounded concurrency, cancellation, cleanup | Sedang |
+| Performance, optimasi, atau background job | Flow dan runtime, Performance | Baseline, target, profiling, measurement, bounded concurrency, cancellation, cleanup, regression test | Sedang |
 | UI, copy, atau styling | UI/UX dan no-em-dashes | Accessibility, responsive review, state coverage, punctuation scan | Rendah sampai sedang |
 | Security atau privacy | Security dan privacy | Threat model, authorization test, redaction, audit evidence | Tinggi |
 | Perubahan rule atau proses | Governance dan quality | Review record, impact analysis, validation plan | Sedang sampai tinggi |
 | Error handling | Error handling | Kategorisasi, retry policy, fallback, user message | Sedang |
-| Performance | Performance | Baseline, target, profiling, regression test | Sedang |
 | Commit atau changelog | Commit dan changelog | Full diff, read penuh, signature verified, changelog entry | Rendah sampai sedang |
 
 ## 7. Definition of Done untuk Agen

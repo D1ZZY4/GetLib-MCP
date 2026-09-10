@@ -302,7 +302,7 @@ error
 
 Aturan field minimum:
 
-| Field | **WAJIB** | Larangan |
+| Field | Kewajiban | Larangan |
 |-------|-------|----------|
 | requestId, transport, method, status, duration | Ya untuk korelasi dan SLO | **DILARANG** memuat secret |
 | userId | Hanya apabila diizinkan dan dibutuhkan audit | **WAJIB** masking pada log umum |

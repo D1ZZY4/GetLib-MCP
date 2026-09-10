@@ -65,6 +65,14 @@ Template decision record minimum:
 - **WAJIB** menjaga perubahan kecil, reversible, dan dapat diuji.
 - **DILARANG** menutup test, lint, typecheck, atau build untuk menghilangkan sinyal kegagalan.
 
+Quorum review minimum:
+
+| Perubahan | Approval Minimum |
+|-----------|------------------|
+| Additive non-breaking | Owner modul |
+| Corrective sensitif | Owner modul dan reviewer security atau data |
+| Breaking public contract | Owner modul dan satu reviewer lintas boundary |
+
 ## 4. Quality Gate
 
 Bukti minimum ditentukan oleh risiko. Perubahan kode **WAJIB** mempertimbangkan typecheck, lint, unit test, integration test, E2E apabila relevan, production build, architecture validation, migration validation, protocol validation, security validation, observability review, dan no-em-dash scan. Status build yang hijau semata bukan bukti selesai.
