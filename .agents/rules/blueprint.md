@@ -33,10 +33,13 @@ Blueprint tidak menggantikan modul fokus. Semua implementasi **HARUS** memenuhi 
 | `engineering-governance-and-quality.md` | Decision record, review, change control, quality gate, ownership, definition of done | Mengubah rule, contract, atau proses engineering |
 | `performance-and-scalability.md` | Pengukuran, optimasi, caching, concurrency, resource limit, profiling | Mengubah performa atau skalabilitas |
 | `error-handling-and-recovery.md` | Kategorisasi error, retry, fallback, recovery, user messaging | Mengubah error handling atau resilience |
+| `commit-and-changelog.md` | Disiplin commit, staging, signing, verifikasi, push policy, changelog | Membuat commit atau entri changelog |
 
 Penomoran bagian pada tiap modul bersifat lokal. Penomoran tidak mengubah identifier public, nama route, nama tool, nama resource, nama prompt, nama environment variable, atau status protocol. Perubahan contract tetap **HARUS** mengikuti aturan backward compatibility.
 
 Bahasa utama seluruh rule adalah bahasa Indonesia. Istilah teknis resmi seperti API, MCP, HTTP, SSE, SQL, Supabase, Vercel, Context7, typecheck, lint, dan nama identifier dipertahankan agar makna teknis tetap tepat. Semua penjelasan, larangan, alasan, dan instruksi penerapan **HARUS** ditulis dalam bahasa Indonesia.
+
+Asumsi stack: Supabase PostgreSQL, deployment Vercel, MCP, dan kapabilitas dokumentasi seperti Context7. Apabila stack project berbeda, modul yang tidak relevan **WAJIB** diadaptasi secara eksplisit dan dicatat pada decision record. Aturan yang belum diadaptasi **DILARANG** dipaksakan ke stack yang tidak cocok.
 
 ## 3. Aturan Global
 
@@ -144,6 +147,7 @@ Kedalaman membaca:
 | Perubahan rule atau proses | Governance dan quality | Review record, impact analysis, validation plan | Sedang sampai tinggi |
 | Error handling | Error handling | Kategorisasi, retry policy, fallback, user message | Sedang |
 | Performance | Performance | Baseline, target, profiling, regression test | Sedang |
+| Commit atau changelog | Commit dan changelog | Full diff, read penuh, signature verified, changelog entry | Rendah sampai sedang |
 
 ## 7. Definition of Done untuk Agen
 

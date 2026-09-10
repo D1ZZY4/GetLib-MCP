@@ -207,7 +207,9 @@ getlib123
 
 Ketika environment variable tidak diisi, application menggunakan fallback tersebut untuk bootstrap account sesuai deployment policy.
 
-Credential fallback bersifat tidak aman dan **HARUS** dianggap sebagai credential emergency atau bootstrap sementara, bukan credential jangka panjang.
+Credential fallback bersifat tidak aman dan **HARUS** dianggap sebagai credential emergency atau bootstrap sementara, bukan credential jangka panjang. Perilaku fallback tidak berlaku untuk production normal.
+
+Production **DILARANG** berjalan dengan fallback credentials aktif. Apabila production mendeteksi fallback credentials masih aktif, startup **HARUS** gagal secara eksplisit dengan error aman dan audit, bukan sekadar warning.
 
 Dashboard **HARUS** menampilkan warning ketika fallback credentials sedang digunakan.
 
@@ -221,6 +223,8 @@ Warning **HARUS** menyatakan bahwa default credentials **HARUS** segera diubah.
 - **WAJIB** memberikan warning yang jelas ketika credential fallback aktif.
 - **WAJIB** menyediakan mekanisme untuk mengganti password bootstrap.
 - **WAJIB** membatasi exposure terhadap credential default.
+- **DILARANG** mengizinkan fallback credentials pada production, kecuali deployment policy secara eksplisit mendefinisikan mode bootstrap darurat yang terdokumentasi.
+- **WAJIB** menggagalkan startup production dengan error aman dan audit apabila fallback credentials terdeteksi aktif di luar mode tersebut.
 - **DILARANG** menampilkan password default pada UI public tanpa otorisasi yang sesuai.
 - **DILARANG** mencatat password default ke log.
 

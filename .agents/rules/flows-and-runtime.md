@@ -621,6 +621,8 @@ GETLIB_DEFAULT_PASS
 
 Spelling variable **HARUS** dipertahankan persis sesuai contract application.
 
+Keputusan kontrak: ejaan `GETLIB_AUTHENTICATICATION_ENABLE` adalah kontrak canonical dan dipertahankan persis untuk backward compatibility. Ejaan koreksi `GETLIB_AUTHENTICATION_ENABLE` **DILARANG** dipakai tanpa migration contract yang eksplisit. Apabila project memakai ejaan benar, buat migration contract yang membaca kedua ejaan dengan precedence terdokumentasi, lalu depresiasi ejaan lama.
+
 Additional variables dapat mencakup Supabase URL, publishable key, secret key, database connection configuration, runtime flags, dan provider credentials.
 
 ## Aturan
@@ -630,6 +632,7 @@ Additional variables dapat mencakup Supabase URL, publishable key, secret key, d
 - **DILARANG** melakukan arbitrary direct environment access dari feature code.
 - **WAJIB** membedakan public dan server-only variables.
 - **DILARANG** mengekspos server secrets ke browser.
+- **DILARANG** memperkenalkan ejaan environment variable baru atau koreksi ejaan tanpa migration contract.
 - **WAJIB** memiliki explicit default behavior untuk configuration yang memang mempunyai safe default.
 - **WAJIB** menggunakan fail-fast behavior untuk required production secrets kecuali variable tersebut memang memiliki defined fallback contract.
 

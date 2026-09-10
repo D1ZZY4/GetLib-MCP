@@ -65,6 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   grids, and ranking imports.
 - Restructure agent rules into versioned Indonesian modules with
   a blueprint index.
+- Harden agent rules with production fallback fail-closed policy,
+  canonical env spelling contract, and commit changelog discipline.
 
 </details>
 
