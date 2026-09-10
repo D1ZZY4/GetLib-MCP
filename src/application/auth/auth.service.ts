@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "crypto";
 import {
+  displayNameFor,
   isDevDemoAllowed,
   isDevDemoCredentials,
   normalizeEmail,
@@ -76,7 +77,19 @@ export function verifyCredentials(email: string, password: string): boolean {
   const environment = detectEnvironment();
   const isMock = resolveDatabaseMode(environment) === "mock";
   if (isDevDemoAllowed(environment, isMock) && isDevDemoCredentials(email, password)) return true;
+  // Operator diagnostic only: tells server-log readers whether the email
+  // or the password mismatched, without logging either value. The client
+  // always gets the same neutral 401 so this reveals nothing to probers.
+  log({ level: "warn", msg: "auth.signin.rejected", emailMatch: emailOk });
   return false;
+}
+
+/**
+ * Identity display for the sign-in response. Route layer must not import
+ * domain policy directly - presentation string stays behind this use case.
+ */
+export function getDisplayName(email: string): string {
+  return displayNameFor(email.trim());
 }
 
 /**
