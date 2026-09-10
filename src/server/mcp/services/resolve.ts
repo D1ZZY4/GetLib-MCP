@@ -6,8 +6,6 @@ import { resolveFromNpm, resolveFromPypi, resolveFromCrates, resolveFromGo } fro
 import { searchNpm, searchGitHub } from "./resolve/search";
 
 export { probeLlmsTxt } from "./resolve/llms-probe";
-export { extractGithubUrl, resolveFromNpm, resolveFromPypi, resolveFromCrates, resolveFromGo } from "./resolve/registries";
-export { searchNpm, searchGitHub } from "./resolve/search";
 
 export interface ResolvedLibrary {
   docsUrl: string;

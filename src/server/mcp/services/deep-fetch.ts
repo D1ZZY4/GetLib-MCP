@@ -8,7 +8,7 @@ import {
 } from "../constants";
 import { scoreTopicRelevance, extractInternalLinks, rankLinksForTopic, buildTopicUrls } from "./links";
 
-export { scoreTopicRelevance, extractInternalLinks, rankLinksForTopic, buildTopicUrls } from "./links";
+export { extractInternalLinks, rankLinksForTopic } from "./links";
 
 async function fetchFirstSuccessful(
   urls: string[],

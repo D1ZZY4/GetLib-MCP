@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verification seam.
 - Inject the examples fallback seams and re-export the sources
   error from the application layer.
+- Harden API key issuance to the strict tier and drop the last
+  barrel re-exports.
 - Verify API keys by indexed hash lookup, redact key material
   and emails from logs, harden the keys UI, and constrain hashes
   unique.

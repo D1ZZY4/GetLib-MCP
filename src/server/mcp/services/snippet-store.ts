@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Snippet, SnippetIndex } from "../types";
-import { DiskCache } from "./cache";
+import { DiskCache } from "./disk-cache";
 import { rankSnippets } from "../utils/snippet-extract";
 import { parseExternal, safeJsonParse } from "../utils/validate-external";
 

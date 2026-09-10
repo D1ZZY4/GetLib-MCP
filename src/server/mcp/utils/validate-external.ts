@@ -134,10 +134,6 @@ const mdnDocSchema = z.object({
     .optional(),
 });
 
-export type ValidatedNpmPackage = z.infer<typeof npmPackageSchema>;
-export type ValidatedPypiPackage = z.infer<typeof pypiPackageSchema>;
-export type ValidatedCratesPackage = z.infer<typeof cratesPackageSchema>;
-
 /** Parse unknown data against a schema. Returns typed data or null. */
 export function parseExternal<T>(schema: z.ZodType<T>, data: unknown): T | null {
   const parsed = schema.safeParse(data);

@@ -2,17 +2,18 @@ import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
 import {
   ApiKeyValidationError,
+  API_KEY_NAME_MAX,
   createApiKey,
   listApiKeys,
   revokeApiKey,
 } from "@/application/apikeys/apikeys.service";
 import { liveApiKeyAuthDeps, liveApiKeyDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
-import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
+import { checkRateLimit, READ_TIER, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { jsonError, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const CreateBody = z.object({
-  name: nonBlankString(100),
+  name: nonBlankString(API_KEY_NAME_MAX),
 });
 
 const RevokeBody = z.object({
@@ -33,7 +34,9 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const id = requestId();
   try {
-    checkRateLimit(req, "management/apikeys", EXECUTION_TIER);
+    // Credential issuance and revocation share the strict signin budget:
+    // both write security state and must resist enumeration/fill.
+    checkRateLimit(req, "management/apikeys", STRICT_TIER);
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = CreateBody.parse(await readJsonBody(req));
     return jsonOk(await createApiKey(liveApiKeyDeps, body.name), id);
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const id = requestId();
   try {
-    checkRateLimit(req, "management/apikeys", EXECUTION_TIER);
+    checkRateLimit(req, "management/apikeys", STRICT_TIER);
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = RevokeBody.parse(await readJsonBody(req));
     const revoked = await revokeApiKey(liveApiKeyDeps, body.id);
