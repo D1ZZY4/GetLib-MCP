@@ -155,5 +155,11 @@ export function sanitizeContent(content: string): string {
   // Collapse excessive whitespace
   sanitized = sanitized.replace(/\n{4,}/g, "\n\n\n");
 
+  // No-em-dash contract: external providers may return U+2014. Controlled
+  // output must never contain it, so fold to a hyphen here at the
+  // transformation boundary (matched for removal, never emitted).
+  // Semantics are preserved for technical docs.
+  sanitized = sanitized.split(String.fromCharCode(0x2014)).join("-");
+
   return sanitized;
 }

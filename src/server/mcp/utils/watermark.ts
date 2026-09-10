@@ -107,7 +107,7 @@ export function embedWatermark(text: string): string {
  *   nonce     - 8-char hex per-request nonce (proves distinct origin per response)
  *
  * Usage for forensic detection:
- *   import { detectWatermark } from "getlib-mcp/dist/utils/watermark.js";
+ *   import { detectWatermark } from "./watermark.js";
  *   const result = detectWatermark(suspectedLeakedText);
  *   if (result.found) console.log("Originated from install:", result.installId);
  */
