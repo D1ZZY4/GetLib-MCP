@@ -29,6 +29,7 @@ const InputSchema = z.object({
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = timeoutResponse(
   "Changelog fetch timed out. Retry, or open the library's GitHub releases page directly.",
+  { timedOut: true },
 );
 
 export function registerChangelogTools(): void {

@@ -34,6 +34,7 @@ const InputSchema = z.object({
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = timeoutResponse(
   "Migration lookup timed out. Retry with explicit fromVersion/toVersion, or call gl_changelog instead.",
+  { timedOut: true },
 );
 
 export function registerMigrationTools(): void {

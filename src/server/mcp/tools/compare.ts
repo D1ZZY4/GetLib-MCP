@@ -31,6 +31,7 @@ const InputSchema = z.object({
  *  next step beats a hung call or an MCP-level timeout error. */
 const TIMEOUT_RESPONSE = timeoutResponse(
   "Comparison timed out. Retry with two libraries instead of three, or call gl_best_practices per library.",
+  { timedOut: true },
 );
 
 export function registerCompareTools(): void {

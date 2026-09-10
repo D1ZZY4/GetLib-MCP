@@ -22,6 +22,7 @@ const TIMEOUT_RESPONSE = timeoutResponse(
   {
     total: 0,
     found: 0,
+    timedOut: true,
     results: [] as never[],
   },
 );
