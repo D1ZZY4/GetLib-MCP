@@ -1,4 +1,5 @@
 import { lookupByAlias, lookupById, fuzzySearch } from "../../sources/registry";
+import { isLibraryBlocked } from "../source-settings";
 import { fetchDocs, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../fetcher";
 import { extractRelevantContent } from "../../utils/extract";
 import { sanitizeContent } from "../../utils/sanitize";
@@ -19,16 +20,21 @@ function concurrency(): number {
 }
 
 export function matchDepToRegistry(depName: string): LibraryEntry | null {
+  // Blocked libraries never match: enforcement here (not just the report)
+  // so auto-scan cannot fetch guidance for them.
+  const blocked = (entry: LibraryEntry): boolean =>
+    isLibraryBlocked(entry.id, [depName, entry.name]);
+
   // exact alias first
   const byAlias = lookupByAlias(depName);
-  if (byAlias) return byAlias;
+  if (byAlias && !blocked(byAlias)) return byAlias;
 
   // strip scope from scoped packages (@scope/name -> name)
   if (depName.startsWith("@")) {
     const unscoped = depName.split("/")[1];
     if (unscoped) {
       const byScopedAlias = lookupByAlias(unscoped);
-      if (byScopedAlias) return byScopedAlias;
+      if (byScopedAlias && !blocked(byScopedAlias)) return byScopedAlias;
     }
   }
 
@@ -36,7 +42,7 @@ export function matchDepToRegistry(depName: string): LibraryEntry | null {
   const fuzzy = fuzzySearch(depName, 1);
   if (fuzzy.length > 0 && fuzzy[0]) {
     const entry = lookupById(fuzzy[0].id);
-    if (entry) return entry;
+    if (entry && !blocked(entry)) return entry;
   }
 
   return null;

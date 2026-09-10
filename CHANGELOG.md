@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directories, and ignore local credentials.
 - Normalize session emails to one identity and harden content
   sanitization with entity decoding and offset-safe redaction.
+- Fail closed when the auth probe is unreachable, enforce
+  blocked libraries in every resolver, and move dev mutations
+  to the strict tier.
 - Keep previews out of production policy, warn on shadowed URLs
   and accidental open production, retry failed init, and observe
   unexpected hosts without enforcing.

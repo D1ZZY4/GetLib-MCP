@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Card } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 import { AuthForm, type AuthMode } from "@/web/features/auth/components/auth-form";
 import { AuthLayout } from "@/web/features/auth/components/auth-layout";
 import { GateLoader } from "@/web/components/feedback/gate-loader";
 import { useSession } from "@/web/providers/auth-provider";
 
 export function AuthGate({ mode }: { mode: AuthMode }) {
-  const { session, authEnabled, signIn, signInWithCredentials } = useSession();
+  const { session, authEnabled, configError, retryConfig, signIn, signInWithCredentials } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -25,6 +25,23 @@ export function AuthGate({ mode }: { mode: AuthMode }) {
   }, [mounted, session, router]);
 
   if (!mounted || authEnabled === null) {
+    if (mounted && configError !== null && session === null) {
+      return (
+        <AuthLayout>
+          <Card className="w-full max-w-md">
+            <Card.Header>
+              <Card.Title>Cannot reach the server</Card.Title>
+              <Card.Description>{configError}</Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Button className="w-full" onPress={retryConfig}>
+                Retry
+              </Button>
+            </Card.Footer>
+          </Card>
+        </AuthLayout>
+      );
+    }
     // Must match the server render (no session server-side). Also waits
     // for the auth-mode probe so a loading flash never shows a form that
     // does not apply to the resolved mode.

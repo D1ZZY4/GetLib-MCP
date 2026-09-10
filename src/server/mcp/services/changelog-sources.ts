@@ -1,6 +1,7 @@
 import { fetchGitHubReleases, fetchGitHubContent, fetchAsMarkdownRace } from "./fetcher";
 import { lookupById, lookupByAlias } from "../sources/registry";
 import { resolveDynamic } from "./resolve";
+import { checkLibraryAccess } from "./source-settings";
 
 export interface ChangelogTarget {
   displayName: string;
@@ -12,10 +13,14 @@ export interface ChangelogTarget {
 export async function resolveChangelogTarget(libraryId: string): Promise<ChangelogTarget | string> {
   const entry = lookupById(libraryId) ?? lookupByAlias(libraryId);
   if (entry) {
+    const blocked = checkLibraryAccess(libraryId, [entry.id, entry.name]);
+    if (blocked) return blocked;
     return { displayName: entry.name, githubUrl: entry.githubUrl, docsUrl: entry.docsUrl };
   }
   const resolved = await resolveDynamic(libraryId);
   if (!resolved) return `Could not resolve "${libraryId}". Try gl_resolve_library first.`;
+  const blocked = checkLibraryAccess(libraryId, [resolved.displayName]);
+  if (blocked) return blocked;
   return { displayName: resolved.displayName, githubUrl: resolved.githubUrl, docsUrl: resolved.docsUrl };
 }
 

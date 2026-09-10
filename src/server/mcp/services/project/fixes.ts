@@ -1,5 +1,6 @@
 import { lookupById } from "../../sources/registry";
 import { fetchDocs, fetchGitHubReleases, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../fetcher";
+import { checkLibraryAccess } from "../source-settings";
 import { extractRelevantContent } from "../../utils/extract";
 import { checkEvidence } from "../../utils/evidence";
 import { sanitizeContent } from "../../utils/sanitize";
@@ -26,6 +27,8 @@ async function fetchFromRegistry(query: string, tokens: number): Promise<string>
     if (!re.test(query)) continue;
     const entry = lookupById(libId);
     if (!entry) continue;
+    // Blocked libraries stay out of fix guidance, like every resolver.
+    if (checkLibraryAccess(libId, [entry.id, entry.name])) continue;
     try {
       let result = await fetchDocs(entry.docsUrl, entry.llmsTxtUrl, entry.llmsFullTxtUrl, query);
       if (isIndexContent(result.content)) {

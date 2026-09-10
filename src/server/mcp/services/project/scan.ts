@@ -109,8 +109,12 @@ export function runPatterns(
   return issues;
 }
 export function groupIssues(issues: Issue[]): Map<string, Issue[]> {
+  // Severity-ranked group order is owned here (not by callers): the
+  // top-N slice downstream must always see critical findings first.
+  const rank: Record<Issue["severity"], number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const ordered = [...issues].sort((a, b) => rank[a.severity] - rank[b.severity]);
   const groups = new Map<string, Issue[]>();
-  for (const issue of issues) {
+  for (const issue of ordered) {
     const list = groups.get(issue.title);
     if (list) list.push(issue);
     else groups.set(issue.title, [issue]);

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "@/web/providers/auth-provider";
 import { GateLoader } from "@/web/components/feedback/gate-loader";
+import { LoadError } from "@/web/components/ui/load-error";
 import { MobileNav } from "@/web/components/layout/mobile-nav";
 import { Sidebar } from "@/web/components/layout/sidebar";
 
@@ -18,7 +19,7 @@ function readCollapsed(): boolean {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { session, authEnabled } = useSession();
+  const { session, authEnabled, configError, retryConfig } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   // Post-mount only, so the server render never mismatches hydration.
@@ -56,6 +57,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (session === null) {
+    if (configError !== null) {
+      return (
+        <div className="flex min-h-screen items-center justify-center p-6">
+          <LoadError message={configError} onRetry={retryConfig} />
+        </div>
+      );
+    }
     return <GateLoader label="Loading dashboard" />;
   }
 
