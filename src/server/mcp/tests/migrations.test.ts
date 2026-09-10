@@ -78,6 +78,13 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/not null/i);
   });
 
+  test("revoked flag removal purges dead keys and drops the column", () => {
+    const sql = readMigration("2026090907_api_keys_drop_revoked.sql");
+    expect(sql).toContain("where revoked = true");
+    expect(sql).toMatch(/drop column if exists revoked/i);
+    expect(sql).not.toMatch(/drop table/i);
+  });
+
   test("no migration stores real secrets or drops tables", () => {
     for (const file of migrationFiles()) {
       const sql = readMigration(file);

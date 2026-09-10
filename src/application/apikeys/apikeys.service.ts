@@ -12,7 +12,7 @@ export const API_KEY_NAME_MAX = 100;
 export interface ApiKeyDeps {
   getDatabase: () => Pick<
     DatabaseRepository,
-    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "revokeApiKey" | "touchApiKeyLastUsed"
+    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "deleteApiKey" | "touchApiKeyLastUsed"
   >;
 }
 
@@ -22,7 +22,6 @@ export interface ApiKeyView {
   prefix: string;
   createdAt: string;
   lastUsedAt: string | null;
-  revoked: boolean;
 }
 
 export interface CreatedApiKey extends ApiKeyView {
@@ -49,7 +48,6 @@ function toView(record: ApiKeyRecord): ApiKeyView {
     prefix: record.keyPrefix,
     createdAt: record.createdAt,
     lastUsedAt: record.lastUsedAt,
-    revoked: record.revoked,
   };
 }
 
@@ -60,8 +58,9 @@ function hashKey(presented: string): Buffer {
 /**
  * Long-lived programmatic credentials for MCP clients and scripts.
  * Unlike 12-hour session tokens, API keys do not expire; unlike the
- * session secret, they are revocable individually and never grant
- * dashboard cookie sessions. Only hashes reach storage.
+ * session secret, they are deletable individually and never grant
+ * dashboard cookie sessions. Only hashes reach storage. Deletion
+ * removes the row permanently.
  */
 export async function listApiKeys(deps: ApiKeyDeps): Promise<ApiKeyView[]> {
   const records = await deps.getDatabase().listApiKeys();
@@ -86,18 +85,18 @@ export async function createApiKey(deps: ApiKeyDeps, name: string): Promise<Crea
   return { ...toView(stored), key };
 }
 
-export async function revokeApiKey(deps: ApiKeyDeps, id: number): Promise<boolean> {
+export async function deleteApiKey(deps: ApiKeyDeps, id: number): Promise<boolean> {
   if (!Number.isInteger(id) || id < 1) {
     throw new ApiKeyValidationError("API key id must be a positive integer.");
   }
-  return deps.getDatabase().revokeApiKey(id);
+  return deps.getDatabase().deleteApiKey(id);
 }
 
 /**
  * Verify a presented Bearer value against the stored hash via the
- * indexed lookup (no table scan, no per-row timing oracle). Revoked
- * and unknown keys return null (the caller maps that to 401 without
- * saying which). Comparison is constant-time; the last-used stamp is
+ * indexed lookup (no table scan, no per-row timing oracle). Unknown
+ * keys return null (the caller maps that to 401 without saying
+ * which). Comparison is constant-time; the last-used stamp is
  * best-effort and never fails verification.
  */
 export async function verifyApiKey(deps: ApiKeyDeps, presented: string): Promise<ApiKeyIdentity | null> {
@@ -107,7 +106,6 @@ export async function verifyApiKey(deps: ApiKeyDeps, presented: string): Promise
   if (!record) return null;
   const stored = Buffer.from(record.keyHash, "hex");
   if (stored.length !== candidate.length || !timingSafeEqual(stored, candidate)) return null;
-  if (record.revoked) return null;
   try {
     await deps.getDatabase().touchApiKeyLastUsed(record.id);
   } catch {

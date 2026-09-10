@@ -72,7 +72,6 @@ export class MockDatabaseRepository implements DatabaseRepository {
       name: record.name,
       keyHash: record.keyHash,
       keyPrefix: record.keyPrefix,
-      revoked: false,
       createdAt: new Date().toISOString(),
       lastUsedAt: null,
     };
@@ -80,10 +79,10 @@ export class MockDatabaseRepository implements DatabaseRepository {
     return { ...stored };
   }
 
-  async revokeApiKey(id: number): Promise<boolean> {
-    const found = this.apiKeys.find((key) => key.id === id);
-    if (!found || found.revoked) return false;
-    found.revoked = true;
+  async deleteApiKey(id: number): Promise<boolean> {
+    const index = this.apiKeys.findIndex((key) => key.id === id);
+    if (index < 0) return false;
+    this.apiKeys.splice(index, 1);
     return true;
   }
 

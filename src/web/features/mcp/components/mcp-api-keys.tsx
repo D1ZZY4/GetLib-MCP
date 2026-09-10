@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Label, Skeleton } from "@heroui/react";
+import { AlertDialog, Button, Card, Label, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -9,7 +9,7 @@ import { useApiData } from "@/web/hooks/use-api-data";
 import { FormRowSkeleton, ListRowSkeleton } from "@/web/components/ui/skeletons";
 import { formatLogTime } from "@/web/lib/format";
 import type { CreatedApiKey } from "@/web/types/mcp";
-import { createApiKey, fetchApiKeys, revokeApiKey } from "../services/api-keys.service";
+import { createApiKey, deleteApiKey, fetchApiKeys } from "../services/api-keys.service";
 
 const LOAD_ERROR = "We couldn't load API keys. Try again in a moment.";
 
@@ -21,9 +21,9 @@ export function McpApiKeys() {
   const [freshKey, setFreshKey] = useState<CreatedApiKey | null>(null);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
-  const [revokingId, setRevokingId] = useState<number | null>(null);
-  const [confirmId, setConfirmId] = useState<number | null>(null);
-  const [revokeError, setRevokeError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (name.trim().length === 0 || creating) return;
@@ -55,27 +55,32 @@ export function McpApiKeys() {
     }
   };
 
-  const handleRevoke = async (id: number, name: string) => {
-    // Two-step inline confirm: revocation is immediate and permanent,
-    // so the first press only arms the button.
-    if (confirmId !== id) {
-      setConfirmId(id);
-      setRevokeError(null);
-      return;
-    }
-    setConfirmId(null);
-    setRevokingId(id);
-    setRevokeError(null);
+  const handleDeleteRequest = (id: number, name: string) => {
+    setDeleteTarget({ id, name });
+    setDeleteError(null);
+  };
+
+  const handleDeleteCancel = () => {
+    if (deleting) return;
+    setDeleteTarget(null);
+    setDeleteError(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteTarget === null || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
     try {
-      await revokeApiKey(id);
-      if (freshKey?.id === id) setFreshKey(null);
+      await deleteApiKey(deleteTarget.id);
+      if (freshKey?.id === deleteTarget.id) setFreshKey(null);
+      setDeleteTarget(null);
       retry();
     } catch (err) {
-      setRevokeError(
-        err instanceof Error ? `Could not revoke "${name}". ${err.message}` : LOAD_ERROR,
+      setDeleteError(
+        err instanceof Error ? `Could not delete "${deleteTarget.name}". ${err.message}` : LOAD_ERROR,
       );
     } finally {
-      setRevokingId(null);
+      setDeleting(false);
     }
   };
 
@@ -83,7 +88,7 @@ export function McpApiKeys() {
     <PageContainer>
       <PageHeader
         title="API keys"
-        description="Long-lived credentials for MCP clients and scripts. Use one as an Authorization: Bearer header with full management access instead of a 12-hour session token. Keys are stored hashed and shown once. Revoking takes effect immediately and cannot be undone."
+        description="Long-lived credentials for MCP clients and scripts. Use one as an Authorization: Bearer header with full management access instead of a 12-hour session token. Keys are stored hashed and shown once. Deleting removes the key immediately and cannot be undone."
       />
 
       {freshKey ? (
@@ -200,43 +205,79 @@ export function McpApiKeys() {
                       {key.lastUsedAt ? ` · last used ${formatLogTime(key.lastUsedAt)}` : " · never used"}
                     </p>
                   </div>
-                  {key.revoked ? (
-                    <span className="shrink-0 rounded-full bg-surface-tertiary px-2.5 py-1 text-xs font-medium text-muted">
-                      Revoked
-                    </span>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onPress={() => void handleRevoke(key.id, key.name)}
-                      isDisabled={revokingId === key.id}
-                      aria-label={
-                        confirmId === key.id
-                          ? `Confirm revoking ${key.name}. This cannot be undone.`
-                          : `Revoke ${key.name}`
-                      }
-                    >
-                      {revokingId === key.id
-                        ? "Revoking"
-                        : confirmId === key.id
-                          ? "Confirm revoke"
-                          : "Revoke"}
-                    </Button>
-                  )}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => handleDeleteRequest(key.id, key.name)}
+                    aria-label={`Delete ${key.name}`}
+                  >
+                    Delete
+                  </Button>
                 </li>
               ))}
             </ul>
           </Card.Content>
         </Card>
       )}
-      {revokeError ? (
+      {deleteError && deleteTarget === null ? (
         <p role="alert" className="text-sm text-danger">
-          {revokeError}{" "}
+          {deleteError}{" "}
           <button type="button" onClick={retry} className="underline">
             Retry
           </button>
         </p>
       ) : null}
+      <AlertDialog.Backdrop
+        isOpen={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) handleDeleteCancel();
+        }}
+        className="bg-overlay/50 dark:bg-overlay/60"
+        variant="blur"
+      >
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="relative overflow-hidden border border-border/80 bg-surface shadow-2xl ring-1 ring-danger/10 sm:max-w-[400px] dark:border-border/90 dark:bg-surface dark:ring-danger/15">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-danger/10 to-transparent dark:from-danger/15"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-danger/40 to-transparent dark:via-danger/50"
+            />
+            <AlertDialog.Header className="relative">
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete this API key?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body className="relative">
+              <p className="text-muted">
+                This will permanently delete{" "}
+                <strong className="text-foreground">
+                  {deleteTarget !== null ? deleteTarget.name : ""}
+                </strong>{" "}
+                and the key will stop working immediately. This action cannot be undone.
+              </p>
+              {deleteError ? (
+                <p role="alert" className="mt-2 text-sm text-danger">
+                  {deleteError}
+                </p>
+              ) : null}
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary" isDisabled={deleting} onPress={handleDeleteCancel}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                isDisabled={deleting}
+                onPress={() => void handleDeleteConfirm()}
+              >
+                {deleting ? "Deleting..." : "Delete key"}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </PageContainer>
   );
 }

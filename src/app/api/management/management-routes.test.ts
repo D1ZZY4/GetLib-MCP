@@ -82,7 +82,7 @@ describe("signin route", () => {
 });
 
 describe("apikeys routes", () => {
-  test("create, list, and revoke round-trip with the key shown once", async () => {
+  test("create, list, and delete round-trip with the key shown once", async () => {
     setConfigOverride({ authEnabled: false });
     const created = (await (
       await apikeysPost(
@@ -95,16 +95,20 @@ describe("apikeys routes", () => {
     ).json()) as { keys: Array<{ id: number; name: string }> };
     expect(listed.keys.map((key) => key.name)).toContain("route-test");
     expect(JSON.stringify(listed)).not.toContain(created.key);
-    const revoked = (await (
+    const deleted = (await (
       await apikeysDelete(
         jsonRequest("http://localhost/api/management/apikeys", "DELETE", { id: created.id }),
       )
-    ).json()) as { revoked: number };
-    expect(revoked.revoked).toBe(created.id);
+    ).json()) as { deleted: number };
+    expect(deleted.deleted).toBe(created.id);
     const missing = await apikeysDelete(
       jsonRequest("http://localhost/api/management/apikeys", "DELETE", { id: created.id }),
     );
     expect(missing.status).toBe(404);
+    const relisted = (await (
+      await apikeysGet(jsonRequest("http://localhost/api/management/apikeys", "GET"))
+    ).json()) as { keys: Array<{ id: number; name: string }> };
+    expect(relisted.keys.map((key) => key.id)).not.toContain(created.id);
   });
 
   test("blank names are 422, unknown ids are 404", async () => {

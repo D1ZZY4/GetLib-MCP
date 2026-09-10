@@ -106,13 +106,13 @@ describe("MCP transport auth matrix (auth enabled)", () => {
     }
   });
 
-  test("a revoked API key stays at 401", async () => {
-    const { createApiKey, revokeApiKey } = await import("@/application/apikeys/apikeys.service");
+  test("a deleted API key stays at 401", async () => {
+    const { createApiKey, deleteApiKey } = await import("@/application/apikeys/apikeys.service");
     const { liveApiKeyDeps } = await import("../infrastructure/deps/apikeys-deps");
     const { resetDatabaseCache } = await import("../infrastructure/database");
     resetDatabaseCache();
     const created = await createApiKey(liveApiKeyDeps, "transport-auth-test");
-    await revokeApiKey(liveApiKeyDeps, created.id);
+    await deleteApiKey(liveApiKeyDeps, created.id);
     try {
       const res = await handleHttpRequest(
         new Request("http://localhost/api/mcp", {

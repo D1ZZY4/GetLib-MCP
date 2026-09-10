@@ -22,6 +22,9 @@ files are never edited, only extended by new ones.
 - `2026090906_bootstrap_password_hash.sql` - nullable `password_hash`
   on `app_bootstrap` for same-account rotation detection. Additive
   only; shipped files are never edited.
+- `2026090907_api_keys_drop_revoked.sql` - drops the `revoked` flag
+  (deletion is now the only removal path; revoked rows are purged
+  so dead credentials cannot resurrect).
 
 Rules:
 

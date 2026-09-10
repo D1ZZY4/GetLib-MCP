@@ -30,14 +30,13 @@ export interface BootstrapRecord {
 /**
  * Long-lived API key record. Only the sha256 hash is ever persisted;
  * the plaintext key is shown once at creation and cannot be recovered
- * afterwards. Revocation flips the flag; rows are kept for auditability.
+ * afterwards. Removal deletes the row; there is no revoked state.
  */
 export interface ApiKeyRecord {
   id: number;
   name: string;
   keyHash: string;
   keyPrefix: string;
-  revoked: boolean;
   createdAt: string;
   lastUsedAt: string | null;
 }
@@ -101,8 +100,8 @@ export interface DatabaseRepository {
    * reports a key that was not stored.
    */
   saveApiKey(record: NewApiKey): Promise<ApiKeyRecord>;
-  /** Revoke by id. Returns false when the row is missing or unwritable. */
-  revokeApiKey(id: number): Promise<boolean>;
+  /** Delete by id. Returns false when the row is missing or unwritable. */
+  deleteApiKey(id: number): Promise<boolean>;
   /** Best-effort last-used stamp. Never rejects. */
   touchApiKeyLastUsed(id: number): Promise<void>;
 }

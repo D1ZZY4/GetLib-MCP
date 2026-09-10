@@ -26,7 +26,6 @@ export interface ApiKeyView {
   prefix: string;
   createdAt: string;
   lastUsedAt: string | null;
-  revoked: boolean;
 }
 
 export interface ApiKeysSnapshot {

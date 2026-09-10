@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Added
+
+- Replace API key revocation with permanent deletion behind a
+  danger-styled confirmation dialog.
+
 </details>
 
 ## [1.2.1] - 2026-09-10
@@ -30,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through re-validated siblings, and redact nested secrets with
   cycle protection.
 
-### Fixed
+  ### Fixed
 
 - Flag every timeout payload so clients can tell hangs apart
   from results.

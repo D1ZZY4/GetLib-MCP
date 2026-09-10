@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   ApiKeyValidationError,
   createApiKey,
+  deleteApiKey,
   listApiKeys,
-  revokeApiKey,
   verifyApiKey,
   type ApiKeyDeps,
 } from "../apikeys/apikeys.service";
@@ -30,7 +30,7 @@ describe("api key service with stubbed infrastructure", () => {
     expect(listed).toHaveLength(1);
     expect(listed[0]).not.toHaveProperty("key");
     expect(listed[0]).not.toHaveProperty("keyHash");
-    expect(listed[0]?.revoked).toBe(false);
+    expect(listed[0]).not.toHaveProperty("revoked");
   });
 
   test("verifies the plaintext key and rejects anything else", async () => {
@@ -42,23 +42,22 @@ describe("api key service with stubbed infrastructure", () => {
     expect(await verifyApiKey(deps, "")).toBeNull();
   });
 
-  test("revoked keys stop verifying", async () => {
+  test("deleted keys stop verifying and disappear from the list", async () => {
     const { deps } = stubDeps();
     const created = await createApiKey(deps, "ci");
-    expect(await revokeApiKey(deps, created.id)).toBe(true);
+    expect(await deleteApiKey(deps, created.id)).toBe(true);
     expect(await verifyApiKey(deps, created.key)).toBeNull();
-    expect(await revokeApiKey(deps, created.id)).toBe(false);
-    expect(await revokeApiKey(deps, 999)).toBe(false);
-    const listed = await listApiKeys(deps);
-    expect(listed[0]?.revoked).toBe(true);
+    expect(await deleteApiKey(deps, created.id)).toBe(false);
+    expect(await deleteApiKey(deps, 999)).toBe(false);
+    expect(await listApiKeys(deps)).toHaveLength(0);
   });
 
   test("rejects blank and oversized names and ids", async () => {
     const { deps } = stubDeps();
     await expect(createApiKey(deps, "   ")).rejects.toThrow(ApiKeyValidationError);
     await expect(createApiKey(deps, "x".repeat(101))).rejects.toThrow(ApiKeyValidationError);
-    await expect(revokeApiKey(deps, 0)).rejects.toThrow(ApiKeyValidationError);
-    await expect(revokeApiKey(deps, 1.5)).rejects.toThrow(ApiKeyValidationError);
+    await expect(deleteApiKey(deps, 0)).rejects.toThrow(ApiKeyValidationError);
+    await expect(deleteApiKey(deps, 1.5)).rejects.toThrow(ApiKeyValidationError);
   });
 
   test("stored rows hold hashes, never plaintext", async () => {

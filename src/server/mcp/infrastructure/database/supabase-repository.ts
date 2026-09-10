@@ -260,7 +260,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     try {
       const query = client
         .from("api_keys")
-        .select("id,name,key_hash,key_prefix,revoked,created_at,last_used_at")
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at")
         .order("id", { ascending: false })
         .limit(200);
       const { data, error } = await withTimeout(query, 5000, "Supabase api keys read timed out.");
@@ -286,7 +286,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       const insert = client
         .from("api_keys")
         .insert({ name: record.name, key_hash: record.keyHash, key_prefix: record.keyPrefix })
-        .select("id,name,key_hash,key_prefix,revoked,created_at,last_used_at")
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at")
         .abortSignal(AbortSignal.timeout(5000))
         .maybeSingle();
       const { data, error } = (await withTimeout(
@@ -304,31 +304,30 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
-  async revokeApiKey(id: number): Promise<boolean> {
+  async deleteApiKey(id: number): Promise<boolean> {
     const client = privilegedClient();
     if (!client) {
       reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
       return false;
     }
     try {
-      // Only unrevoked rows: the returned count distinguishes "revoked
-      // now" from "missing or already revoked" so callers can answer 404
-      // truthfully on every backend (the mock does the same).
-      const update = client
+      // The returned count distinguishes "deleted now" from "missing"
+      // so callers can answer 404 truthfully on every backend (the
+      // mock does the same).
+      const remove = client
         .from("api_keys")
-        .update({ revoked: true })
+        .delete()
         .eq("id", id)
-        .eq("revoked", false)
         .select("id");
       const { data, error } = (await withTimeout(
-        update,
+        remove,
         5000,
-        "Supabase api key revoke timed out.",
+        "Supabase api key delete timed out.",
       )) as { data: Array<{ id: number }> | null; error: { message: string } | null };
       if (error || !data) return false;
       return data.length > 0;
     } catch (error) {
-      log({ level: "warn", msg: "supabase.apikeys.revoke-failed", error: String(error) });
+      log({ level: "warn", msg: "supabase.apikeys.delete-failed", error: String(error) });
       return false;
     }
   }
@@ -342,7 +341,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     try {
       const query = client
         .from("api_keys")
-        .select("id,name,key_hash,key_prefix,revoked,created_at,last_used_at")
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at")
         .eq("key_hash", keyHash)
         .abortSignal(AbortSignal.timeout(5000))
         .maybeSingle();
@@ -380,12 +379,12 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
 function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
   if (typeof row !== "object" || row === null) return null;
   const record = row as Record<string, unknown>;
-  const { id, name, key_hash, key_prefix, revoked, created_at, last_used_at } = record;
+  const { id, name, key_hash, key_prefix, created_at, last_used_at } = record;
   if (typeof id !== "number" || !Number.isFinite(id)) return null;
   if (typeof name !== "string" || typeof key_hash !== "string" || typeof key_prefix !== "string") {
     return null;
   }
-  if (typeof revoked !== "boolean" || typeof created_at !== "string") return null;
+  if (typeof created_at !== "string") return null;
   if (last_used_at !== null && last_used_at !== undefined && typeof last_used_at !== "string") {
     return null;
   }
@@ -394,7 +393,6 @@ function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
     name,
     keyHash: key_hash,
     keyPrefix: key_prefix,
-    revoked,
     createdAt: created_at,
     lastUsedAt: typeof last_used_at === "string" ? last_used_at : null,
   };
