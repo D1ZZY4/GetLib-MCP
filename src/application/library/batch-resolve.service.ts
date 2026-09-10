@@ -53,8 +53,11 @@ export async function batchResolveUseCase(
   input: BatchResolveInput,
   deps: BatchResolveDeps,
 ): Promise<BatchResolveApplicationResult> {
+  // Dedupe identical names (case-insensitive) so 20x the same name
+  // costs one lookup instead of twenty.
+  const libraryNames = [...new Map(input.libraryNames.map((name) => [name.toLowerCase(), name])).values()];
   const results = await Promise.all(
-    input.libraryNames.map(async (name): Promise<BatchResolveItem> => {
+    libraryNames.map(async (name): Promise<BatchResolveItem> => {
       // Per-item guard: one flagged name must not discard the other
       // legitimate results in the batch.
       if (isExtractionAttempt(name)) {
@@ -155,6 +158,6 @@ export async function batchResolveUseCase(
         results,
       },
     },
-    resolved: true,
+    resolved: found > 0,
   };
 }

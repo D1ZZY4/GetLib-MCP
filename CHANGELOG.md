@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directories, and ignore local credentials.
 - Normalize session emails to one identity and harden content
   sanitization with entity decoding and offset-safe redaction.
+- Normalize use-case inputs, fix resolved flags and outage
+  severity, widen durable reads, and reset health probes on mode
+  changes.
 
 ### Changed
 

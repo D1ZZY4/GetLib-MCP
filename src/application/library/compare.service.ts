@@ -58,7 +58,10 @@ export interface CompareApplicationResult {
  * infrastructure adapters, and map this result.
  */
 export async function compareUseCase(input: CompareInput, deps: CompareDeps): Promise<CompareApplicationResult> {
-  const { libraries, criteria, tokens } = input;
+  const { criteria, tokens } = input;
+  // Dedupe identical names (case-insensitive) so ["prisma","prisma"]
+  // compares once instead of fetching twice.
+  const libraries = [...new Map(input.libraries.map((lib) => [lib.toLowerCase(), lib])).values()];
   // No extraction guard on `criteria` - it is a comparison angle, not a
   // registry key ("full feature list" is a legitimate criteria).
   const topic = criteria ? `${criteria} comparison tradeoffs` : "overview features comparison";
@@ -75,7 +78,7 @@ export async function compareUseCase(input: CompareInput, deps: CompareDeps): Pr
     const text = withNotice(
       `Could not resolve any of the requested libraries.\n\nTry using exact package names or registry IDs from \`gl_resolve_library\`.`,
     );
-    return { response: { content: [{ type: "text", text }] }, resolved: true };
+    return { response: { content: [{ type: "text", text }] }, resolved: false };
   }
 
   const fetchResults = await Promise.allSettled(
@@ -134,7 +137,7 @@ export async function compareUseCase(input: CompareInput, deps: CompareDeps): Pr
     const text = withNotice(
       `Could not resolve any of the requested libraries.\n\nTry using exact package names or registry IDs from \`gl_resolve_library\`.`,
     );
-    return { response: { content: [{ type: "text", text }] }, resolved: true };
+    return { response: { content: [{ type: "text", text }] }, resolved: false };
   }
 
   const header = [

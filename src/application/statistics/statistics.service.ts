@@ -35,6 +35,7 @@ export interface UsageStats {
   requestsUsed: number;
   docsPages: number;
   activeLibraries: number;
+  /** 0-1 fraction, same scale as telemetry and dashboard rates. */
   successRate: number;
 }
 
@@ -80,13 +81,8 @@ function mockUsage(): UsageStats {
     requestsUsed: 99,
     docsPages: MOCK_ROWS.reduce((total, row) => total + row.docsPages, 0),
     activeLibraries: MOCK_ROWS.length,
-    successRate: 99.2,
+    successRate: 0.992,
   };
-}
-
-function dayLabel(ts: number): string {
-  const d = new Date(ts);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 interface OutcomePoint {
@@ -103,14 +99,28 @@ interface OutcomePoint {
 export function summarizeOutcomePoints(points: OutcomePoint[]): {
   days: UsageDay[];
   fetches: LibraryFetch[];
+  /** 0-1 fraction; 1 when there are no points (neutral, like the telemetry summary). */
   successRate: number;
 } {
   const byDay = new Map<string, number>();
-  for (const point of points) {
-    const label = dayLabel(point.ts);
-    byDay.set(label, (byDay.get(label) ?? 0) + 1);
+  const ordered = [...points].sort((a, b) => a.ts - b.ts);
+  for (const point of ordered) {
+    // ISO day key so Dec 31 of different years never merge; the display
+    // label stays short month/day for chart fit.
+    const key = new Date(point.ts).toISOString().slice(0, 10);
+    byDay.set(key, (byDay.get(key) ?? 0) + 1);
   }
-  const days: UsageDay[] = [...byDay.entries()].slice(-10).map(([date, requests]) => ({ date, requests }));
+  const days: UsageDay[] = [...byDay.entries()]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .slice(-10)
+    .map(([key, requests]) => {
+      const [, month, day] = key.split("-");
+      const label = new Date(Date.UTC(2020, Number(month) - 1, Number(day))).toLocaleDateString(
+        "en-US",
+        { month: "short", day: "numeric", timeZone: "UTC" },
+      );
+      return { date: label, requests };
+    });
   const byTool = new Map<string, number>();
   for (const point of points) {
     byTool.set(point.tool, (byTool.get(point.tool) ?? 0) + 1);
@@ -121,7 +131,7 @@ export function summarizeOutcomePoints(points: OutcomePoint[]): {
     fetches: count,
   }));
   const successRate =
-    points.length === 0 ? 100 : Math.round((points.filter((p) => p.success).length / points.length) * 1000) / 10;
+    points.length === 0 ? 1 : Math.round((points.filter((p) => p.success).length / points.length) * 1000) / 1000;
   return { days, fetches, successRate };
 }
 
@@ -154,7 +164,8 @@ export interface StatisticsDeps {
  * this isolate's in-memory telemetry. Never throws.
  */
 export async function getTelemetryTotals(deps: StatisticsDeps): Promise<TelemetryTotals> {
-  if (resolveDatabaseMode() === "supabase-production") {
+  // Any real database mode reads durable storage (see dashboard note).
+  if (resolveDatabaseMode() !== "mock") {
     try {
       const [total, stored] = await Promise.all([
         deps.getDatabase().countLogs(),
@@ -175,7 +186,7 @@ export async function getTelemetryTotals(deps: StatisticsDeps): Promise<Telemetr
 }
 
 async function durableOutcomePoints(deps: StatisticsDeps): Promise<OutcomePoint[] | null> {
-  if (resolveDatabaseMode() !== "supabase-production") return null;
+  if (resolveDatabaseMode() === "mock") return null;
   try {
     const stored = await deps.getDatabase().listLogs(STATS_LOG_WINDOW);
     if (stored.length === 0) return null;
@@ -206,7 +217,7 @@ export async function getStatisticsSnapshot(deps: StatisticsDeps): Promise<Stati
     requestsUsed: totals.totalCalls,
     docsPages: 0,
     activeLibraries: fetches.length,
-    successRate: totals.totalCalls > 0 ? Math.round(totals.successRate * 1000) / 10 : windowRate,
+    successRate: totals.totalCalls > 0 ? Math.round(totals.successRate * 1000) / 1000 : windowRate,
   };
   return { usage, days, rows: [], fetches, isMock: false };
 }

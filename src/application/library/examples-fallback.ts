@@ -82,27 +82,33 @@ export async function docsFallbackResponse(
     emptyText?: string;
   },
   deps: ExamplesFallbackDeps,
-): Promise<ExamplesResponse> {
+): Promise<{ response: ExamplesResponse; empty: boolean }> {
   const { library, pattern, language, maxResults, reason, emptyText } = params;
   const fallback = await docsExamples(deps, library, pattern, maxResults, reason).catch(() => null);
   if (fallback) {
     return {
-      content: [{ type: "text", text: fallback.text }],
-      structuredContent: {
-        library,
-        pattern,
-        language,
-        totalCount: fallback.count,
-        source: "official-docs-fallback",
-        sourceUrl: fallback.sourceUrl,
+      response: {
+        content: [{ type: "text", text: fallback.text }],
+        structuredContent: {
+          library,
+          pattern,
+          language,
+          totalCount: fallback.count,
+          source: "official-docs-fallback",
+          sourceUrl: fallback.sourceUrl,
+        },
       },
+      empty: false,
     };
   }
   return {
-    content: [{
-      type: "text",
-      text: emptyText
-        ?? `${reason} No documentation-based examples found either - try gl_snippets with a registry libraryId, or set GETLIB_GITHUB_TOKEN.`,
-    }],
+    response: {
+      content: [{
+        type: "text",
+        text: emptyText
+          ?? `${reason} No documentation-based examples found either - try gl_snippets with a registry libraryId, or set GETLIB_GITHUB_TOKEN.`,
+      }],
+    },
+    empty: true,
   };
 }

@@ -106,10 +106,13 @@ export interface SnippetsApplicationResult {
  * one place; every branch returns through it.
  */
 export async function snippetsUseCase(input: SnippetsInput, deps: SnippetsDeps): Promise<SnippetsApplicationResult> {
-  const done = (response: {
-    content: Array<{ type: "text"; text: string }>;
-    structuredContent?: Record<string, unknown>;
-  }): SnippetsApplicationResult => ({ response, resolved: true });
+  const done = (
+    response: {
+      content: Array<{ type: "text"; text: string }>;
+      structuredContent?: Record<string, unknown>;
+    },
+    resolved = true,
+  ): SnippetsApplicationResult => ({ response, resolved });
   // Guard only the resolution identifier (see docs.ts) - topic is a
   // content filter, not a registry key.
   if (isExtractionAttempt(input.libraryId)) {
@@ -121,7 +124,7 @@ export async function snippetsUseCase(input: SnippetsInput, deps: SnippetsDeps):
 
   const target = deps.resolveSnippetTarget(input.libraryId);
   if (typeof target === "string") {
-    return done({ content: [{ type: "text", text: target }] });
+    return done({ content: [{ type: "text", text: target }] }, false);
   }
   const { library, displayName, docsUrl } = target;
   const versionKey = version ?? null;
@@ -200,9 +203,9 @@ export async function snippetsUseCase(input: SnippetsInput, deps: SnippetsDeps):
             }),
           );
         }
-        return done(renderNoTopicMatch({ index: persisted, displayName, library, topic: input.topic, version, language: input.language }));
+        return done(renderNoTopicMatch({ index: persisted, displayName, library, topic: input.topic, version, language: input.language }), false);
       }
-      return done(renderNoIndex(displayName));
+      return done(renderNoIndex(displayName), false);
     }
 
     await deps.storeSave(index);
@@ -211,7 +214,7 @@ export async function snippetsUseCase(input: SnippetsInput, deps: SnippetsDeps):
     builtAt = index.builtAt;
 
     if (snippets.length === 0) {
-      return done(renderNoTopicMatch({ index, displayName, library, topic: input.topic, version, language: input.language }));
+      return done(renderNoTopicMatch({ index, displayName, library, topic: input.topic, version, language: input.language }), false);
     }
   }
 

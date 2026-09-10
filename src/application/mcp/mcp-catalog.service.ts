@@ -10,6 +10,7 @@ import {
   parseLogLimitValue,
 } from "@/server/mcp/utils/schemas";
 import { log } from "@/server/mcp/utils/logger";
+import { generateRequestId } from "@/server/mcp/utils/guard";
 
 export interface McpToolInputKey {
   key: string;
@@ -56,7 +57,7 @@ export interface McpCatalogDeps {
   listResources: () => Array<{ name: string; uri: string; description: string }>;
   listPrompts: () => Array<{ name: string; description: string }>;
   runTool: (name: string, args?: unknown, requestId?: string) => Promise<unknown>;
-  getDatabase: () => Pick<DatabaseRepository, "listLogs">;
+  getDatabase: () => Pick<DatabaseRepository, "countLogs" | "listLogs">;
   listLogs: () => McpLogEntry[];
 }
 
@@ -168,7 +169,9 @@ export async function executeTool(
   validateToolName(deps, name);
   const started = Date.now();
   const result = await deps.runTool(name, args, requestId);
-  return { tool: name, result, requestId: requestId ?? "", durationMs: Date.now() - started };
+  // Never emit an empty correlation id: callers that omit one still get
+  // a traceable execution.
+  return { tool: name, result, requestId: requestId ?? generateRequestId(), durationMs: Date.now() - started };
 }
 
 const DEFAULT_LOG_LIMIT = LOG_LIMIT_DEFAULT;
@@ -217,14 +220,17 @@ export function mapStoredLogToView(entry: StoredLogEntry): McpLogEntry {
  * source.
  */
 export async function listMcpLogs(deps: McpCatalogDeps, limit: number = DEFAULT_LOG_LIMIT): Promise<McpLogView> {
-  if (resolveDatabaseMode() !== "supabase-production") {
+  if (resolveDatabaseMode() === "mock") {
     return ringLogs(deps, limit);
   }
   try {
-    const stored = await deps.getDatabase().listLogs(limit);
+    const [stored, total] = await Promise.all([
+      deps.getDatabase().listLogs(limit),
+      deps.getDatabase().countLogs(),
+    ]);
     return {
       logs: stored.map(mapStoredLogToView),
-      total: stored.length,
+      total,
     };
   } catch (error) {
     log({

@@ -247,7 +247,10 @@ async function liveActivities(deps: DashboardDeps): Promise<DashboardActivity[]>
   // serverless isolates and reflects every persisted run, not just the
   // ones this process happened to execute. Anything less makes the
   // dashboard lie about activity on multi-instance hosts.
-  if (resolveDatabaseMode() === "supabase-production") {
+  // Any real database mode reads durable storage; mock mode has no
+  // database to read. supabase-development included: it is a real
+  // project, and repository fail-soft paths cover the unmigrated case.
+  if (resolveDatabaseMode() !== "mock") {
     try {
       const stored = await deps.getDatabase().listLogs(8);
       if (stored.length > 0) {
@@ -342,8 +345,12 @@ export async function getDashboardSnapshot(deps: DashboardDeps): Promise<Dashboa
     errorRate: telemetry.errorRate,
   };
 
-  const systemStatus =
-    database.health === "unavailable" || health.status === "degraded" ? "degraded" : "healthy";
+  const dbDown = database.health === "unavailable";
+  const systemStatus = dbDown
+    ? "unavailable"
+    : database.health === "degraded" || health.status === "degraded"
+      ? "degraded"
+      : "healthy";
 
   if (runtime.isMock) {
     return {
@@ -382,7 +389,7 @@ export async function getDashboardSnapshot(deps: DashboardDeps): Promise<Dashboa
     activities,
     attentions,
     system: {
-      status: database.health === "unavailable" ? "unavailable" : systemStatus,
+      status: systemStatus,
       environment: runtime.environment,
       databaseMode: runtime.databaseMode,
       isMock: false,

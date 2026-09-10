@@ -26,14 +26,6 @@ export interface SourcesSnapshot {
   wildcards: string[];
 }
 
-export interface SourcesSnapshot {
-  groups: SourceSummaryGroup[];
-  totalEntries: number;
-  registryEntries: number;
-  blocked: string[];
-  wildcards: string[];
-}
-
 /**
  * Capability seams of the sources snapshot. Table sizes, the enabled
  * policy, and the persisted settings store are infrastructure injected

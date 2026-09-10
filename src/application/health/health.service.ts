@@ -81,8 +81,17 @@ const DB_PROBE_TTL_MS = 15_000;
 let cachedProbe: { at: number; status: DatabaseStatus } | null = null;
 let inflightProbe: Promise<DatabaseStatus> | null = null;
 
-async function probeDatabase(
-  deps: HealthDeps,
+/**
+ * Drops the cached database probe. Called when the database mode
+ * changes at runtime so the next snapshot probes the new target
+ * instead of serving the old mode until TTL expiry.
+ */
+export function resetHealthProbeCache(): void {
+  cachedProbe = null;
+  inflightProbe = null;
+}
+
+async function probeDatabase(  deps: HealthDeps,
   fallbackMode: DatabaseStatus["mode"],
 ): Promise<DatabaseStatus> {
   const now = Date.now();
@@ -143,10 +152,14 @@ export async function getHealthSnapshot(deps: HealthDeps): Promise<HealthSnapsho
   const runtime = getRuntimeSnapshot();
   const auth = getAuthConfig();
   const database = databaseCheck(await probeDatabase(deps, runtime.databaseMode), runtime.isMock);
+  // Full-outage severity is preserved: an unavailable database reports
+  // "unavailable", never collapsed to degraded.
   const status =
-    circuits.open > 0 || database.status === "degraded" || database.status === "unavailable"
-      ? "degraded"
-      : "healthy";
+    database.status === "unavailable"
+      ? "unavailable"
+      : circuits.open > 0 || database.status === "degraded"
+        ? "degraded"
+        : "healthy";
   return {
     status,
     name: SERVER_NAME,

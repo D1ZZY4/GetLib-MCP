@@ -41,9 +41,12 @@ export interface DispatchApplicationResult {
  * adapters, and map this result.
  */
 export async function dispatchUseCase(input: DispatchInput, deps: DispatchDeps): Promise<DispatchApplicationResult> {
+  const projectPath = input.projectPath === undefined || input.projectPath.trim().length === 0
+    ? undefined
+    : input.projectPath;
   const intent = deps.detectIntent({
     query: input.query,
-    ...(input.projectPath !== undefined ? { projectPath: input.projectPath } : {}),
+    ...(projectPath !== undefined ? { projectPath } : {}),
   });
 
   // Resolve project path for project-level tools
@@ -51,7 +54,7 @@ export async function dispatchUseCase(input: DispatchInput, deps: DispatchDeps):
     try {
       const rawPath = intent.args["projectPath"];
       const pathArg = typeof rawPath === "string" ? rawPath : undefined;
-      const resolvedPath = safeguardPath(pathArg ?? input.projectPath ?? process.cwd());
+      const resolvedPath = safeguardPath(pathArg ?? projectPath ?? process.cwd());
       intent.args["projectPath"] = resolvedPath;
     } catch {
       // fall back to bare cwd marker - actual tool will re-validate
@@ -83,7 +86,7 @@ export async function dispatchUseCase(input: DispatchInput, deps: DispatchDeps):
   lines.push("");
   lines.push("## Next step");
   lines.push(
-    `Invoke the recommended tool with the args above. The arguments are checked against the target tool's required fields. If the routing looks wrong, fall back to \`gl_search({ query: "${input.query.replace(/"/g, '\\"')}" })\` - it never fails to return *something* useful.`,
+    `Invoke the recommended tool with the args above. The arguments are checked against the target tool's required fields. If the routing looks wrong, fall back to \`gl_search({ query: "${input.query.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}" })\` - it never fails to return *something* useful.`,
   );
   lines.push("");
   lines.push("---");

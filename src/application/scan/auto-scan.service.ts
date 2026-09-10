@@ -66,7 +66,11 @@ export async function autoScanUseCase(input: AutoScanInput, deps: AutoScanDeps):
 
   let resolvedPath: string;
   try {
-    resolvedPath = safeguardPath(input.projectPath ?? process.cwd());
+    resolvedPath = safeguardPath(
+      input.projectPath === undefined || input.projectPath.trim().length === 0
+        ? process.cwd()
+        : input.projectPath,
+    );
   } catch {
     return { response: text(`Invalid project path.`), resolved: false };
   }

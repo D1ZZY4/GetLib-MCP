@@ -21,7 +21,7 @@ const UNRESOLVED_HELP = [
  * technical infrastructure.
  */
 export interface BestPracticesDeps {
-  resolveBestPracticesTarget: (libraryId: string) => Promise<BestPracticesTarget | null>;
+  resolveBestPracticesTarget: (libraryId: string) => Promise<BestPracticesTarget | string | null>;
   fetchBestPracticesContent: (
     libraryId: string,
     docsUrl: string,
@@ -78,7 +78,11 @@ function isExplicitTarget(libraryId: string): boolean {
   ) {
     return true;
   }
-  return normalized.includes(".") && !normalized.includes(" ");
+  // Bare hostnames only: must contain a letter (so pure version strings
+  // like "1.2.3" stay behind the fuzzy-identity gate) alongside the dot.
+  if (!normalized.includes(".") || normalized.includes(" ")) return false;
+  if (/^v?\d+(\.\d+)*$/.test(normalized)) return false;
+  return /[a-zA-Z]/.test(normalized);
 }
 
 /**
@@ -122,6 +126,11 @@ export async function bestPracticesUseCase(
   }
 
   const target = await deps.resolveBestPracticesTarget(input.libraryId);
+  if (typeof target === "string") {
+    // Blocked by Sources settings (or otherwise unusable): surface the
+    // reason verbatim instead of a generic miss.
+    return { response: { content: [{ type: "text", text: target }] }, resolved: false };
+  }
   if (!target) {
     return miss(`Could not resolve "${input.libraryId}".\n\n${UNRESOLVED_HELP}`);
   }

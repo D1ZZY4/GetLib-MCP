@@ -1,4 +1,4 @@
-import { TRANSPORT_MODES, type TransportMode } from "@/domain/mcp/catalog";
+import { TRANSPORT_MODES, type TransportMode, type TransportModeId } from "@/domain/mcp/catalog";
 
 /**
  * Install application service - canonical installation metadata shared by
@@ -7,7 +7,7 @@ import { TRANSPORT_MODES, type TransportMode } from "@/domain/mcp/catalog";
  * never hardcoded per-page.
  */
 
-export type AssistantTransport = "stdio" | "sse" | "streamable-http";
+export type AssistantTransport = TransportModeId;
 
 export interface AssistantEntry {
   id: string;
@@ -307,8 +307,21 @@ function transportDocs(): TransportModeDoc[] {
 
 /**
  * Canonical install catalog. Transports derive from the server transport
- * registry so docs cannot drift from runtime.
+ * registry so docs cannot drift from runtime. Pass the request origin as
+ * baseUrl so remote snippets point at this deployment instead of the
+ * placeholder host; omitting it keeps the placeholder for offline use.
  */
-export function getInstallCatalog(): InstallCatalog {
-  return { assistants: ASSISTANTS, transports: transportDocs() };
+export function getInstallCatalog(baseUrl?: string): InstallCatalog {
+  if (baseUrl === undefined || baseUrl.trim().length === 0) {
+    return { assistants: ASSISTANTS, transports: transportDocs() };
+  }
+  const host = baseUrl.replace(/\/+$/, "");
+  const assistants = ASSISTANTS.map((assistant) => ({
+    ...assistant,
+    snippet: assistant.snippet.split(REMOTE_HTTP_URL).join(`${host}/api/mcp/http`),
+    ...(assistant.remoteSnippet !== undefined
+      ? { remoteSnippet: assistant.remoteSnippet.split(REMOTE_HTTP_URL).join(`${host}/api/mcp/http`) }
+      : {}),
+  }));
+  return { assistants, transports: transportDocs() };
 }

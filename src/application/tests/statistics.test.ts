@@ -28,14 +28,14 @@ describe("statistics application service", () => {
       { id: "gl_search", name: "gl_search", fetches: 2 },
       { id: "gl_docs", name: "gl_docs", fetches: 1 },
     ]);
-    expect(successRate).toBe(66.7);
+    expect(successRate).toBe(0.667);
   });
 
   test("empty outcomes report a neutral full rate", () => {
     const { days, fetches, successRate } = summarizeOutcomePoints([]);
     expect(days).toEqual([]);
     expect(fetches).toEqual([]);
-    expect(successRate).toBe(100);
+    expect(successRate).toBe(1);
   });
 
   test("mock repository counts persisted logs for totals", async () => {

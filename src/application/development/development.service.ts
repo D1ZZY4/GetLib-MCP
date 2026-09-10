@@ -7,6 +7,7 @@ import {
   type DatabaseModeSelection,
 } from "@/server/mcp/runtime";
 import { ensureBootstrapAccount, resetBootstrapCache, type AuthDeps } from "@/application/auth/auth.service";
+import { resetHealthProbeCache } from "@/application/health/health.service";
 
 /**
  * Capability seams of the development mutations. Bootstrap persistence
@@ -66,6 +67,9 @@ export function updateDatabaseMode(mode: DatabaseModeSelection | null): Developm
     throw new DevelopmentForbiddenError();
   }
   setDatabaseModeOverride(mode);
+  // The health probe caches per-mode status: drop it so the next
+  // snapshot reflects the new target instead of stale mode data.
+  resetHealthProbeCache();
   return getDevelopmentSettings();
 }
 

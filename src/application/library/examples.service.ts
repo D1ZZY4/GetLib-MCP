@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isExtractionAttempt, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 import { parseExternal, externalSchemas } from "@/server/mcp/utils/validate-external";
+import { log } from "@/server/mcp/utils/logger";
 import { docsFallbackResponse, type ExamplesFallbackDeps } from "./examples-fallback";
 import { renderCodeSearch, type CodeSearchItem } from "./examples-render";
 
@@ -104,7 +105,7 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
         ...(emptyText !== undefined ? { emptyText } : {}),
       },
       deps.fallback,
-    ).then((response) => ({ response, resolved: true }));
+    ).then(({ response, empty }) => ({ response, resolved: !empty }));
 
   // GitHub code search is authenticated-only: without a token the call
   // is a guaranteed 401/403. Skip straight to the docs-derived path
@@ -146,9 +147,14 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
       ? (raw as { items: unknown[] }).items
       : [];
     const items: CodeSearchItem[] = [];
+    let dropped = 0;
     for (const candidate of rawItems) {
       const parsed = codeSearchItemSchema.safeParse(candidate);
       if (parsed.success) items.push(parsed.data as CodeSearchItem);
+      else dropped += 1;
+    }
+    if (dropped > 0) {
+      log({ level: "debug", msg: "examples.items.dropped", dropped, library });
     }
     if (items.length === 0) {
       return fallbackAsync(

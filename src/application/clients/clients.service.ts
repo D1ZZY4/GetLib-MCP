@@ -1,4 +1,5 @@
 import type { ClientLister, ClientSessionSnapshot } from "@/domain/mcp/catalog";
+import { log } from "@/server/mcp/utils/logger";
 
 export type ConnectedClient = ClientSessionSnapshot;
 
@@ -33,7 +34,10 @@ export function listClients(): ClientsSnapshot {
   const clients: ConnectedClient[] = listers.flatMap((lister) => {
     try {
       return lister();
-    } catch {
+    } catch (error) {
+      // A broken lister must not zero out healthy transports, but the
+      // breakage must be visible somewhere: log once per failing lister.
+      log({ level: "warn", msg: "clients.lister-failed", error: String(error) });
       return [];
     }
   });

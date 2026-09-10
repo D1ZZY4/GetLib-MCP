@@ -1,4 +1,5 @@
 import type { Issue } from "@/server/mcp/sources/audit-patterns";
+import { withNotice } from "@/server/mcp/utils/guard";
 
 const BADGE: Record<string, string> = {
   critical: "[CRITICAL]",
@@ -98,7 +99,7 @@ export function renderAuditReport(params: AuditReportInput): AuditReport {
 
   if (issues.length === 0) {
     return {
-      text: header + `No issues found for: ${categories.join(", ")}.\n`,
+      text: withNotice(header + `No issues found for: ${categories.join(", ")}.\n`),
       structuredContent: { ...structuredContent, totalIssues: 0, uniqueIssueTypes: 0, issues: [] },
     };
   }
@@ -107,5 +108,5 @@ export function renderAuditReport(params: AuditReportInput): AuditReport {
     .map(([title, group]) => renderSection(title, group, bpMap))
     .join("");
 
-  return { text: header + sections, structuredContent };
+  return { text: withNotice(header + sections), structuredContent };
 }

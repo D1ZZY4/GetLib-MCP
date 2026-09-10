@@ -44,9 +44,15 @@ export interface AuditApplicationResult {
  * live infrastructure adapters, and map this result.
  */
 export async function auditProjectUseCase(input: AuditInput, deps: AuditDeps): Promise<AuditApplicationResult> {
+  const categories = input.categories.includes("all")
+    ? ["all"]
+    : [...new Set(input.categories)];
+  const projectPath = input.projectPath === undefined || input.projectPath.trim().length === 0
+    ? undefined
+    : input.projectPath;
   let resolvedPath: string;
   try {
-    resolvedPath = safeguardPath(input.projectPath ?? process.cwd());
+    resolvedPath = safeguardPath(projectPath ?? process.cwd());
   } catch {
     return { response: { content: [{ type: "text", text: `Invalid project path.` }] }, resolved: false };
   }
@@ -78,9 +84,7 @@ export async function auditProjectUseCase(input: AuditInput, deps: AuditDeps): P
     };
   }
 
-  const allIssues = deps.runPatterns(files, input.categories);
-  const SRANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-  allIssues.sort((a, b) => (SRANK[a.severity] ?? 4) - (SRANK[b.severity] ?? 4));
+  const allIssues = deps.runPatterns(files, categories);
 
   const grouped = deps.groupIssues(allIssues);
   const topIssues = Array.from(grouped.entries()).slice(0, 6);
@@ -104,7 +108,7 @@ export async function auditProjectUseCase(input: AuditInput, deps: AuditDeps): P
     issues: allIssues,
     grouped,
     bpMap,
-    categories: input.categories,
+    categories,
   });
 
   return {

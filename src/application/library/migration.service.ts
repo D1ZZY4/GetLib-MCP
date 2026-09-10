@@ -18,6 +18,7 @@ export interface MigrationDeps {
   lookupById: (id: string) => LibraryEntry | null | undefined;
   lookupByAlias: (alias: string) => LibraryEntry | null | undefined;
   resolveDynamic: (libraryId: string) => Promise<ResolvedLibrary | null>;
+  checkLibraryAccess: (libraryId: string, resolvedNames?: string[]) => string | null;
   fetchVersionGuide: (docsUrl: string, toVersion: string) => Promise<MigrationSection | null>;
   fetchGitHubMigrationDocs: (
     githubUrl: string,
@@ -77,8 +78,15 @@ export async function migrationUseCase(input: MigrationInput, deps: MigrationDep
           text: `Could not resolve "${libraryId}". Try gl_resolve_library first to find the correct ID.`,
         }],
       },
-      resolved: true,
+      resolved: false,
     };
+  }
+  const blocked = deps.checkLibraryAccess(
+    libraryId,
+    entry ? [entry.id, entry.name] : [resolved.displayName],
+  );
+  if (blocked) {
+    return { response: { content: [{ type: "text", text: blocked }] }, resolved: false };
   }
   const { docsUrl, githubUrl, displayName, resolvedId } = resolved;
 
@@ -118,7 +126,7 @@ export async function migrationUseCase(input: MigrationInput, deps: MigrationDep
           text: `No migration guides found for "${displayName}". Try gl_changelog for release notes, or gl_get_docs with topic "migration".`,
         }],
       },
-      resolved: true,
+      resolved: false,
     };
   }
 

@@ -43,7 +43,12 @@ export interface ChangelogApplicationResult {
  * live infrastructure adapters, and map this result.
  */
 export async function changelogUseCase(input: ChangelogInput, deps: ChangelogDeps): Promise<ChangelogApplicationResult> {
-  const { libraryId, version, tokens } = input;
+  const { libraryId, tokens } = input;
+  // Normalize the v-prefix once so slicing, ranking, and evidence all
+  // test the same band ("v15" vs "15" must not disagree with itself).
+  const version = input.version === undefined || input.version.trim().length === 0
+    ? undefined
+    : input.version.replace(/^v/, "");
   if (isExtractionAttempt(libraryId)) {
     return { response: { content: [{ type: "text", text: EXTRACTION_REFUSAL }] }, resolved: true };
   }
@@ -72,7 +77,7 @@ export async function changelogUseCase(input: ChangelogInput, deps: ChangelogDep
 
   const target = await deps.resolveChangelogTarget(libraryId);
   if (typeof target === "string") {
-    return { response: { content: [{ type: "text", text: target }] }, resolved: true };
+    return { response: { content: [{ type: "text", text: target }] }, resolved: false };
   }
   const { displayName, githubUrl, docsUrl } = target;
   const { raw, sourceUrl } = await deps.fetchChangelog(target);
@@ -81,7 +86,7 @@ export async function changelogUseCase(input: ChangelogInput, deps: ChangelogDep
     const text = withNotice(
       `No changelog found for **${displayName}**.\n\nCheck the GitHub releases page directly: ${githubUrl ?? docsUrl}`,
     );
-    return { response: { content: [{ type: "text", text }] }, resolved: true };
+    return { response: { content: [{ type: "text", text }] }, resolved: false };
   }
 
   let content = sanitizeContent(raw);
@@ -105,7 +110,7 @@ export async function changelogUseCase(input: ChangelogInput, deps: ChangelogDep
     "github-readme",
     version ? [version] : undefined,
   );
-  const evidence: EvidenceCheck = version ? checkEvidence(text, `v${version.replace(/^v/, "")} release`) : checkEvidence(text, "");
+  const evidence: EvidenceCheck = version ? checkEvidence(text, `v${version} release`) : checkEvidence(text, "");
 
   const header = [
     `# ${displayName} Changelog`,
@@ -120,7 +125,7 @@ export async function changelogUseCase(input: ChangelogInput, deps: ChangelogDep
 
   const evidenceBlock = buildEvidenceBlock({
     sources: [{ url: sourceUrl, sourceType: "changelog" }],
-    ...(version ? { topic: `v${version.replace(/^v/, "")} release`, check: evidence } : {}),
+    ...(version ? { topic: `v${version} release`, check: evidence } : {}),
   });
 
   const response = withNotice(`${header}\n\n${text}${evidenceBlock}`);

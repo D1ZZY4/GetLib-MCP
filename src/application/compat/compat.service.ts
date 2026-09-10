@@ -129,7 +129,7 @@ export async function compatUseCase(input: CompatInput, deps: CompatDeps): Promi
         content: [{ type: "text", text }],
         structuredContent: { feature, environments: environments ?? [], sources: [], evidence: { ok: false, verdict: "miss" } },
       },
-      resolved: true,
+      resolved: false,
     };
   }
 

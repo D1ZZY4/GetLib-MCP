@@ -12,7 +12,7 @@ export function renderNoIndex(displayName: string): SnippetResponse {
   return {
     content: [{
       type: "text",
-      text: [
+      text: withNotice([
         `No snippets indexed for "${displayName}".`,
         "",
         "**What to try next:**",
@@ -20,7 +20,7 @@ export function renderNoIndex(displayName: string): SnippetResponse {
         "- Try gl_examples for real-world usage examples from GitHub repositories",
         "- Try gl_get_docs for prose-style content",
         "- Re-run with refresh:true if the cache may be stale",
-      ].join("\n"),
+      ].join("\n")),
     }],
   };
 }
@@ -46,7 +46,7 @@ export function renderNoTopicMatch(params: {
   return {
     content: [{
       type: "text",
-      text: [
+      text: withNotice([
         `# ${displayName} - no snippets match "${topic}"${language ? ` in ${language}` : ""}`,
         "",
         `The snippet index for ${displayName} (${index.snippets.length} snippets from ${index.sourceUrl}) contains no code matching that topic. Closest available snippets:`,
@@ -57,7 +57,7 @@ export function renderNoTopicMatch(params: {
         "- Re-run with one of the topics listed above, or without a topic to see everything",
         `- Try gl_get_docs with topic "${topic}" for prose documentation`,
         "- Try gl_examples for real-world GitHub usage of this pattern",
-      ].join("\n"),
+      ].join("\n")),
     }],
     structuredContent: {
       library,
