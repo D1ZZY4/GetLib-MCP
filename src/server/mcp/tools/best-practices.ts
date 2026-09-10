@@ -1,29 +1,16 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { lookupByAlias, lookupById } from "../sources/registry";
-import { isExtractionAttempt, withToolTimeout, EXTRACTION_REFUSAL } from "../utils/guard";
-import { checkEvidence } from "../utils/evidence";
+import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
-import { resolveBestPracticesTarget } from "../services/best-practices/target";
-import { fetchBestPracticesContent } from "../services/best-practices/fetch";
-import { escalateWeakEvidence } from "../services/best-practices/escalate";
-import { renderBestPractices } from "./best-practices-report";
+import { bestPracticesUseCase } from "@/application/library/best-practices.service";
+import { liveBestPracticesDeps } from "../infrastructure/deps/best-practices-deps";
 
-// Re-exported so the existing test import path stays valid.
-export { raceUrls } from "../services/best-practices/race";
-
-const TIMEOUT_RESPONSE = {
-  content: [{ type: "text" as const, text: "Best-practices lookup timed out. Retry with a narrower topic." }],
-  structuredContent: { timedOut: true },
-};
-
-const UNRESOLVED_HELP = [
-  "**What to try next:**",
-  "- Run gl_resolve_library to find the correct library ID",
-  "- Try gl_search with a freeform query (e.g. 'React performance best practices')",
-  "- Use the npm/PyPI package name or a direct docs URL",
-].join("\n");
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Best-practices lookup timed out. Retry with a narrower topic.",
+  { timedOut: true },
+);
 
 const InputSchema = z.object({
   libraryId: z
@@ -52,45 +39,8 @@ const InputSchema = z.object({
     .describe("Max tokens to return"),
 });
 
-// Known best practices / guide URLs per library - 363+ entries
-
-function isRegistryIdentifier(libraryId: string): boolean {
-  return (lookupById(libraryId) ?? lookupByAlias(libraryId)) !== undefined;
-}
-
-/**
- * Explicitly-scoped targets the user deliberately addressed: registry
- * prefixes, direct docs URLs, and bare hostnames. These skip the
- * fuzzy-identity gate below because the user - not fuzzy search -
- * chose the target.
- */
-function isExplicitTarget(libraryId: string): boolean {
-  const normalized = libraryId.trim();
-  if (
-    normalized.startsWith("npm:") ||
-    normalized.startsWith("pypi:") ||
-    normalized.startsWith("crates:") ||
-    normalized.startsWith("go:") ||
-    normalized.startsWith("http://") ||
-    normalized.startsWith("https://")
-  ) {
-    return true;
-  }
-  return normalized.includes(".") && !normalized.includes(" ");
-}
-
-/**
- * Fuzzy-identity gate for bare non-registry identifiers. resolveDynamic
- * falls back to npm/GitHub fuzzy search, which can latch onto an
- * unrelated repo for garbage input. Unless the fetched content actually
- * mentions what the user asked for (or the resolved library name), the
- * identifier is a miss - unrelated guides must never pass as best
- * practices. Pure and network-free so the rule itself is unit-testable.
- */
-export function passesIdentityGate(text: string, libraryId: string, displayName: string): boolean {
-  if (isRegistryIdentifier(libraryId) || isExplicitTarget(libraryId)) return true;
-  return checkEvidence(text, libraryId).ok || checkEvidence(text, displayName).ok;
-}
+// Known best practices / guide URLs per library - 363+ entries (see
+// services/best-practices and sources/best-practice-urls).
 
 export function registerBestPracticesTools(): void {
   defineTool({
@@ -114,78 +64,17 @@ Do not call this tool more than 3 times per question.`,
       const { libraryId, topic = "", version, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_best_practices", async (ctx) => {
         return withToolTimeout(async () => {
-        // Guard only the resolution identifier (see docs.ts) - topic is a
-        // content filter, not a registry key.
-        if (isExtractionAttempt(libraryId)) {
-          ctx.resolved = true;
-          return { content: [{ type: "text", text: EXTRACTION_REFUSAL }] };
-        }
-
-        const target = await resolveBestPracticesTarget(libraryId);
-        if (!target) {
-          ctx.resolved = false;
-          return {
-            content: [{ type: "text", text: `Could not resolve "${libraryId}".\n\n${UNRESOLVED_HELP}` }],
-          };
-        }
-        const { docsUrl, displayName, resolvedId, bestPracticesPaths } = target;
-
-        const effectiveTopic = version
-          ? `${topic ? `${topic} ` : ""}v${version.replace(/^v/, "")}`.trim()
-          : topic;
-
-        const fetched = await fetchBestPracticesContent(
-          resolvedId,
-          docsUrl,
-          target.llmsTxtUrl,
-          target.llmsFullTxtUrl,
-          target.githubUrl,
-          effectiveTopic,
-          tokens,
-          bestPracticesPaths,
-        );
-
-        const sourcesTried: Array<{ url: string; sourceType?: string }> = [
-          { url: fetched.sourceUrl },
-          ...fetched.extraSources.map((url) => ({ url })),
-        ];
-
-        const escalation = await escalateWeakEvidence({
-          text: fetched.text,
-          sourceUrl: fetched.sourceUrl,
-          truncated: fetched.truncated,
-          sourceType: fetched.sourceType,
-          topic: effectiveTopic,
-          docsUrl,
-          tokens,
-          bestPracticesPaths,
-        });
-        if (escalation.extraSource) sourcesTried.push(escalation.extraSource);
-
-        // Identity gate for fuzzy-resolved identifiers: a bare name that
-        // missed the registry only survives on npm/pypi/URL prefixes or an
-        // explicit docs URL via resolveDynamic's fuzzy search, which can
-        // latch onto an unrelated repo for garbage input. Unless the
-        // fetched content actually mentions what the user asked for (or
-        // the resolved library name), that is a miss - never serve
-        // unrelated guides as best practices.
-        if (!passesIdentityGate(escalation.text, libraryId, target.displayName)) {
-          ctx.resolved = false;
-          return {
-            content: [{ type: "text", text: `Could not resolve "${libraryId}".\n\n${UNRESOLVED_HELP}` }],
-          };
-        }
-
-        ctx.resolved = effectiveTopic && escalation.evidence.matchRatio === 0
-          ? false
-          : escalation.text.length > 200;
-        return renderBestPractices({
-          displayName,
-          resolvedId,
-          topic: effectiveTopic,
-          sourcesTried,
-          ...escalation,
-        });
+          const { response, resolved } = await bestPracticesUseCase(
+            {
+              libraryId,
+              topic,
+              ...(version !== undefined ? { version } : {}),
+              tokens,
+            },
+            liveBestPracticesDeps,
+          );
+          ctx.resolved = resolved;
+          return response;
         }, TIMEOUT_RESPONSE);
       });
     },

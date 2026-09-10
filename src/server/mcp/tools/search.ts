@@ -8,6 +8,7 @@ import {
   searchLibrariesUseCase,
 } from "@/application/library/search.service";
 import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
 
@@ -31,15 +32,15 @@ const InputSchema = z.object({
     .describe(`Max tokens to return (default: ${SEARCH_TOKENS_DEFAULT}, max: ${SEARCH_TOKENS_MAX})`),
 });
 
-const TIMEOUT_RESPONSE = {
-  content: [{ type: "text" as const, text: "Search timed out. Retry with a narrower query." }],
-  structuredContent: {
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Search timed out. Retry with a narrower query.",
+  {
     timedOut: true,
     query: "",
     sources: [] as Array<{ name: string; url: string; content: string }>,
     evidence: { ok: false, matchRatio: 0, occurrences: 0, verdict: "miss" as const },
   },
-};
+);
 
 export function registerSearchTools(): void {
   const currentYear = new Date().getFullYear();

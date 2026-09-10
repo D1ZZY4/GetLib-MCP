@@ -1,18 +1,15 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { createHash } from "crypto";
 import { withTelemetry } from "../services/telemetry";
-import { lookupById, lookupByAlias, fuzzySearch } from "../sources/registry";
-import { fetchDocs, fetchAsMarkdownRace, isIndexContent, rankIndexLinks } from "../services/fetcher";
-import { extractRelevantContent } from "../utils/extract";
-import { sanitizeContent } from "../utils/sanitize";
-import { isExtractionAttempt, withNotice, withToolTimeout } from "../utils/guard";
-import { docCache } from "../services/cache";
-import type { LibraryEntry } from "../types";
+import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
+import { nonBlankString } from "../utils/schemas";
+import { compareUseCase } from "@/application/library/compare.service";
+import { liveCompareDeps } from "../infrastructure/deps/compare-deps";
 
 const InputSchema = z.object({
   libraries: z
-    .array(z.string().min(1).max(100))
+    .array(nonBlankString(100))
     .min(2)
     .max(3)
     .describe("2–3 library names to compare, e.g. ['prisma', 'drizzle-orm']"),
@@ -30,15 +27,11 @@ const InputSchema = z.object({
     .describe("Max tokens per library (2000 default)"),
 });
 
-function resolveLibrary(name: string): LibraryEntry | null {
-  return lookupById(name) ?? lookupByAlias(name) ?? fuzzySearch(name, 1)[0] ?? null;
-}
-
 /** Returned when the whole pipeline exceeds the tool timeout - an actionable
  *  next step beats a hung call or an MCP-level timeout error. */
-const TIMEOUT_RESPONSE = {
-  content: [{ type: "text" as const, text: "Comparison timed out. Retry with two libraries instead of three, or call gl_best_practices per library." }],
-};
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Comparison timed out. Retry with two libraries instead of three, or call gl_best_practices per library.",
+);
 
 export function registerCompareTools(): void {
   defineTool({
@@ -59,103 +52,15 @@ Pass library NAMES (e.g. ['prisma', 'drizzle-orm']) - not registry IDs. The tool
       return withTelemetry("gl_compare", async (ctx) => {
         ctx.resolved = true;
         return withToolTimeout(async () => {
-          // No extraction guard on `criteria` - it is a comparison angle, not a
-          // registry key ("full feature list" is a legitimate criteria).
-          const topic = criteria ? `${criteria} comparison tradeoffs` : "overview features comparison";
-          // Per-item guard: one flagged name is treated as unresolvable instead of
-          // aborting the sibling libraries' comparison.
-          const entries = libraries.map((lib) => ({
-            lib,
-            entry: isExtractionAttempt(lib) ? null : resolveLibrary(lib),
-          }));
-
-          if (entries.every(({ entry }) => entry === null)) {
-            const text = withNotice(
-              `Could not resolve any of the requested libraries.\n\nTry using exact package names or registry IDs from \`gl_resolve_library\`.`,
-            );
-            return { content: [{ type: "text", text }] };
-          }
-
-          const fetchResults = await Promise.allSettled(
-            entries.map(async ({ lib, entry }) => {
-              const topicHash = createHash("sha256").update(topic).digest("hex").slice(0, 16);
-              // Tokens shape the extracted content, so the key must include
-              // them - otherwise the same topic with different budgets collides.
-              const cacheKey = `compare:${entry?.id ?? lib}:${topicHash}:${tokens ?? 2000}`;
-              const cached = docCache.get(cacheKey);
-              if (typeof cached === "string") return { lib, entry, content: cached };
-
-              if (!entry) return { lib, entry: null, content: null };
-
-              try {
-                let fetchResult = await fetchDocs(entry.docsUrl, entry.llmsTxtUrl, entry.llmsFullTxtUrl, topic);
-                if (!fetchResult) return { lib, entry, content: null };
-                if (isIndexContent(fetchResult.content)) {
-                  const deepLinks = rankIndexLinks(fetchResult.content, topic, fetchResult.url || entry.docsUrl);
-                  for (const deepUrl of deepLinks) {
-                    const deepContent = await fetchAsMarkdownRace(deepUrl);
-                    if (deepContent && deepContent.length > 300) {
-                      fetchResult = { content: deepContent, url: deepUrl, sourceType: "jina" };
-                      break;
-                    }
-                  }
-                }
-                const safe = sanitizeContent(fetchResult.content);
-                const { text } = extractRelevantContent(safe, topic, tokens ?? 2000);
-                docCache.set(cacheKey, text);
-                return { lib, entry, content: text };
-              } catch {
-                return { lib, entry, content: null };
-              }
-            }),
-          );
-
-          const sections: string[] = [];
-          const structuredLibraries: Array<{
-            id: string;
-            name: string;
-            description: string;
-            docsUrl: string;
-            content: string;
-          }> = [];
-
-          for (const result of fetchResults) {
-            if (result.status !== "fulfilled") continue;
-            const { lib, entry, content } = result.value;
-            const name = entry?.name ?? lib;
-            const id = entry?.id ?? lib;
-            const description = entry?.description ?? "";
-            const docsUrl = entry?.docsUrl ?? "";
-            const displayContent = content ?? `_No documentation found for ${name}._`;
-
-            sections.push(`## ${name}\n\n${description ? `> ${description}\n\n` : ""}${displayContent}`);
-            structuredLibraries.push({ id, name, description, docsUrl, content: displayContent });
-          }
-
-          if (sections.length === 0) {
-            const text = withNotice(
-              `Could not resolve any of the requested libraries.\n\nTry using exact package names or registry IDs from \`gl_resolve_library\`.`,
-            );
-            return { content: [{ type: "text", text }] };
-          }
-
-          const header = [
-            `# Comparison: ${libraries.join(" vs ")}`,
-            criteria ? `Criteria: **${criteria}**` : "",
-            "",
-          ]
-            .filter(Boolean)
-            .join("\n");
-
-          const response = withNotice(`${header}\n\n${sections.join("\n\n---\n\n")}`);
-
-          return {
-            content: [{ type: "text", text: response }],
-            structuredContent: {
-              libraries: structuredLibraries,
-              criteria: criteria ?? "general overview",
+          const { response } = await compareUseCase(
+            {
+              libraries,
+              ...(criteria !== undefined ? { criteria } : {}),
+              tokens,
             },
-          };
+            liveCompareDeps,
+          );
+          return response;
         }, TIMEOUT_RESPONSE);
       });
     },

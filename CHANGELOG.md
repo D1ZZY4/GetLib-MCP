@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the resolve use case.
 - Extract compat and dispatch use cases with injected seams so
   tools stay thin adapters.
+- Extract batch, best-practices, changelog, compare, examples,
+  migration, and snippets use cases with injected seams.
 
 </details>
 

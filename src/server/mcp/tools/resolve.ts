@@ -6,6 +6,7 @@ import {
   resolveLibraryUseCase,
 } from "@/application/library/resolve.service";
 import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
 
@@ -21,10 +22,10 @@ const InputSchema = z.object({
     .describe("Optional: what you want to do with this library, used to rank results"),
 });
 
-const TIMEOUT_RESPONSE = {
-  content: [{ type: "text" as const, text: "Library resolution timed out. Retry with the exact library name." }],
-  structuredContent: { timedOut: true, matches: [] },
-};
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Library resolution timed out. Retry with the exact library name.",
+  { timedOut: true, matches: [] },
+);
 
 export function registerResolveTools(): void {
   defineTool({

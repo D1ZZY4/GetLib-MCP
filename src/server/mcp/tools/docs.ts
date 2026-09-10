@@ -1,6 +1,7 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import {
@@ -14,10 +15,10 @@ import {
 // Re-exported so the existing test import path stays valid.
 export { isValidPackageName } from "../services/docs/docs-resolve";
 
-const TIMEOUT_RESPONSE = {
-  content: [{ type: "text" as const, text: "Documentation lookup timed out. Retry with a narrower topic or an explicit version." }],
-  structuredContent: { timedOut: true },
-};
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Documentation lookup timed out. Retry with a narrower topic or an explicit version.",
+  { timedOut: true },
+);
 
 const InputSchema = z.object({
   libraryId: z
