@@ -1,6 +1,6 @@
 import { checkEvidence, buildEvidenceBlock, type EvidenceCheck } from "@/server/mcp/utils/evidence";
 import { withNotice } from "@/server/mcp/utils/guard";
-import { parseExternal, safeJsonParse, externalSchemas } from "@/server/mcp/utils/validate-external";
+import { parseCacheEnvelopeRaw, safeJsonParse } from "@/server/mcp/utils/validate-external";
 import type { CompatSection } from "@/server/mcp/services/compat-sources";
 
 /**
@@ -56,12 +56,14 @@ export async function compatUseCase(input: CompatInput, deps: CompatDeps): Promi
   // not a registry key - guarding it refused ordinary queries like
   // "does Safari support the full :has() selector list".
   const envFilter = environments?.map((e) => e.toLowerCase()).join(", ") ?? "";
-  const cacheKey = `compat:${feature}:${envFilter}:${tokens}`;
+  // Normalized so "Container Queries", "container queries " and
+  // "CONTAINER QUERIES" share one entry - the lookup is case-insensitive.
+  const cacheKey = `compat:${feature.trim().toLowerCase()}:${envFilter}:${tokens}`;
   const cached = deps.cacheGet(cacheKey);
   if (typeof cached === "string") {
     const raw = safeJsonParse(cached);
-    const envelope = raw ? parseExternal(externalSchemas.cacheEnvelope, raw) : null;
-    if (envelope?.text) {
+    const envelope = parseCacheEnvelopeRaw(raw);
+    if (envelope) {
       return {
         response: {
           content: [{ type: "text", text: envelope.text }],
@@ -71,14 +73,11 @@ export async function compatUseCase(input: CompatInput, deps: CompatDeps): Promi
       };
     }
     // Pre-envelope cache entry - plain rendered text.
-    if (envelope === null) {
-      try {
-        const legacy = JSON.parse(cached) as unknown;
-        if (typeof legacy === "string") return { response: { content: [{ type: "text", text: legacy }] }, resolved: true };
-      } catch {
-        // Not JSON at all - fall through to plain text below.
-      }
-      return { response: { content: [{ type: "text", text: cached }] }, resolved: true };
+    try {
+      const legacy = JSON.parse(cached) as unknown;
+      if (typeof legacy === "string") return { response: { content: [{ type: "text", text: legacy }] }, resolved: true };
+    } catch {
+      // Not JSON at all - fall through to plain text below.
     }
     return { response: { content: [{ type: "text", text: cached }] }, resolved: true };
   }

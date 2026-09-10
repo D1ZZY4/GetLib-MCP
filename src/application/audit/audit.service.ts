@@ -31,7 +31,7 @@ export interface AuditInput {
 export interface AuditApplicationResult {
   response: {
     content: Array<{ type: "text"; text: string }>;
-    structuredContent?: AuditReport["structuredContent"];
+    structuredContent?: Record<string, unknown>;
   };
   resolved: boolean;
 }

@@ -1,13 +1,8 @@
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
-import { getDatabase } from "@/server/mcp/infrastructure/database";
-import type { StoredLogEntry } from "@/server/mcp/infrastructure/database";
-import { listLogs, type McpLogEntry } from "@/server/mcp/middleware/logging";
-import { listPrompts } from "@/server/mcp/registry/prompt-registry";
-import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
-import { listResources } from "@/server/mcp/registry/resource-registry";
-import { getTool, listTools, runTool } from "@/server/mcp/registry/tool-registry";
+import type { DatabaseRepository, StoredLogEntry } from "@/server/mcp/infrastructure/database";
+import type { McpLogEntry } from "@/server/mcp/middleware/logging";
+import type { GlToolAnnotations, GlToolDef } from "@/server/mcp/registry/tool-registry";
 import { resolveDatabaseMode } from "@/server/mcp/runtime";
-import type { GlToolAnnotations } from "@/server/mcp/registry/tool-registry";
 import { transportModeIds, type TransportModeId } from "@/domain/mcp/catalog";
 import {
   LOG_LIMIT_DEFAULT,
@@ -47,8 +42,26 @@ export interface McpServersSnapshot {
   servers: McpServerDescriptor[];
 }
 
-function ensureLoaded(): void {
-  ensureRegistryLoaded();
+/**
+ * Capability seams of the MCP catalog. Registry reads, tool execution,
+ * durable log reads, and the in-memory log ring are infrastructure
+ * injected here; pure shaping (input keys, view mapping, limit parsing)
+ * and shared policy (database mode, schemas, logging) stay directly
+ * owned.
+ */
+export interface McpCatalogDeps {
+  ensureRegistryLoaded: () => void;
+  listTools: () => Array<Pick<GlToolDef, "name" | "description">>;
+  getTool: (name: string) => GlToolDef | undefined;
+  listResources: () => Array<{ name: string; uri: string; description: string }>;
+  listPrompts: () => Array<{ name: string; description: string }>;
+  runTool: (name: string, args?: unknown, requestId?: string) => Promise<unknown>;
+  getDatabase: () => Pick<DatabaseRepository, "listLogs">;
+  listLogs: () => McpLogEntry[];
+}
+
+function ensureLoaded(deps: McpCatalogDeps): void {
+  deps.ensureRegistryLoaded();
 }
 
 function describeInputKey(schema: unknown): string | null {
@@ -65,11 +78,11 @@ function inputKeysOf(inputSchema: Record<string, object> | undefined): McpToolIn
   }));
 }
 
-export function getMcpCatalog(): McpCatalogSnapshot {
-  ensureLoaded();
+export function getMcpCatalog(deps: McpCatalogDeps): McpCatalogSnapshot {
+  ensureLoaded(deps);
   return {
-    tools: listTools().map(({ name, description }) => {
-      const def = getTool(name);
+    tools: deps.listTools().map(({ name, description }) => {
+      const def = deps.getTool(name);
       return {
         name,
         description,
@@ -77,13 +90,13 @@ export function getMcpCatalog(): McpCatalogSnapshot {
         ...(def?.annotations ? { annotations: def.annotations } : {}),
       };
     }),
-    resources: listResources(),
-    prompts: listPrompts(),
+    resources: deps.listResources(),
+    prompts: deps.listPrompts(),
   };
 }
 
-export function getMcpServers(): McpServersSnapshot {
-  const catalog = getMcpCatalog();
+export function getMcpServers(deps: McpCatalogDeps): McpServersSnapshot {
+  const catalog = getMcpCatalog(deps);
   return {
     servers: [
       {
@@ -102,16 +115,16 @@ export function getMcpServers(): McpServersSnapshot {
   };
 }
 
-function isKnownTool(name: string): boolean {
-  ensureLoaded();
-  return getTool(name) !== undefined;
+function isKnownTool(deps: McpCatalogDeps, name: string): boolean {
+  ensureLoaded(deps);
+  return deps.getTool(name) !== undefined;
 }
 
-export function validateToolName(name: string): void {
+export function validateToolName(deps: McpCatalogDeps, name: string): void {
   if (!TOOL_NAME_PATTERN.test(name)) {
     throw new ToolNameValidationError(`Invalid tool name: "${name}"`);
   }
-  if (!isKnownTool(name)) {
+  if (!isKnownTool(deps, name)) {
     throw new UnknownToolError(name);
   }
 }
@@ -147,13 +160,14 @@ export interface ToolExecution {
 }
 
 export async function executeTool(
+  deps: McpCatalogDeps,
   name: string,
   args: unknown,
   requestId?: string,
 ): Promise<ToolExecution> {
-  validateToolName(name);
+  validateToolName(deps, name);
   const started = Date.now();
-  const result = await runTool(name, args, requestId);
+  const result = await deps.runTool(name, args, requestId);
   return { tool: name, result, requestId: requestId ?? "", durationMs: Date.now() - started };
 }
 
@@ -169,12 +183,12 @@ export function parseLogLimit(raw: string | null): number {
 }
 
 export interface McpLogView {
-  logs: ReturnType<typeof listLogs>;
+  logs: McpLogEntry[];
   total: number;
 }
 
-function ringLogs(limit: number): McpLogView {
-  const logs = listLogs();
+function ringLogs(deps: McpCatalogDeps, limit: number): McpLogView {
+  const logs = deps.listLogs();
   return { logs: logs.slice(0, limit), total: logs.length };
 }
 
@@ -202,12 +216,12 @@ export function mapStoredLogToView(entry: StoredLogEntry): McpLogEntry {
  * page. Development and tests stay on the ring, which is their only
  * source.
  */
-export async function listMcpLogs(limit: number = DEFAULT_LOG_LIMIT): Promise<McpLogView> {
+export async function listMcpLogs(deps: McpCatalogDeps, limit: number = DEFAULT_LOG_LIMIT): Promise<McpLogView> {
   if (resolveDatabaseMode() !== "supabase-production") {
-    return ringLogs(limit);
+    return ringLogs(deps, limit);
   }
   try {
-    const stored = await getDatabase().listLogs(limit);
+    const stored = await deps.getDatabase().listLogs(limit);
     return {
       logs: stored.map(mapStoredLogToView),
       total: stored.length,
@@ -218,6 +232,6 @@ export async function listMcpLogs(limit: number = DEFAULT_LOG_LIMIT): Promise<Mc
       msg: "mcp-catalog.logs.durable_read_failed",
       error: error instanceof Error ? error.message : String(error),
     });
-    return ringLogs(limit);
+    return ringLogs(deps, limit);
   }
 }

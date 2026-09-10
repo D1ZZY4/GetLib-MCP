@@ -6,8 +6,7 @@ import {
   MAX_TOKEN_LIMIT,
   sharedPipelineBudgetMs,
 } from "@/server/mcp/constants";
-import { collectSearchSources } from "@/server/mcp/services/search/collect";
-import { addWebSearchSources } from "@/server/mcp/services/search/fetch-topic";
+import type { SearchSource } from "@/server/mcp/services/search/fetch-topic";
 import { LRUCache } from "@/server/mcp/services/lru-cache";
 
 export const SEARCH_TOKENS_MIN = 1000;
@@ -26,6 +25,27 @@ const NO_RESULTS_HELP = [
 export interface SearchInput {
   query: string;
   tokens?: number;
+}
+
+/**
+ * Capability seams of the search use case. Source collection (registry,
+ * curated topics, web fallbacks) is infrastructure injected here; the
+ * memoization, singleflight budget, ranking-adjacent evidence check, and
+ * render stay application-owned. Pure text transforms
+ * (normalizeQueryYear, evidence helpers) stay imported as cross-cutting
+ * technical infrastructure.
+ */
+export interface SearchDeps {
+  collectSearchSources: (
+    query: string,
+    tokens: number,
+  ) => Promise<{ results: SearchSource[]; webSearched: boolean }>;
+  addWebSearchSources: (
+    query: string,
+    results: SearchSource[],
+    perSourceTokens: number,
+    maxUrls: number,
+  ) => Promise<void>;
 }
 
 export interface SearchApplicationResult {
@@ -82,19 +102,23 @@ export function pipelineBudgetMs(): number {
   return sharedPipelineBudgetMs();
 }
 
-function runPipelineWithSharedBudget(query: string, tokens: number): Promise<SearchApplicationResult> {
+function runPipelineWithSharedBudget(
+  query: string,
+  tokens: number,
+  deps: SearchDeps,
+): Promise<SearchApplicationResult> {
   const budgetMs = pipelineBudgetMs();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const budget: Promise<SearchApplicationResult> = new Promise((resolve) => {
     timer = setTimeout(() => resolve(emptySearchResult(query)), budgetMs);
   });
-  const pipeline = runSearchPipeline(query, tokens);
+  const pipeline = runSearchPipeline(query, tokens, deps);
   return Promise.race([pipeline, budget]).finally(() => {
     if (timer !== undefined) clearTimeout(timer);
   });
 }
 
-export async function searchLibrariesUseCase(input: SearchInput): Promise<SearchApplicationResult> {
+export async function searchLibrariesUseCase(input: SearchInput, deps: SearchDeps): Promise<SearchApplicationResult> {
   const tokens = input.tokens ?? SEARCH_TOKENS_DEFAULT;
   const query = normalizeQueryYear(input.query);
   const key = `search:${query}:${tokens}`;
@@ -102,7 +126,7 @@ export async function searchLibrariesUseCase(input: SearchInput): Promise<Search
   if (cached) return cached;
   const ongoing = searchInFlight.get(key);
   if (ongoing) return ongoing;
-  const pipeline = runPipelineWithSharedBudget(query, tokens).then((result) => {
+  const pipeline = runPipelineWithSharedBudget(query, tokens, deps).then((result) => {
     searchResultCache.set(key, result, CACHE_TTLS.SEARCH_RESULT);
     return result;
   }).finally(() => {
@@ -112,8 +136,12 @@ export async function searchLibrariesUseCase(input: SearchInput): Promise<Search
   return pipeline;
 }
 
-async function runSearchPipeline(query: string, tokens: number): Promise<SearchApplicationResult> {
-  const { results, webSearched } = await collectSearchSources(query, tokens);
+async function runSearchPipeline(
+  query: string,
+  tokens: number,
+  deps: SearchDeps,
+): Promise<SearchApplicationResult> {
+  const { results, webSearched } = await deps.collectSearchSources(query, tokens);
 
   if (results.length === 0) {
     return emptySearchResult(query);
@@ -123,7 +151,7 @@ async function runSearchPipeline(query: string, tokens: number): Promise<SearchA
   // add authoritative web sources once instead of shipping a thin answer.
   let combinedCheck = checkEvidence(results.map((r) => r.content).join("\n\n"), query);
   if (!combinedCheck.ok && !webSearched && results.length < 3) {
-    await addWebSearchSources(query, results, Math.floor(tokens / 3), 2);
+    await deps.addWebSearchSources(query, results, Math.floor(tokens / 3), 2);
     combinedCheck = checkEvidence(results.map((r) => r.content).join("\n\n"), query);
   }
 

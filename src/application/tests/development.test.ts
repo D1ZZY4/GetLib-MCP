@@ -8,6 +8,7 @@ import {
 import { setDatabaseModeOverride } from "@/server/mcp/runtime";
 import { resetDatabaseCache } from "@/server/mcp/infrastructure/database";
 import { resetBootstrapCache } from "@/application/auth/auth.service";
+import { liveDevelopmentDeps } from "@/server/mcp/infrastructure/deps/development-deps";
 
 const KEY = "GET_LIB_MODE";
 
@@ -64,19 +65,19 @@ describe("development application service", () => {
 
   test("seed ensures settings in development", async () => {
     await withMockModeAsync(async () => {
-      const snapshot = await seedDevelopmentData();
+      const snapshot = await seedDevelopmentData(liveDevelopmentDeps);
       expect(snapshot.editable).toBe(true);
     });
   });
 
   test("reset reseeds in development and rejects in production", async () => {
     await withMockModeAsync(async () => {
-      const snapshot = await resetDevelopmentData();
+      const snapshot = await resetDevelopmentData(liveDevelopmentDeps);
       expect(snapshot.editable).toBe(true);
     });
     await withLibModeAsync("production", async () => {
-      await expect(seedDevelopmentData()).rejects.toThrow();
-      await expect(resetDevelopmentData()).rejects.toThrow();
+      await expect(seedDevelopmentData(liveDevelopmentDeps)).rejects.toThrow();
+      await expect(resetDevelopmentData(liveDevelopmentDeps)).rejects.toThrow();
     });
   });
 });

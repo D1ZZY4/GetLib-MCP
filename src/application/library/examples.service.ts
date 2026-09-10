@@ -73,7 +73,10 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
   }
 
   const query = buildQuery(library, pattern, language);
-  const cacheKey = `gh-code-examples:${query}:${maxResults}`;
+  // Key-only normalization: the GitHub query keeps its original casing
+  // (sent verbatim upstream) while "React" and "react " share one entry -
+  // code search itself is case-insensitive.
+  const cacheKey = `gh-code-examples:${query.trim().toLowerCase()}:${maxResults}`;
 
   const memCached = deps.cacheGet(cacheKey);
   if (typeof memCached === "string") {

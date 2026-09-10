@@ -1,17 +1,9 @@
 import { getAuthConfig } from "@/application/auth/auth.service";
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
-import { listPrompts } from "@/server/mcp/registry/prompt-registry";
-import { ensureRegistryLoaded } from "@/server/mcp/registry/registry-loader";
-import { listResources } from "@/server/mcp/registry/resource-registry";
-import { listTools } from "@/server/mcp/registry/tool-registry";
-import { docCache } from "@/server/mcp/services/cache";
-import { getCircuitSummary } from "@/server/mcp/services/circuit-breaker";
-import { getUptimeSeconds } from "@/server/mcp/services/metrics";
-import { LIBRARY_REGISTRY } from "@/server/mcp/sources/registry";
-import { getInvocationSummary } from "@/server/mcp/services/telemetry";
-import { getDatabaseStatus } from "@/server/mcp/infrastructure/database";
 import type { DatabaseStatus } from "@/server/mcp/infrastructure/database";
 import { getRuntimeSnapshot } from "@/server/mcp/runtime";
+import type { getCircuitSummary } from "@/server/mcp/services/circuit-breaker";
+import type { getInvocationSummary } from "@/server/mcp/services/telemetry";
 
 export type HealthStatus = "healthy" | "degraded" | "unavailable";
 
@@ -58,6 +50,25 @@ function checkNow(status: HealthStatus, latencyMs: number | null = null, error: 
 }
 
 /**
+ * Capability seams of the health snapshot. Registry reads, cache size,
+ * circuits, uptime, telemetry, and the database probe are infrastructure
+ * injected here; auth, runtime policy, and constants stay directly owned
+ * (application-internal or centralized configuration).
+ */
+export interface HealthDeps {
+  ensureRegistryLoaded: () => void;
+  listTools: () => Array<{ name: string }>;
+  listResources: () => Array<{ name: string }>;
+  listPrompts: () => Array<{ name: string }>;
+  registryEntryCount: () => number;
+  cacheMemoryEntries: () => number;
+  getCircuitSummary: () => ReturnType<typeof getCircuitSummary>;
+  getUptimeSeconds: () => number;
+  getInvocationSummary: () => ReturnType<typeof getInvocationSummary>;
+  getDatabaseStatus: () => Promise<DatabaseStatus>;
+}
+
+/**
  * Live database probe with TTL cache and single-flight. Health scrapes,
  * the dashboard, and runtime diagnostics share one probe result for
  * DB_PROBE_TTL_MS instead of hitting Supabase per call, and concurrent
@@ -70,11 +81,14 @@ const DB_PROBE_TTL_MS = 15_000;
 let cachedProbe: { at: number; status: DatabaseStatus } | null = null;
 let inflightProbe: Promise<DatabaseStatus> | null = null;
 
-async function probeDatabase(fallbackMode: DatabaseStatus["mode"]): Promise<DatabaseStatus> {
+async function probeDatabase(
+  deps: HealthDeps,
+  fallbackMode: DatabaseStatus["mode"],
+): Promise<DatabaseStatus> {
   const now = Date.now();
   if (cachedProbe && now - cachedProbe.at < DB_PROBE_TTL_MS) return cachedProbe.status;
   if (inflightProbe) return inflightProbe;
-  inflightProbe = getDatabaseStatus().then(
+  inflightProbe = deps.getDatabaseStatus().then(
     (status) => {
       cachedProbe = { at: Date.now(), status };
       inflightProbe = null;
@@ -129,12 +143,12 @@ function databaseCheck(status: DatabaseStatus, isMock: boolean): DependencyCheck
  * is a live cached probe (not config presence): latencyMs and
  * lastCheckedAt are measured, and a dead Supabase degrades the snapshot.
  */
-export async function getHealthSnapshot(): Promise<HealthSnapshot> {
-  ensureRegistryLoaded();
-  const circuits = getCircuitSummary();
+export async function getHealthSnapshot(deps: HealthDeps): Promise<HealthSnapshot> {
+  deps.ensureRegistryLoaded();
+  const circuits = deps.getCircuitSummary();
   const runtime = getRuntimeSnapshot();
   const auth = getAuthConfig();
-  const database = databaseCheck(await probeDatabase(runtime.databaseMode), runtime.isMock);
+  const database = databaseCheck(await probeDatabase(deps, runtime.databaseMode), runtime.isMock);
   const status =
     circuits.open > 0 || database.status === "degraded" || database.status === "unavailable"
       ? "degraded"
@@ -143,14 +157,14 @@ export async function getHealthSnapshot(): Promise<HealthSnapshot> {
     status,
     name: SERVER_NAME,
     version: SERVER_VERSION,
-    uptimeSeconds: getUptimeSeconds(),
-    tools: listTools().length,
-    resources: listResources().length,
-    prompts: listPrompts().length,
-    registryEntries: LIBRARY_REGISTRY.length,
-    cache: { memoryEntries: docCache.size() },
+    uptimeSeconds: deps.getUptimeSeconds(),
+    tools: deps.listTools().length,
+    resources: deps.listResources().length,
+    prompts: deps.listPrompts().length,
+    registryEntries: deps.registryEntryCount(),
+    cache: { memoryEntries: deps.cacheMemoryEntries() },
     circuits,
-    telemetry: getInvocationSummary(),
+    telemetry: deps.getInvocationSummary(),
     environment: runtime.environment,
     databaseMode: runtime.databaseMode,
     isMock: runtime.isMock,

@@ -1,8 +1,5 @@
-import { fuzzySearch, lookupByAlias } from "@/server/mcp/sources/registry";
-import type { LibraryMatch } from "@/server/mcp/types";
+import type { LibraryEntry, LibraryMatch } from "@/server/mcp/types";
 import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
-import { isLibraryBlocked, isSourceEnabled } from "@/server/mcp/services/source-settings";
-import { resolveBareNameCandidates } from "@/server/mcp/services/resolve";
 
 export const RESOLVE_NAME_MAX = 200;
 export const RESOLVE_QUERY_MAX = 500;
@@ -48,6 +45,21 @@ export interface ResolveInput {
   query?: string;
 }
 
+/**
+ * Capability seams of the resolve use case. Registry lookup, external
+ * package fallbacks, and source-policy checks are infrastructure
+ * injected here. Pure text transforms (extraction guard, scoring
+ * boost, render) and shared presentation (notice) stay imported as
+ * cross-cutting technical infrastructure.
+ */
+export interface ResolveDeps {
+  lookupByAlias: (name: string) => LibraryEntry | null | undefined;
+  fuzzySearch: (name: string, limit: number) => LibraryEntry[];
+  resolveBareNameCandidates: (name: string) => Promise<LibraryMatch[]>;
+  isSourceEnabled: (source: string) => boolean;
+  isLibraryBlocked: (id: string, names: string[]) => boolean;
+}
+
 export interface ResolveApplicationResult {
   response: {
     content: Array<{ type: "text"; text: string }>;
@@ -63,7 +75,7 @@ export interface ResolveApplicationResult {
  * re-ranking, blocked-list filtering, render. Transport adapters (tools,
  * API routes) only validate input and map this result.
  */
-export async function resolveLibraryUseCase(input: ResolveInput): Promise<ResolveApplicationResult> {
+export async function resolveLibraryUseCase(input: ResolveInput, deps: ResolveDeps): Promise<ResolveApplicationResult> {
   const name = input.libraryName.trim();
   const query = input.query;
 
@@ -81,10 +93,10 @@ export async function resolveLibraryUseCase(input: ResolveInput): Promise<Resolv
 
   // Registry steps are skipped when library-registry is disabled on
   // the Sources page - external package fallbacks below still run.
-  const registryOn = isSourceEnabled("library-registry");
+  const registryOn = deps.isSourceEnabled("library-registry");
 
   // 1. Exact alias lookup in registry
-  const exact = registryOn ? lookupByAlias(name) : undefined;
+  const exact = registryOn ? deps.lookupByAlias(name) : undefined;
   if (exact) {
     matches.push({
       id: exact.id,
@@ -101,7 +113,7 @@ export async function resolveLibraryUseCase(input: ResolveInput): Promise<Resolv
 
   // 2. Fuzzy search registry
   if (registryOn && matches.length === 0) {
-    const fuzzy = fuzzySearch(name, 5);
+    const fuzzy = deps.fuzzySearch(name, 5);
     for (const entry of fuzzy) {
       if (!matches.some((m) => m.id === entry.id)) {
         matches.push({
@@ -126,7 +138,7 @@ export async function resolveLibraryUseCase(input: ResolveInput): Promise<Resolv
   // scoring < 90). Single ownership in services/resolve.ts keeps the
   // npm/pypi then crates/go then search sequence from drifting.
   if (matches.length === 0 || (matches.length < 3 && matches.every((m) => m.source === "registry" && m.score < 85))) {
-    const candidates = await resolveBareNameCandidates(name);
+    const candidates = await deps.resolveBareNameCandidates(name);
     for (const candidate of candidates) {
       if (!matches.some((m) => m.id === candidate.id)) matches.push(candidate);
     }
@@ -149,7 +161,7 @@ export async function resolveLibraryUseCase(input: ResolveInput): Promise<Resolv
   // External package fallbacks above are live data, not the curated
   // registry, so only registry-sourced matches are filtered.
   const visible = matches.filter(
-    (m) => m.source !== "registry" || !isLibraryBlocked(m.id, [m.name]),
+    (m) => m.source !== "registry" || !deps.isLibraryBlocked(m.id, [m.name]),
   );
 
   const text = withNotice(formatResults(visible.slice(0, 5)));

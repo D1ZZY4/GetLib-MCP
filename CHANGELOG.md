@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tools stay thin adapters.
 - Share one bare-name fallback pipeline between dynamic resolve
   and the resolve use case.
+- Inject capability seams into every remaining use case so
+  orchestration is testable without infrastructure.
 - Adopt shared input schemas in every route and await the async
   health and statistics snapshots.
 - Extract compat and dispatch use cases with injected seams so

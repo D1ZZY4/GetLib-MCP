@@ -1,6 +1,6 @@
 import { getAuthConfig } from "@/application/auth/auth.service";
-import { getMcpServers } from "@/application/mcp/mcp-catalog.service";
-import { getDatabaseStatus } from "@/server/mcp/infrastructure/database";
+import { getMcpServers, type McpCatalogDeps } from "@/application/mcp/mcp-catalog.service";
+import type { DatabaseStatus } from "@/server/mcp/infrastructure/database";
 import { SERVER_NAME, SERVER_VERSION } from "@/server/mcp/constants";
 import { detectEnvironment, resolveDatabaseMode } from "@/server/mcp/runtime";
 
@@ -28,16 +28,27 @@ export interface SettingsSnapshot {
 }
 
 /**
+ * Capability seams of the settings snapshot. The database probe is
+ * infrastructure injected here; auth, catalog, constants, and runtime
+ * policy stay directly owned (application-internal or centralized
+ * configuration).
+ */
+export interface SettingsDeps {
+  getDatabaseStatus: () => Promise<DatabaseStatus>;
+  catalog: McpCatalogDeps;
+}
+
+/**
  * Application configuration snapshot for the Settings surface.
  * Read-only: every value here is env-driven and changes require an
  * environment update plus restart. Secrets are never included.
  */
-export async function getSettingsSnapshot(): Promise<SettingsSnapshot> {
+export async function getSettingsSnapshot(deps: SettingsDeps): Promise<SettingsSnapshot> {
   const environment = detectEnvironment();
   const databaseMode = resolveDatabaseMode(environment);
   const auth = getAuthConfig();
-  const servers = getMcpServers();
-  const database = await getDatabaseStatus();
+  const servers = getMcpServers(deps.catalog);
+  const database = await deps.getDatabaseStatus();
   const primary = servers.servers[0];
   return {
     general: { server: SERVER_NAME, version: SERVER_VERSION, environment },

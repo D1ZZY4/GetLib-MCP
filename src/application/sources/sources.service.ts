@@ -1,15 +1,4 @@
-import { AUDIT_PATTERNS } from "@/server/mcp/sources/audit-patterns";
-import { FIX_TARGET_GROUPS } from "@/server/mcp/sources/audit-fix-urls";
-import { BEST_PRACTICES_URLS } from "@/server/mcp/sources/best-practice-urls";
-import { DEFAULT_URL_PATTERNS } from "@/server/mcp/sources/doc-url-patterns";
-import { MIGRATION_PATHS } from "@/server/mcp/sources/migration-paths";
-import { LIBRARY_REGISTRY } from "@/server/mcp/sources/registry";
-import { TOPIC_URL_MAP } from "@/server/mcp/sources/topic-urls";
-import {
-  getSourceSettings,
-  isSourceEnabled,
-  updateSourceSettings,
-} from "@/server/mcp/services/source-settings";
+import type { SourceSettingsState } from "@/server/mcp/services/source-settings";
 
 export interface SourceSummaryItem {
   id: string;
@@ -34,13 +23,48 @@ export interface SourcesSnapshot {
   wildcards: string[];
 }
 
+export interface SourcesSnapshot {
+  groups: SourceSummaryGroup[];
+  totalEntries: number;
+  registryEntries: number;
+  blocked: string[];
+  wildcards: string[];
+}
+
+/**
+ * Capability seams of the sources snapshot. Table sizes, the enabled
+ * policy, and the persisted settings store are infrastructure injected
+ * here; the grouping and render shape stay application-owned. Tables
+ * arrive as counts (the only thing the snapshot reads), never as live
+ * provider data.
+ */
+export interface SourcesDeps {
+  tableCounts: {
+    libraryRegistry: number;
+    docUrlPatterns: number;
+    bestPracticeUrls: number;
+    topicUrls: number;
+    migrationPaths: number;
+    auditPatterns: number;
+    fixTargets: number;
+  };
+  isSourceEnabled: (id: string) => boolean;
+  getSourceSettings: () => SourceSettingsState;
+  updateSourceSettings: (input: {
+    disabled?: unknown;
+    blocked?: unknown;
+    wildcards?: unknown;
+  }) => Promise<unknown>;
+}
+
 function item(
+  deps: SourcesDeps,
   id: string,
   name: string,
   description: string,
   entries: number,
 ): SourceSummaryItem {
-  return { id, name, description, entries, enabled: isSourceEnabled(id) };
+  return { id, name, description, entries, enabled: deps.isSourceEnabled(id) };
 }
 
 /**
@@ -48,7 +72,7 @@ function item(
  * Counts are read live from the source tables, so the Sources settings
  * page always reflects the running server instead of static mock data.
  */
-export function getSourcesSnapshot(): SourcesSnapshot {
+export function getSourcesSnapshot(deps: SourcesDeps): SourcesSnapshot {
   const groups: SourceSummaryGroup[] = [
     {
       id: "library",
@@ -56,10 +80,11 @@ export function getSourcesSnapshot(): SourcesSnapshot {
       description: "Curated library entries backing resolve, docs, and snippets.",
       items: [
         item(
+          deps,
           "library-registry",
           "Library registry",
           "Curated libraries with docs URLs, aliases, and package mappings.",
-          LIBRARY_REGISTRY.length,
+          deps.tableCounts.libraryRegistry,
         ),
       ],
     },
@@ -69,22 +94,25 @@ export function getSourcesSnapshot(): SourcesSnapshot {
       description: "URL tables used to locate official docs and best practices.",
       items: [
         item(
+          deps,
           "doc-url-patterns",
           "Doc URL patterns",
           "Per-library documentation URL patterns for direct fetching.",
-          DEFAULT_URL_PATTERNS.length,
+          deps.tableCounts.docUrlPatterns,
         ),
         item(
+          deps,
           "best-practice-urls",
           "Best-practice URLs",
           "Curated best-practice guides per library and topic.",
-          Object.keys(BEST_PRACTICES_URLS).length,
+          deps.tableCounts.bestPracticeUrls,
         ),
         item(
+          deps,
           "topic-urls",
           "Topic URLs",
           "Authoritative URLs for cross-cutting topics and standards.",
-          TOPIC_URL_MAP.length,
+          deps.tableCounts.topicUrls,
         ),
       ],
     },
@@ -94,22 +122,25 @@ export function getSourcesSnapshot(): SourcesSnapshot {
       description: "Migration, audit, and remediation knowledge tables.",
       items: [
         item(
+          deps,
           "migration-paths",
           "Migration paths",
           "Known upgrade paths between library versions.",
-          MIGRATION_PATHS.length,
+          deps.tableCounts.migrationPaths,
         ),
         item(
+          deps,
           "audit-patterns",
           "Audit patterns",
           "Dependency issue detection patterns per category.",
-          AUDIT_PATTERNS.length,
+          deps.tableCounts.auditPatterns,
         ),
         item(
+          deps,
           "fix-targets",
           "Fix targets",
           "Remediation link targets for audit findings.",
-          FIX_TARGET_GROUPS.length,
+          deps.tableCounts.fixTargets,
         ),
       ],
     },
@@ -118,10 +149,10 @@ export function getSourcesSnapshot(): SourcesSnapshot {
       title: "Search providers",
       description: "Live providers used for topic search and fallback retrieval.",
       items: [
-        item("search-mdn", "MDN Web Docs", "Web standards reference search.", 1),
-        item("search-ddg", "DuckDuckGo", "Instant answers and HTML results.", 1),
-        item("search-searxng", "SearXNG", "Community instances behind a circuit breaker.", 4),
-        item("search-mojeek", "Mojeek", "Independent index with direct URLs.", 1),
+        item(deps, "search-mdn", "MDN Web Docs", "Web standards reference search.", 1),
+        item(deps, "search-ddg", "DuckDuckGo", "Instant answers and HTML results.", 1),
+        item(deps, "search-searxng", "SearXNG", "Community instances behind a circuit breaker.", 4),
+        item(deps, "search-mojeek", "Mojeek", "Independent index with direct URLs.", 1),
       ],
     },
   ];
@@ -130,15 +161,18 @@ export function getSourcesSnapshot(): SourcesSnapshot {
     .flatMap((group) => group.items)
     .reduce((total, source) => total + source.entries, 0);
 
-  const { blocked, wildcards } = getSourceSettings();
-  return { groups, totalEntries, registryEntries: LIBRARY_REGISTRY.length, blocked, wildcards };
+  const { blocked, wildcards } = deps.getSourceSettings();
+  return { groups, totalEntries, registryEntries: deps.tableCounts.libraryRegistry, blocked, wildcards };
 }
 
-export async function updateSourcesSettings(input: {
-  disabled?: unknown;
-  blocked?: unknown;
-  wildcards?: unknown;
-}): Promise<SourcesSnapshot> {
-  await updateSourceSettings(input);
-  return getSourcesSnapshot();
+export async function updateSourcesSettings(
+  deps: SourcesDeps,
+  input: {
+    disabled?: unknown;
+    blocked?: unknown;
+    wildcards?: unknown;
+  },
+): Promise<SourcesSnapshot> {
+  await deps.updateSourceSettings(input);
+  return getSourcesSnapshot(deps);
 }

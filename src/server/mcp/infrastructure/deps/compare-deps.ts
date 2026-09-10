@@ -1,6 +1,7 @@
 import type { CompareDeps } from "@/application/library/compare.service";
 import { lookupByAlias, lookupById, fuzzySearch } from "@/server/mcp/sources/registry";
-import { fetchAsMarkdownRace, fetchDocs, isIndexContent, rankIndexLinks } from "@/server/mcp/services/fetcher";
+import { fetchDocs } from "@/server/mcp/services/fetcher";
+import { fetchFirstIndexDeepLink } from "@/server/mcp/services/deep-fetch";
 import { docCache } from "@/server/mcp/services/cache";
 
 /**
@@ -13,9 +14,7 @@ export const liveCompareDeps: CompareDeps = {
   lookupByAlias,
   fuzzySearch,
   fetchDocs,
-  fetchAsMarkdownRace,
-  isIndexContent,
-  rankIndexLinks,
+  fetchFirstIndexDeepLink,
   cacheGet: (key) => docCache.get(key),
   cacheSet: (key, value) => {
     docCache.set(key, value);

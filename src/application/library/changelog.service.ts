@@ -3,8 +3,7 @@ import { extractRelevantContent, sliceVersionBand } from "@/server/mcp/utils/ext
 import { checkEvidence, buildEvidenceBlock, type EvidenceCheck } from "@/server/mcp/utils/evidence";
 import { computeQualityScore } from "@/server/mcp/utils/quality";
 import { sanitizeContent } from "@/server/mcp/utils/sanitize";
-import { parseExternal, safeJsonParse } from "@/server/mcp/utils/validate-external";
-import { externalSchemas } from "@/server/mcp/utils/validate-external";
+import { readCacheEnvelope } from "@/server/mcp/utils/validate-external";
 import type { ChangelogTarget } from "@/server/mcp/services/changelog-sources";
 
 /**
@@ -58,8 +57,7 @@ export async function changelogUseCase(input: ChangelogInput, deps: ChangelogDep
     // Envelope, not a bare string: caching only the text made every
     // cache hit return a degraded structuredContent (no displayName,
     // sourceUrl, qualityScore or content). compat.ts already does this.
-    const raw = safeJsonParse(cached);
-    const envelope = raw ? parseExternal(externalSchemas.cacheEnvelope, raw) : null;
+    const envelope = readCacheEnvelope(cached);
     if (envelope?.text && envelope.structuredContent) {
       return {
         response: {

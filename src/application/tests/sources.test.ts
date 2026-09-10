@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { getSourcesSnapshot, updateSourcesSettings } from "../sources/sources.service";
+import { liveSourcesDeps } from "@/server/mcp/infrastructure/deps/sources-deps";
 
 describe("sources application service", () => {
   test("exposes live source groups with entry counts", () => {
-    const snapshot = getSourcesSnapshot();
+    const snapshot = getSourcesSnapshot(liveSourcesDeps);
     expect(snapshot.groups.length).toBeGreaterThan(0);
     for (const group of snapshot.groups) {
       expect(group.items.length).toBeGreaterThan(0);
@@ -17,9 +18,9 @@ describe("sources application service", () => {
   });
 
   test("snapshot merges stored enabled flags and lists", async () => {
-    await updateSourcesSettings({ disabled: ["search-mojeek"], blocked: ["x"], wildcards: ["y"] });
+    await updateSourcesSettings(liveSourcesDeps, { disabled: ["search-mojeek"], blocked: ["x"], wildcards: ["y"] });
     try {
-      const snapshot = getSourcesSnapshot();
+      const snapshot = getSourcesSnapshot(liveSourcesDeps);
       const mojeek = snapshot.groups
         .flatMap((group) => group.items)
         .find((source) => source.id === "search-mojeek");
@@ -27,7 +28,7 @@ describe("sources application service", () => {
       expect(snapshot.blocked).toEqual(["x"]);
       expect(snapshot.wildcards).toEqual(["y"]);
     } finally {
-      await updateSourcesSettings({ disabled: [], blocked: [], wildcards: [] });
+      await updateSourcesSettings(liveSourcesDeps, { disabled: [], blocked: [], wildcards: [] });
     }
   });
 });

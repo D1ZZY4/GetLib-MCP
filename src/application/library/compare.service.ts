@@ -27,9 +27,11 @@ export interface CompareDeps {
     llmsFullTxtUrl: string | undefined,
     topic: string,
   ) => Promise<FetchResult | null>;
-  fetchAsMarkdownRace: (url: string) => Promise<string | null>;
-  isIndexContent: (content: string) => boolean;
-  rankIndexLinks: (content: string, topic: string, baseUrl: string) => string[];
+  fetchFirstIndexDeepLink: (
+    content: string,
+    topic: string,
+    baseUrl: string,
+  ) => Promise<{ content: string; url: string } | null>;
   cacheGet: (key: string) => string | undefined;
   cacheSet: (key: string, value: string) => void;
 }
@@ -90,16 +92,12 @@ export async function compareUseCase(input: CompareInput, deps: CompareDeps): Pr
       try {
         let fetchResult = await deps.fetchDocs(entry.docsUrl, entry.llmsTxtUrl, entry.llmsFullTxtUrl, topic);
         if (!fetchResult) return { lib, entry, content: null };
-        if (deps.isIndexContent(fetchResult.content)) {
-          const deepLinks = deps.rankIndexLinks(fetchResult.content, topic, fetchResult.url || entry.docsUrl);
-          for (const deepUrl of deepLinks) {
-            const deepContent = await deps.fetchAsMarkdownRace(deepUrl);
-            if (deepContent && deepContent.length > 300) {
-              fetchResult = { content: deepContent, url: deepUrl, sourceType: "jina" };
-              break;
-            }
-          }
-        }
+        const deep = await deps.fetchFirstIndexDeepLink(
+          fetchResult.content,
+          topic,
+          fetchResult.url || entry.docsUrl,
+        );
+        if (deep) fetchResult = { content: deep.content, url: deep.url, sourceType: "jina" };
         const safe = sanitizeContent(fetchResult.content);
         const { text } = extractRelevantContent(safe, topic, tokens ?? 2000);
         deps.cacheSet(cacheKey, text);

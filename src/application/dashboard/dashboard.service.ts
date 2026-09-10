@@ -1,13 +1,16 @@
 import { getAuthConfig } from "@/application/auth/auth.service";
 import { listClients } from "@/application/clients/clients.service";
-import { getHealthSnapshot } from "@/application/health/health.service";
-import { getMcpCatalog, getMcpServers } from "@/application/mcp/mcp-catalog.service";
-import { getDatabaseStatus, getDatabase } from "@/server/mcp/infrastructure/database";
-import type { StoredLogEntry } from "@/server/mcp/infrastructure/database";
+import { getHealthSnapshot, type HealthDeps } from "@/application/health/health.service";
+import { getMcpCatalog, getMcpServers, type McpCatalogDeps } from "@/application/mcp/mcp-catalog.service";
+import type {
+  DatabaseRepository,
+  DatabaseStatus,
+  StoredLogEntry,
+} from "@/server/mcp/infrastructure/database";
 import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
-import { getRecentOutcomes } from "@/server/mcp/services/telemetry";
-import { getTelemetryTotals } from "@/application/statistics/statistics.service";
-import { listLogs } from "@/server/mcp/middleware/logging";
+import type { InvocationOutcome } from "@/server/mcp/services/telemetry";
+import { getTelemetryTotals, type StatisticsDeps } from "@/application/statistics/statistics.service";
+import type { McpLogEntry } from "@/server/mcp/middleware/logging";
 import { log } from "@/server/mcp/utils/logger";
 
 /**
@@ -87,8 +90,25 @@ export interface DashboardSnapshot {
     successRate: number;
     errorRate: number;
   };
-  database: Awaited<ReturnType<typeof getDatabaseStatus>>;
+  database: DatabaseStatus;
   isMock: boolean;
+}
+
+/**
+ * Capability seams of the dashboard snapshot. Sibling application
+ * capabilities arrive as their own Deps (forwarded, never re-wired);
+ * durable reads, the database probe, the log ring, and the outcome
+ * window are infrastructure injected here. Auth, clients, runtime
+ * policy, and logging stay directly owned.
+ */
+export interface DashboardDeps {
+  catalog: McpCatalogDeps;
+  statistics: StatisticsDeps;
+  health: HealthDeps;
+  getDatabase: () => Pick<DatabaseRepository, "listLogs">;
+  getDatabaseStatus: () => Promise<DatabaseStatus>;
+  listLogs: () => McpLogEntry[];
+  getRecentOutcomes: () => ReadonlyArray<InvocationOutcome>;
 }
 
 const MOCK_LIBRARIES: DashboardLibrary[] = [
@@ -222,14 +242,14 @@ export function mapStoredLogToActivity(entry: StoredLogEntry): DashboardActivity
   };
 }
 
-async function liveActivities(): Promise<DashboardActivity[]> {
+async function liveActivities(deps: DashboardDeps): Promise<DashboardActivity[]> {
   // Production reads durable storage so recent activity survives
   // serverless isolates and reflects every persisted run, not just the
   // ones this process happened to execute. Anything less makes the
   // dashboard lie about activity on multi-instance hosts.
   if (resolveDatabaseMode() === "supabase-production") {
     try {
-      const stored = await getDatabase().listLogs(8);
+      const stored = await deps.getDatabase().listLogs(8);
       if (stored.length > 0) {
         return stored.map(mapStoredLogToActivity);
       }
@@ -238,9 +258,9 @@ async function liveActivities(): Promise<DashboardActivity[]> {
       // Fall through to the in-memory sources below.
     }
   }
-  const outcomes = getRecentOutcomes().slice(-8).reverse();
+  const outcomes = deps.getRecentOutcomes().slice(-8).reverse();
   if (outcomes.length === 0) {
-    const logs = listLogs().slice(0, 8);
+    const logs = deps.listLogs().slice(0, 8);
     return logs.map((entry) => ({
       id: `log-${entry.id}`,
       kind: kindForTool(entry.name),
@@ -299,14 +319,14 @@ function liveAttentions(params: {
   return items;
 }
 
-export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
+export async function getDashboardSnapshot(deps: DashboardDeps): Promise<DashboardSnapshot> {
   const runtime = getRuntimeSnapshot();
   const auth = getAuthConfig();
-  const health = await getHealthSnapshot();
-  const catalog = getMcpCatalog();
-  const servers = getMcpServers();
-  const database = await getDatabaseStatus();
-  const telemetry = await getTelemetryTotals();
+  const health = await getHealthSnapshot(deps.health);
+  const catalog = getMcpCatalog(deps.catalog);
+  const servers = getMcpServers(deps.catalog);
+  const database = await deps.getDatabaseStatus();
+  const telemetry = await getTelemetryTotals(deps.statistics);
   const clients = listClients();
 
   const mcp = {
@@ -349,7 +369,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     };
   }
 
-  const activities = await liveActivities();
+  const activities = await liveActivities(deps);
   const attentions = liveAttentions({
     fallbackActive: auth.fallbackActive,
     databaseError: database.health === "healthy" ? null : (database.error ?? "degraded"),

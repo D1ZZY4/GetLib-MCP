@@ -1,6 +1,6 @@
 import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
-import { getDatabase } from "@/server/mcp/infrastructure/database";
-import { getInvocationSummary, getRecentOutcomes, OUTCOME_WINDOW } from "@/server/mcp/services/telemetry";
+import type { DatabaseRepository } from "@/server/mcp/infrastructure/database";
+import { OUTCOME_WINDOW, type InvocationOutcome } from "@/server/mcp/services/telemetry";
 import { log } from "@/server/mcp/utils/logger";
 
 /**
@@ -138,16 +138,27 @@ interface TelemetryTotals {
 }
 
 /**
+ * Capability seams of the statistics snapshot. Durable reads and the
+ * in-memory telemetry window are infrastructure injected here; runtime
+ * policy, metric definitions, and logging stay directly owned.
+ */
+export interface StatisticsDeps {
+  getDatabase: () => Pick<DatabaseRepository, "countLogs" | "listLogs">;
+  getInvocationSummary: () => TelemetryTotals;
+  getRecentOutcomes: () => ReadonlyArray<Pick<InvocationOutcome, "tool" | "ts" | "success">>;
+}
+
+/**
  * Single definition of call totals for every surface (statistics page,
  * dashboard cards). Production reads durable storage; anything else uses
  * this isolate's in-memory telemetry. Never throws.
  */
-export async function getTelemetryTotals(): Promise<TelemetryTotals> {
+export async function getTelemetryTotals(deps: StatisticsDeps): Promise<TelemetryTotals> {
   if (resolveDatabaseMode() === "supabase-production") {
     try {
       const [total, stored] = await Promise.all([
-        getDatabase().countLogs(),
-        getDatabase().listLogs(STATS_LOG_WINDOW),
+        deps.getDatabase().countLogs(),
+        deps.getDatabase().listLogs(STATS_LOG_WINDOW),
       ]);
       if (total > 0 && stored.length > 0) {
         const ok = stored.filter((entry) => entry.ok).length;
@@ -159,14 +170,14 @@ export async function getTelemetryTotals(): Promise<TelemetryTotals> {
       // Fall through to in-memory telemetry below.
     }
   }
-  const summary = getInvocationSummary();
+  const summary = deps.getInvocationSummary();
   return { totalCalls: summary.totalCalls, successRate: summary.successRate, errorRate: summary.errorRate };
 }
 
-async function durableOutcomePoints(): Promise<OutcomePoint[] | null> {
+async function durableOutcomePoints(deps: StatisticsDeps): Promise<OutcomePoint[] | null> {
   if (resolveDatabaseMode() !== "supabase-production") return null;
   try {
-    const stored = await getDatabase().listLogs(STATS_LOG_WINDOW);
+    const stored = await deps.getDatabase().listLogs(STATS_LOG_WINDOW);
     if (stored.length === 0) return null;
     return stored.map((entry) => ({
       tool: entry.name,
@@ -179,17 +190,17 @@ async function durableOutcomePoints(): Promise<OutcomePoint[] | null> {
   }
 }
 
-function memoryOutcomePoints(): OutcomePoint[] {
-  return getRecentOutcomes().map((o) => ({ tool: o.tool, ts: o.ts, success: o.success }));
+function memoryOutcomePoints(deps: StatisticsDeps): OutcomePoint[] {
+  return deps.getRecentOutcomes().map((o) => ({ tool: o.tool, ts: o.ts, success: o.success }));
 }
 
-export async function getStatisticsSnapshot(): Promise<StatisticsSnapshot> {
+export async function getStatisticsSnapshot(deps: StatisticsDeps): Promise<StatisticsSnapshot> {
   const runtime = getRuntimeSnapshot();
   if (runtime.isMock) {
     return { usage: mockUsage(), days: MOCK_DAYS, rows: MOCK_ROWS, fetches: MOCK_FETCHES, isMock: true };
   }
-  const totals = await getTelemetryTotals();
-  const points = (await durableOutcomePoints()) ?? memoryOutcomePoints();
+  const totals = await getTelemetryTotals(deps);
+  const points = (await durableOutcomePoints(deps)) ?? memoryOutcomePoints(deps);
   const { days, fetches, successRate: windowRate } = summarizeOutcomePoints(points);
   const usage: UsageStats = {
     requestsUsed: totals.totalCalls,

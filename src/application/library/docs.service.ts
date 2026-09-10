@@ -1,14 +1,10 @@
-import type { FetchResult } from "@/server/mcp/types";
-import { isIndexContent } from "@/server/mcp/services/fetcher";
-import { deepFetchForTopic } from "@/server/mcp/services/deep-fetch";
+import type { FetchResult, LibraryEntry } from "@/server/mcp/types";
 import { extractRelevantContent } from "@/server/mcp/utils/extract";
 import { checkEvidence } from "@/server/mcp/utils/evidence";
 import { isExtractionAttempt, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 import { sanitizeContent } from "@/server/mcp/utils/sanitize";
-import { detectVersionForEntry } from "@/server/mcp/utils/lockfile";
-import { resolveLibraryFromId, resolveDocsTarget } from "@/server/mcp/services/docs/docs-resolve";
-import { fetchDocsContent, applyTopic } from "@/server/mcp/services/docs/docs-fetch";
-import { renderDocs } from "@/server/mcp/services/docs/docs-report";
+import type { DocsTarget } from "@/server/mcp/services/docs/docs-resolve";
+import type { DocsReportInput, DocsResponse } from "@/server/mcp/services/docs/docs-report";
 
 export const DOCS_LIBRARY_ID_MAX = 300;
 export const DOCS_TOPIC_MAX = 500;
@@ -21,6 +17,46 @@ export interface DocsInput {
   version?: string;
   tokens: number;
   projectPath?: string;
+}
+
+/**
+ * Capability seams of the docs use case. Target resolution, version
+ * detection, content retrieval, topic application, deep-fetch
+ * escalation, and render are infrastructure injected here. Pure content
+ * transformation (sanitize, extract, evidence, index check) and shared
+ * protection stay imported as cross-cutting technical infrastructure.
+ */
+export interface DocsDeps {
+  resolveLibraryFromId: (libraryId: string) => LibraryEntry | null;
+  detectVersionForEntry: (
+    projectPath: string | undefined,
+    version: string | undefined,
+    entry: Pick<LibraryEntry, "id" | "npmPackage" | "pypiPackage"> | null | undefined,
+  ) => Promise<string | undefined>;
+  resolveDocsTarget: (libraryId: string, entry: LibraryEntry | null) => Promise<DocsTarget | string>;
+  fetchDocsContent: (
+    target: DocsTarget,
+    entry: LibraryEntry | null,
+    libraryId: string,
+    topic: string,
+    version: string | undefined,
+  ) => Promise<FetchResult | string>;
+  applyTopic: (
+    fetchResult: FetchResult,
+    topic: string,
+    docsUrl: string,
+    urlPatterns: string[] | undefined,
+  ) => Promise<FetchResult>;
+  deepFetchForTopic: (
+    fetchResult: FetchResult,
+    topic: string,
+    docsUrl: string,
+    urlPatterns: string[] | undefined,
+    maxPages?: number,
+    force?: boolean,
+  ) => Promise<FetchResult>;
+  renderDocs: (input: DocsReportInput) => DocsResponse;
+  isIndexContent: (content: string) => boolean;
 }
 
 export interface DocsApplicationResult {
@@ -38,7 +74,7 @@ export interface DocsApplicationResult {
  * escalation, render. Transport adapters (tools, API routes) only
  * validate input and map this result.
  */
-export async function fetchLibraryDocsUseCase(input: DocsInput): Promise<DocsApplicationResult> {
+export async function fetchLibraryDocsUseCase(input: DocsInput, deps: DocsDeps): Promise<DocsApplicationResult> {
   let { libraryId, topic = "", version, tokens, projectPath } = input;
   const startedAt = Date.now();
   // Guard only the resolution identifier - topic merely filters content
@@ -48,24 +84,24 @@ export async function fetchLibraryDocsUseCase(input: DocsInput): Promise<DocsApp
     return { response: { content: [{ type: "text", text: EXTRACTION_REFUSAL }] }, resolved: true };
   }
 
-  const entry = resolveLibraryFromId(libraryId);
+  const entry = deps.resolveLibraryFromId(libraryId);
 
   // Auto-detect version from lockfile if projectPath given and version not explicit
-  version = await detectVersionForEntry(projectPath, version, entry);
+  version = await deps.detectVersionForEntry(projectPath, version, entry);
 
-  const target = await resolveDocsTarget(libraryId, entry);
+  const target = await deps.resolveDocsTarget(libraryId, entry);
   if (typeof target === "string") {
     return { response: { content: [{ type: "text", text: target }] }, resolved: false };
   }
 
-  const fetched = await fetchDocsContent(target, entry, libraryId, topic, version);
+  const fetched = await deps.fetchDocsContent(target, entry, libraryId, topic, version);
   if (typeof fetched === "string") {
     return { response: { content: [{ type: "text", text: fetched }] }, resolved: false };
   }
 
   let fetchResult: FetchResult = fetched;
   if (topic) {
-    fetchResult = await applyTopic(fetchResult, topic, target.docsUrl, entry?.urlPatterns);
+    fetchResult = await deps.applyTopic(fetchResult, topic, target.docsUrl, entry?.urlPatterns);
   }
 
   let safe = sanitizeContent(fetchResult.content);
@@ -87,9 +123,9 @@ export async function fetchLibraryDocsUseCase(input: DocsInput): Promise<DocsApp
   // link text but answers nothing - the zod llms.txt served verbatim was
   // exactly this failure. Elapsed guard bounds total latency: a slow
   // initial pipeline must not stack a second 25s deep-fetch on top.
-  if (topic && (!evidence.ok || isIndexContent(text)) && Date.now() - startedAt < 45_000) {
-    const wasIndex = isIndexContent(text);
-    const deeper = await deepFetchForTopic(fetchResult, topic, target.docsUrl, entry?.urlPatterns, undefined, true);
+  if (topic && (!evidence.ok || deps.isIndexContent(text)) && Date.now() - startedAt < 45_000) {
+    const wasIndex = deps.isIndexContent(text);
+    const deeper = await deps.deepFetchForTopic(fetchResult, topic, target.docsUrl, entry?.urlPatterns, undefined, true);
     escalated = true;
     if (deeper.url !== fetchResult.url) {
       sourcesTried.push({ url: deeper.url, sourceType: deeper.sourceType });
@@ -97,7 +133,7 @@ export async function fetchLibraryDocsUseCase(input: DocsInput): Promise<DocsApp
     const deeperSafe = sanitizeContent(deeper.content);
     const reExtract = extractRelevantContent(deeperSafe, topic, tokens);
     const reCheck = checkEvidence(reExtract.text, topic);
-    const deeperIsIndex = isIndexContent(reExtract.text);
+    const deeperIsIndex = deps.isIndexContent(reExtract.text);
     const better = wasIndex
       ? !deeperIsIndex && reCheck.matchRatio > 0
       : reCheck.ok || reCheck.occurrences > evidence.occurrences;
@@ -110,7 +146,7 @@ export async function fetchLibraryDocsUseCase(input: DocsInput): Promise<DocsApp
     }
   }
 
-  const { response, resolved } = renderDocs({
+  const { response, resolved } = deps.renderDocs({
     libraryId,
     displayName: target.displayName,
     topic,

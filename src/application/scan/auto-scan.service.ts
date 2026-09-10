@@ -46,7 +46,7 @@ export interface AutoScanInput {
 export interface AutoScanApplicationResult {
   response: {
     content: Array<{ type: "text"; text: string }>;
-    structuredContent?: ScanReport["structuredContent"];
+    structuredContent?: Record<string, unknown>;
   };
   resolved: boolean;
 }

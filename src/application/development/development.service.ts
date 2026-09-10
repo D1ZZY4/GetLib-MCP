@@ -6,8 +6,19 @@ import {
   type DatabaseMode,
   type DatabaseModeSelection,
 } from "@/server/mcp/runtime";
-import { ensureBootstrapAccount, resetBootstrapCache } from "@/application/auth/auth.service";
-import { resetDatabaseCache } from "@/server/mcp/infrastructure/database";
+import { ensureBootstrapAccount, resetBootstrapCache, type AuthDeps } from "@/application/auth/auth.service";
+
+/**
+ * Capability seams of the development mutations. Bootstrap persistence
+ * arrives as the auth seam (forwarded, never re-wired); repository-cache
+ * invalidation is infrastructure injected here so reseed flows stay
+ * testable without touching the global factory. Runtime policy stays
+ * directly owned.
+ */
+export interface DevelopmentDeps {
+  auth: AuthDeps;
+  resetDatabaseCache: () => void;
+}
 
 export class DevelopmentForbiddenError extends Error {
   constructor(message = "Development settings cannot be changed in production.") {
@@ -68,9 +79,9 @@ function requireDevelopment(): void {
  * Seed development state: idempotently ensures the bootstrap record
  * exists. Safe to call repeatedly. Production always rejects.
  */
-export async function seedDevelopmentData(): Promise<DevelopmentSettingsSnapshot> {
+export async function seedDevelopmentData(deps: DevelopmentDeps): Promise<DevelopmentSettingsSnapshot> {
   requireDevelopment();
-  await ensureBootstrapAccount();
+  await ensureBootstrapAccount(deps.auth);
   return getDevelopmentSettings();
 }
 
@@ -79,10 +90,10 @@ export async function seedDevelopmentData(): Promise<DevelopmentSettingsSnapshot
  * bootstrap record. Real database modes are never wiped - only the
  * bootstrap record is re-ensured. Production always rejects.
  */
-export async function resetDevelopmentData(): Promise<DevelopmentSettingsSnapshot> {
+export async function resetDevelopmentData(deps: DevelopmentDeps): Promise<DevelopmentSettingsSnapshot> {
   requireDevelopment();
-  resetDatabaseCache();
+  deps.resetDatabaseCache();
   resetBootstrapCache();
-  await ensureBootstrapAccount();
+  await ensureBootstrapAccount(deps.auth);
   return getDevelopmentSettings();
 }

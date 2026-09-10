@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { ensureBootstrapAccount, resetBootstrapCache } from "../auth/auth.service";
+import { liveAuthDeps } from "@/server/mcp/infrastructure/deps/auth-deps";
 import { getDatabase, resetDatabaseCache } from "@/server/mcp/infrastructure/database";
 import { setDatabaseModeOverride } from "@/server/mcp/runtime";
 import { resetConfigOverride, setConfigOverride } from "@/server/mcp/config";
@@ -36,8 +37,8 @@ async function withMockMode(fn: () => Promise<void>): Promise<void> {
 describe("bootstrap lifecycle", () => {
   test("seeds the fallback record idempotently", async () => {
     await withMockMode(async () => {
-      const first = await ensureBootstrapAccount();
-      const second = await ensureBootstrapAccount();
+      const first = await ensureBootstrapAccount(liveAuthDeps);
+      const second = await ensureBootstrapAccount(liveAuthDeps);
       expect(first).toEqual(second);
       expect(first.account).toBe(FALLBACK_ACCOUNT);
       expect(first.isFallback).toBe(true);
@@ -56,7 +57,7 @@ describe("bootstrap lifecycle", () => {
       resetBootstrapCache();
       // Config still resolves the fallback identity, so the stale custom row
       // is replaced and the rotation warning clears only for custom env creds.
-      const status = await ensureBootstrapAccount();
+      const status = await ensureBootstrapAccount(liveAuthDeps);
       expect(status.account).toBe(FALLBACK_ACCOUNT);
       const stored = await getDatabase("mock").getBootstrap();
       expect(stored?.account).toBe(FALLBACK_ACCOUNT);

@@ -1,6 +1,6 @@
 import { getAuthConfig } from "@/application/auth/auth.service";
-import { getDatabaseStatus } from "@/server/mcp/infrastructure/database";
-import { getHealthSnapshot } from "@/application/health/health.service";
+import type { DatabaseStatus } from "@/server/mcp/infrastructure/database";
+import { getHealthSnapshot, type HealthDeps } from "@/application/health/health.service";
 import { getRuntimeSnapshot } from "@/server/mcp/runtime";
 
 export interface RuntimeInfoSnapshot {
@@ -11,8 +11,18 @@ export interface RuntimeInfoSnapshot {
   nodeEnv: string | undefined;
   vercelEnv: string | undefined;
   auth: ReturnType<typeof getAuthConfig>;
-  database: Awaited<ReturnType<typeof getDatabaseStatus>>;
+  database: DatabaseStatus;
   health: Awaited<ReturnType<typeof getHealthSnapshot>>;
+}
+
+/**
+ * Capability seams of the runtime snapshot. The database probe is
+ * infrastructure injected here; auth, health, and runtime policy stay
+ * directly owned (application-internal or centralized configuration).
+ */
+export interface RuntimeDeps {
+  getDatabaseStatus: () => Promise<DatabaseStatus>;
+  health: HealthDeps;
 }
 
 /**
@@ -20,9 +30,9 @@ export interface RuntimeInfoSnapshot {
  * environment policy, database status, auth state, and health through one
  * reusable application capability (Web, API, and MCP share it).
  */
-export async function getRuntimeInfo(): Promise<RuntimeInfoSnapshot> {
+export async function getRuntimeInfo(deps: RuntimeDeps): Promise<RuntimeInfoSnapshot> {
   const runtime = getRuntimeSnapshot();
-  const [database, health] = await Promise.all([getDatabaseStatus(), getHealthSnapshot()]);
+  const [database, health] = await Promise.all([deps.getDatabaseStatus(), getHealthSnapshot(deps.health)]);
   return {
     environment: runtime.environment,
     databaseMode: runtime.databaseMode,

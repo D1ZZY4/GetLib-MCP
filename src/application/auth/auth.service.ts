@@ -6,7 +6,7 @@ import {
   normalizeEmail,
   resolveBootstrapCredentials,
 } from "@/domain/auth/policy";
-import { getDatabase } from "@/server/mcp/infrastructure/database";
+import type { BootstrapRecord, DatabaseRepository } from "@/server/mcp/infrastructure/database";
 import { config } from "@/server/mcp/config";
 import { detectEnvironment, resolveDatabaseMode } from "@/server/mcp/runtime";
 import { log } from "@/server/mcp/utils/logger";
@@ -93,6 +93,17 @@ export function getDisplayName(email: string): string {
 }
 
 /**
+ * Capability seams of the bootstrap use case. Persistence goes through
+ * the repository contract injected here; credential resolution stays
+ * domain-owned and environment detection stays runtime-owned.
+ */
+export interface AuthDeps {
+  getDatabase: () => Pick<DatabaseRepository, "getBootstrap" | "saveBootstrap">;
+}
+
+export type { BootstrapRecord };
+
+/**
  * Idempotent bootstrap initialization. Runs once per process (not per
  * request) and persists the bootstrap record through the database
  * boundary when available. Duplicate calls return the cached status.
@@ -103,7 +114,7 @@ export function getDisplayName(email: string): string {
  * set so the dashboard warning clears. A failed write throws in production
  * (fail fast at startup) and falls back to memory in development.
  */
-export async function ensureBootstrapAccount(): Promise<BootstrapStatus> {
+export async function ensureBootstrapAccount(deps: AuthDeps): Promise<BootstrapStatus> {
   if (bootstrapCache) return bootstrapCache;
   const bootstrap = resolveBootstrapCredentials({
     account: config.defaultAccount,
@@ -111,7 +122,7 @@ export async function ensureBootstrapAccount(): Promise<BootstrapStatus> {
   });
   const now = new Date().toISOString();
   try {
-    const db = getDatabase();
+    const db = deps.getDatabase();
     const stored = await db.getBootstrap();
     if (stored && stored.account === bootstrap.account) {
       bootstrapCache = {

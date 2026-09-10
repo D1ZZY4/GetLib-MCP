@@ -5,10 +5,11 @@ import {
   getTelemetryTotals,
   summarizeOutcomePoints,
 } from "../statistics/statistics.service";
+import { liveStatisticsDeps } from "@/server/mcp/infrastructure/deps/statistics-deps";
 
 describe("statistics application service", () => {
   test("returns usage, days, rows, and fetches with mock flag", async () => {
-    const snapshot = await getStatisticsSnapshot();
+    const snapshot = await getStatisticsSnapshot(liveStatisticsDeps);
     expect(typeof snapshot.usage.requestsUsed).toBe("number");
     expect(Array.isArray(snapshot.days)).toBe(true);
     expect(Array.isArray(snapshot.fetches)).toBe(true);
@@ -47,7 +48,7 @@ describe("statistics application service", () => {
   });
 
   test("telemetry totals stay within valid ranges", async () => {
-    const totals = await getTelemetryTotals();
+    const totals = await getTelemetryTotals(liveStatisticsDeps);
     expect(totals.totalCalls).toBeGreaterThanOrEqual(0);
     expect(totals.successRate).toBeGreaterThanOrEqual(0);
     expect(totals.successRate).toBeLessThanOrEqual(1);
