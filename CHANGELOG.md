@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate every external payload through centralized schemas so
   malformed upstream bodies never slip into domain models, and
   fold provider em dashes at the transformation boundary.
+- Abort cancellable work on tool timeout and share one timeout
+  envelope factory across tools.
 
 </details>
 

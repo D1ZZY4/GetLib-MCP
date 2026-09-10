@@ -14,6 +14,7 @@
 import { resolve } from "path";
 import { realpathSync } from "fs";
 import { randomBytes } from "crypto";
+import { log } from "./logger";
 import { embedWatermark } from "./watermark";
 import { getUpdateNoticeForResponse } from "./version-check";
 import { TOOL_TIMEOUT_MS } from "../constants";
@@ -42,6 +43,19 @@ export function safeguardPath(inputPath: string): string {
 
   if (/\/\.[a-z]/i.test(resolved) && !/\/\.(?:git|vscode|cursor|github|eslint|prettier|node-version|env)\b/.test(resolved)) {
     throw new Error(`Access to hidden path denied: ${resolved}`);
+  }
+
+  // Observability-only containment signal. The BLOCKED list above remains
+  // the enforced boundary; outside-cwd reads stay allowed because the stdio
+  // cwd is the server install dir while the user project is often elsewhere.
+  // Debug level: this fires on legitimate absolute paths, so warn would spam.
+  try {
+    const cwd = resolve(process.cwd());
+    if (resolved !== cwd && !resolved.startsWith(cwd + "/")) {
+      log({ level: "debug", msg: "guard.path.outside-cwd", path: resolved });
+    }
+  } catch {
+    // Logging must never block the guarded read.
   }
 
   return resolved;
@@ -216,18 +230,31 @@ export function withNotice(text: string): string {
 /**
  * Wrap a tool handler with a global timeout to prevent MCP client 529 overloaded errors.
  * Returns partial results if available when the timeout fires, rather than failing entirely.
+ *
+ * The fallback is returned on timeout, but the underlying work is NOT
+ * cancelled by this race alone - callers with cancellable work should pass
+ * an AbortSignal that fires on the same deadline. The signal is aborted
+ * when the timeout fires (and only then), so non-cancellable callers are
+ * unaffected and no stray abort leaks past the call.
  */
 export async function withToolTimeout<T>(
-  fn: () => Promise<T>,
+  fn: (signal: AbortSignal) => Promise<T>,
   fallback: T,
   ms = TOOL_TIMEOUT_MS,
 ): Promise<T> {
+  const controller = new AbortController();
+  const onTimeout = (): void => {
+    controller.abort();
+  };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<T>((resolve) => {
-    timer = setTimeout(() => resolve(fallback), ms);
+    timer = setTimeout(() => {
+      onTimeout();
+      resolve(fallback);
+    }, ms);
   });
   try {
-    return await Promise.race([fn(), timeoutPromise]);
+    return await Promise.race([fn(controller.signal), timeoutPromise]);
   } finally {
     clearTimeout(timer);
   }
