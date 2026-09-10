@@ -9,10 +9,11 @@ import {
 } from "@/application/library/docs.service";
 import { SEARCH_TOKENS_DEFAULT, SEARCH_TOKENS_MAX, SEARCH_TOKENS_MIN } from "@/application/library/search.service";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
+import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const DocsBody = z.object({
-  libraryId: z.string().min(1).max(DOCS_LIBRARY_ID_MAX),
+  libraryId: nonBlankString(DOCS_LIBRARY_ID_MAX),
   topic: z.string().max(DOCS_TOPIC_MAX).optional(),
   version: z.string().max(DOCS_VERSION_MAX).optional(),
   tokens: z.number().int().min(SEARCH_TOKENS_MIN).max(SEARCH_TOKENS_MAX).optional(),

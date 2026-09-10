@@ -2,10 +2,11 @@ import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
 import { executeTool } from "@/application/mcp/mcp-catalog.service";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
+import { toolNameSchema } from "@/server/mcp/utils/schemas";
 import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const RunBody = z.object({
-  tool: z.string().min(1).max(64),
+  tool: toolNameSchema(),
   args: z.unknown().optional(),
 });
 

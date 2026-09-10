@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     checkRateLimit(req, "management/statistics", READ_TIER);
     requireManagementAuth(req);
-    return jsonOk(getStatisticsSnapshot(), id);
+    return jsonOk(await getStatisticsSnapshot(), id);
   } catch (error) {
     return mapRouteError(error, id);
   }

@@ -8,10 +8,11 @@ import {
   searchLibrariesUseCase,
 } from "@/application/library/search.service";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
+import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const DiscoverBody = z.object({
-  query: z.string().min(1).max(SEARCH_QUERY_MAX),
+  query: nonBlankString(SEARCH_QUERY_MAX),
   tokens: z.number().int().min(SEARCH_TOKENS_MIN).max(SEARCH_TOKENS_MAX).optional(),
 });
 

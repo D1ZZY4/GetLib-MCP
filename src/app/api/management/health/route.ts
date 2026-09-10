@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/health", READ_TIER);
-    return jsonOk(getHealthSnapshot(), id);
+    return jsonOk(await getHealthSnapshot(), id);
   } catch (error) {
     return mapRouteError(error, id);
   }

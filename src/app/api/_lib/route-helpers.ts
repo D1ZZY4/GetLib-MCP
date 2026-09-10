@@ -3,7 +3,7 @@ import { z } from "zod";
 import { generateRequestId } from "@/server/mcp/utils/guard";
 import { SessionSecretMissingError, UnauthorizedError } from "@/application/auth/session";
 import { DevelopmentForbiddenError } from "@/application/development/development.service";
-import { ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
+import { LogLimitError, ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
 import { SourceSettingsValidationError } from "@/server/mcp/services/source-settings";
 import { RateLimitError } from "@/server/mcp/utils/rate-limit";
 import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
@@ -71,6 +71,9 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
       return jsonError("payload_too_large", message, 413, id);
     }
     return jsonError("validation_error", message, 400, id);
+  }
+  if (error instanceof LogLimitError) {
+    return jsonError("validation_error", error.message, 400, id);
   }
   if (error instanceof SourceSettingsValidationError) {
     // Syntactically valid JSON that fails semantic policy - 422 per contract.

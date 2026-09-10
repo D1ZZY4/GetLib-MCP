@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       }
       throw error;
     }
-    return new Response(null, { status: 202 });
+    return new Response(null, { status: 202, headers: { "X-Request-Id": id } });
   } catch (error) {
     return mapRouteError(error, id);
   }
