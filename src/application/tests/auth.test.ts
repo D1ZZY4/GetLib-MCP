@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { resetConfigOverride, setConfigOverride } from "@/server/mcp/config";
-import { getAuthConfig, verifyCredentials } from "../auth/auth.service";
+import { getAuthConfig, signInUseCase, verifyCredentials } from "../auth/auth.service";
 
 describe("auth application service", () => {
   test("config never leaks account or password", () => {
@@ -47,5 +47,23 @@ describe("auth application service", () => {
     expect(out).not.toContain("ops@example.com");
     expect(out).not.toContain("other@example.com");
     expect(out).not.toContain("CorrectHorse99");
+  });
+
+  test("signInUseCase resolves identity and trims without leaking", () => {
+    try {
+      setConfigOverride({
+        authEnabled: true,
+        defaultAccount: "ops@example.com",
+        defaultPass: "CorrectHorse99",
+      });
+      expect(signInUseCase("  ops@example.com  ", "CorrectHorse99")).toEqual({
+        name: "ops",
+        email: "ops@example.com",
+      });
+      expect(signInUseCase("ops@example.com", "wrong")).toBeNull();
+      expect(signInUseCase("other@example.com", "CorrectHorse99")).toBeNull();
+    } finally {
+      resetConfigOverride();
+    }
   });
 });

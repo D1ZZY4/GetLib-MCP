@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateRequestId } from "@/server/mcp/utils/guard";
-import { SessionSecretMissingError, UnauthorizedError } from "@/application/auth/session";
+import { SESSION_SECRET_MISSING_MESSAGE, SessionSecretMissingError, UNAUTHORIZED_MESSAGE, UnauthorizedError } from "@/application/auth/session";
 import { DevelopmentForbiddenError } from "@/application/development/development.service";
 import { LogLimitError, ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
-import { SourceSettingsValidationError } from "@/server/mcp/services/source-settings";
+import { SourceSettingsValidationError } from "@/application/sources/sources.service";
 import { RateLimitError } from "@/server/mcp/utils/rate-limit";
 import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 
@@ -23,6 +23,17 @@ interface ErrorBody {
 }
 
 const MAX_JSON_BYTES = 256 * 1024;
+
+/**
+ * Oversized request body. Distinct from ToolNameValidationError so the
+ * mapper branches on type instead of message-prefix matching.
+ */
+export class PayloadTooLargeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PayloadTooLargeError";
+  }
+}
 
 function requestId(): string {
   return generateRequestId();
@@ -56,21 +67,20 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
     });
   }
   if (error instanceof UnauthorizedError) {
-    return jsonError("unauthorized", "Authentication is required for this endpoint.", 401, id);
+    return jsonError("unauthorized", UNAUTHORIZED_MESSAGE, 401, id);
   }
   if (error instanceof SessionSecretMissingError) {
     // Fail closed without leaking configuration detail to the client.
-    return jsonError("internal_error", "Session signing is not configured.", 500, id);
+    return jsonError("internal_error", SESSION_SECRET_MISSING_MESSAGE, 500, id);
   }
   if (error instanceof UnknownToolError) {
     return jsonError("unknown_tool", error.message, 404, id);
   }
   if (error instanceof ToolNameValidationError) {
-    const message = error.message;
-    if (message.startsWith("Request body too large")) {
-      return jsonError("payload_too_large", message, 413, id);
-    }
-    return jsonError("validation_error", message, 400, id);
+    return jsonError("validation_error", error.message, 400, id);
+  }
+  if (error instanceof PayloadTooLargeError) {
+    return jsonError("payload_too_large", error.message, 413, id);
   }
   if (error instanceof LogLimitError) {
     return jsonError("validation_error", error.message, 400, id);
@@ -115,7 +125,7 @@ export async function readJsonBody(req: Request): Promise<unknown> {
   if (contentLength !== null) {
     const declared = Number(contentLength);
     if (Number.isFinite(declared) && declared > MAX_JSON_BYTES) {
-      throw new ToolNameValidationError(
+      throw new PayloadTooLargeError(
         `Request body too large: ${declared} bytes - limit is ${MAX_JSON_BYTES} bytes.`,
       );
     }
@@ -123,7 +133,7 @@ export async function readJsonBody(req: Request): Promise<unknown> {
   const text = await req.text();
   if (text.length === 0) return undefined;
   if (text.length > MAX_JSON_BYTES) {
-    throw new ToolNameValidationError(
+    throw new PayloadTooLargeError(
       `Request body too large: ${text.length} bytes - limit is ${MAX_JSON_BYTES} bytes.`,
     );
   }

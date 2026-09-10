@@ -92,6 +92,25 @@ export function getDisplayName(email: string): string {
   return displayNameFor(email.trim());
 }
 
+export interface SignInResult {
+  name: string;
+  email: string;
+}
+
+/**
+ * Sign-in use case: verifies credentials and resolves the display
+ * identity in one step so the route stays a thin validate/map layer.
+ * Returns null for invalid credentials without revealing whether the
+ * email or the password was wrong (the route maps that to a neutral
+ * 401). Token issuance and cookie mechanics stay with the transport
+ * adapter (session.ts + route), not here.
+ */
+export function signInUseCase(email: string, password: string): SignInResult | null {
+  if (!verifyCredentials(email, password)) return null;
+  const trimmed = email.trim();
+  return { name: getDisplayName(trimmed), email: trimmed };
+}
+
 /**
  * Capability seams of the bootstrap use case. Persistence goes through
  * the repository contract injected here; credential resolution stays

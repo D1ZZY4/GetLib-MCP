@@ -20,8 +20,11 @@ import { log } from "@/server/mcp/utils/logger";
 export const SESSION_COOKIE = "getlib_session";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
+export const UNAUTHORIZED_MESSAGE = "Authentication is required for this endpoint.";
+export const SESSION_SECRET_MISSING_MESSAGE = "Session signing is not configured.";
+
 export class UnauthorizedError extends Error {
-  constructor(message = "Authentication is required for this endpoint.") {
+  constructor(message: string = UNAUTHORIZED_MESSAGE) {
     super(message);
     this.name = "UnauthorizedError";
   }
@@ -31,7 +34,7 @@ let fallbackSecret: Buffer | null = null;
 
 export class SessionSecretMissingError extends Error {
   constructor() {
-    super("GETLIB_SESSION_SECRET is required in production when authentication is enabled.");
+    super(SESSION_SECRET_MISSING_MESSAGE);
     this.name = "SessionSecretMissingError";
   }
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getDisplayName, verifyCredentials } from "@/application/auth/auth.service";
+import { signInUseCase } from "@/application/auth/auth.service";
 import {
   SESSION_COOKIE,
   createSessionToken,
@@ -19,16 +19,16 @@ export async function POST(req: Request) {
   try {
     checkRateLimit(req, "management/auth/signin", STRICT_TIER);
     const { email, password } = SigninBody.parse(await readJsonBody(req));
-    if (!verifyCredentials(email, password)) {
+    const session = signInUseCase(email, password);
+    if (!session) {
       // Neutral on purpose: never reveal whether the email or the
       // password was wrong, or whether auth is configured at all.
       return jsonError("unauthorized", "Those credentials don't match. Try again.", 401, id);
     }
-    const name = getDisplayName(email);
-    const response = jsonOk({ ok: true, name, email: email.trim() }, id);
+    const response = jsonOk({ ok: true, name: session.name, email: session.email }, id);
     response.headers.set(
       "Set-Cookie",
-      `${SESSION_COOKIE}=${encodeURIComponent(createSessionToken(email.trim()))}; ${sessionCookieAttributes()}`,
+      `${SESSION_COOKIE}=${encodeURIComponent(createSessionToken(session.email))}; ${sessionCookieAttributes()}`,
     );
     return response;
   } catch (error) {
