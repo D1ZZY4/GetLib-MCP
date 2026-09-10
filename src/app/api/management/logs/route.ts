@@ -1,5 +1,6 @@
 import { requireManagementAuth } from "@/application/auth/session";
 import { listMcpLogs, parseLogLimit } from "@/application/mcp/mcp-catalog.service";
+import { liveMcpCatalogDeps } from "@/server/mcp/infrastructure/deps/mcp-catalog-deps";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
 import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
@@ -10,7 +11,7 @@ export async function GET(req: Request) {
     requireManagementAuth(req);
     const url = new URL(req.url);
     const limit = parseLogLimit(url.searchParams.get("limit"));
-    return jsonOk(await listMcpLogs(limit), id);
+    return jsonOk(await listMcpLogs(liveMcpCatalogDeps, limit), id);
   } catch (error) {
     return mapRouteError(error, id);
   }

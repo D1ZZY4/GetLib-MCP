@@ -1,5 +1,6 @@
 import { appendLog } from "../middleware/logging";
-import { generateRequestId } from "../utils/guard";
+import { generateRequestId, withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "../tools/timeout";
 
 export interface GlToolRun {
   (args?: unknown): unknown | Promise<unknown>;
@@ -51,7 +52,16 @@ export async function runTool(name: string, args?: unknown, requestId?: string):
     if (!tool) {
       throw new Error(`Unknown tool: ${name}`);
     }
-    const result = await tool.run(args);
+    // Registry-level backstop: every tool wraps its own withToolTimeout
+    // with a specific payload, but a future tool that forgets the wrapper
+    // must still resolve instead of hanging both transports (MCP
+    // server.ts and the management run route funnel through here). The
+    // inner wrapper fires first on the same deadline, so specific
+    // payloads are preserved.
+    const result = await withToolTimeout(
+      () => Promise.resolve(tool.run(args)),
+      timeoutResponse(`Tool "${name}" timed out. Retry, or narrow the request.`, { timedOut: true }),
+    );
     appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: true, requestId: id });
     return result;
   } catch (error) {

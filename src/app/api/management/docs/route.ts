@@ -9,6 +9,7 @@ import {
 } from "@/application/library/docs.service";
 import { SEARCH_TOKENS_DEFAULT, SEARCH_TOKENS_MAX, SEARCH_TOKENS_MIN } from "@/application/library/search.service";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
+import { liveDocsDeps } from "@/server/mcp/infrastructure/deps/docs-deps";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
@@ -32,13 +33,16 @@ export async function POST(req: Request) {
     requireManagementAuth(req);
     const body = DocsBody.parse(await readJsonBody(req));
     const started = Date.now();
-    const { response, resolved } = await fetchLibraryDocsUseCase({
-      libraryId: body.libraryId,
-      topic: body.topic,
-      version: body.version,
-      tokens: body.tokens ?? SEARCH_TOKENS_DEFAULT,
-      projectPath: body.projectPath,
-    });
+    const { response, resolved } = await fetchLibraryDocsUseCase(
+      {
+        libraryId: body.libraryId,
+        topic: body.topic,
+        version: body.version,
+        tokens: body.tokens ?? SEARCH_TOKENS_DEFAULT,
+        projectPath: body.projectPath,
+      },
+      liveDocsDeps,
+    );
     return jsonOk({ resolved, result: response, durationMs: Date.now() - started }, id);
   } catch (error) {
     return mapRouteError(error, id);

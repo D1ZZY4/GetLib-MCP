@@ -8,6 +8,7 @@ import {
   searchLibrariesUseCase,
 } from "@/application/library/search.service";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
+import { liveSearchDeps } from "@/server/mcp/infrastructure/deps/search-deps";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
@@ -27,10 +28,13 @@ export async function POST(req: Request) {
     requireManagementAuth(req);
     const body = DiscoverBody.parse(await readJsonBody(req));
     const started = Date.now();
-    const { response, resolved } = await searchLibrariesUseCase({
-      query: body.query,
-      tokens: body.tokens ?? SEARCH_TOKENS_DEFAULT,
-    });
+    const { response, resolved } = await searchLibrariesUseCase(
+      {
+        query: body.query,
+        tokens: body.tokens ?? SEARCH_TOKENS_DEFAULT,
+      },
+      liveSearchDeps,
+    );
     return jsonOk({ query: body.query, resolved, result: response, durationMs: Date.now() - started }, id);
   } catch (error) {
     return mapRouteError(error, id);

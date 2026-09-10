@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
 import { getSourcesSnapshot, updateSourcesSettings } from "@/application/sources/sources.service";
+import { liveSourcesDeps } from "@/server/mcp/infrastructure/deps/sources-deps";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
   try {
     checkRateLimit(req, "management/sources", READ_TIER);
     requireManagementAuth(req);
-    return jsonOk(getSourcesSnapshot(), id);
+    return jsonOk(getSourcesSnapshot(liveSourcesDeps), id);
   } catch (error) {
     return mapRouteError(error, id);
   }
@@ -28,7 +29,7 @@ export async function PUT(req: Request) {
     checkRateLimit(req, "management/sources", EXECUTION_TIER);
     requireManagementAuth(req);
     const body = SettingsBody.parse(await readJsonBody(req));
-    return jsonOk(await updateSourcesSettings(body), id);
+    return jsonOk(await updateSourcesSettings(liveSourcesDeps, body), id);
   } catch (error) {
     return mapRouteError(error, id);
   }

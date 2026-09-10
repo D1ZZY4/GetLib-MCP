@@ -1,4 +1,5 @@
 import { ensureBootstrapAccount } from "@/application/auth/auth.service";
+import { liveAuthDeps } from "./infrastructure/deps/auth-deps";
 import { getDatabaseStatus } from "./infrastructure/database";
 import { log } from "./utils/logger";
 import { detectEnvironment, resolveDatabaseMode } from "./runtime";
@@ -80,7 +81,7 @@ async function runInitialization(): Promise<void> {
     log({ level: "warn", msg: "init.database-precondition-failed", error: String(error) });
   }
   try {
-    const bootstrap = await ensureBootstrapAccount();
+    const bootstrap = await ensureBootstrapAccount(liveAuthDeps);
     // Redacted by design: flags and lengths only, never the account or
     // password. Lets operators confirm production env vars actually
     // reached the runtime (missing var, wrong scope, stale deploy) from

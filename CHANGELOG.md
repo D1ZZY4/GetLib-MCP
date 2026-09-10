@@ -62,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   orchestration is testable without infrastructure.
 - Consolidate fetch caching into one tier and finish thinning
   tools into adapters over live bindings.
+- Wire routes, init, and the registry backstop to live bindings
+  with bounded bootstrap I/O and a shared envelope reader.
 - Adopt shared input schemas in every route and await the async
   health and statistics snapshots.
 - Extract compat and dispatch use cases with injected seams so

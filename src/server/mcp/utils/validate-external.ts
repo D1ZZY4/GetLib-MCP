@@ -180,6 +180,36 @@ export const externalSchemas = {
   mdnDoc: mdnDocSchema,
 };
 
+export interface CacheEnvelopeHit {
+  text: string;
+  structuredContent?: Record<string, unknown>;
+}
+
+/**
+ * Single cache-envelope reader shared by every use case that persists a
+ * `{ text, structuredContent }` envelope (changelog, compat). Parses and
+ * validates once; each caller keeps its own hit policy (changelog
+ * refetches envelope-less hits, compat additionally honors legacy plain
+ * entries) so storage evolution never silently degrades a response.
+ */
+/**
+ * Parse an already-parsed value as a cache envelope. Separated from
+ * readCacheEnvelope so callers that already hold the parsed payload
+ * (e.g. compat's legacy plain-text branch) do not parse twice.
+ */
+export function parseCacheEnvelopeRaw(raw: unknown): CacheEnvelopeHit | null {
+  const envelope = raw ? parseExternal(externalSchemas.cacheEnvelope, raw) : null;
+  if (!envelope?.text) return null;
+  return {
+    text: envelope.text,
+    ...(envelope.structuredContent ? { structuredContent: envelope.structuredContent } : {}),
+  };
+}
+
+export function readCacheEnvelope(cached: string): CacheEnvelopeHit | null {
+  return parseCacheEnvelopeRaw(safeJsonParse(cached));
+}
+
 /**
  * Normalize em dashes in application-controlled output.
  *

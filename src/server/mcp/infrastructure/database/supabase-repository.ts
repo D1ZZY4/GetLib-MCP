@@ -55,6 +55,11 @@ function withTimeout<T>(work: PromiseLike<T>, ms: number, message: string): Prom
   });
 }
 
+// Bounded bootstrap I/O: startup reads/writes must never hang past this.
+// Callers pair it with .abortSignal on the query builder so a timeout also
+// frees the socket instead of only winning the race above.
+const BOOTSTRAP_TIMEOUT_MS = 5000;
+
 export class SupabaseDatabaseRepository implements DatabaseRepository {
   readonly mode: DatabaseMode;
 
@@ -109,11 +114,21 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       return null;
     }
     try {
-      const { data, error } = await client
-        .from("app_bootstrap")
-        .select("account,credentials_changed,updated_at")
-        .eq("id", 1)
-        .maybeSingle();
+      // withTimeout's PromiseLike inference resolves the builder to
+      // unknown, so the envelope is re-asserted here; the shape checks
+      // below still validate every field before use. abortSignal sits
+      // before maybeSingle because maybeSingle returns the base builder
+      // without it.
+      const { data, error } = (await withTimeout(
+        client
+          .from("app_bootstrap")
+          .select("account,credentials_changed,updated_at")
+          .eq("id", 1)
+          .abortSignal(AbortSignal.timeout(BOOTSTRAP_TIMEOUT_MS))
+          .maybeSingle(),
+        BOOTSTRAP_TIMEOUT_MS,
+        "Supabase bootstrap read timed out.",
+      )) as { data: unknown; error: { message: string } | null };
       if (error || !data) return null;
       const row = data as Partial<Pick<BootstrapRow, "account" | "credentials_changed" | "updated_at">>;
       if (typeof row.account !== "string" || typeof row.credentials_changed !== "boolean") {
@@ -138,14 +153,20 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       return;
     }
     try {
-      await client.from("app_bootstrap").upsert(
-        {
-          id: 1,
-          account: record.account,
-          credentials_changed: record.credentialsChanged,
-          updated_at: record.updatedAt,
-        },
-        { onConflict: "id" },
+      // No .abortSignal here: upsert returns the base builder without it,
+      // so the race above is the bound (same as getStatus).
+      await withTimeout(
+        client.from("app_bootstrap").upsert(
+          {
+            id: 1,
+            account: record.account,
+            credentials_changed: record.credentialsChanged,
+            updated_at: record.updatedAt,
+          },
+          { onConflict: "id" },
+        ),
+        BOOTSTRAP_TIMEOUT_MS,
+        "Supabase bootstrap write timed out.",
       );
     } catch (error) {
       log({ level: "warn", msg: "supabase.bootstrap.save-failed", error: String(error) });

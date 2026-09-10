@@ -1,4 +1,5 @@
 import { getHealthSnapshot } from "@/application/health/health.service";
+import { liveHealthDeps } from "@/server/mcp/infrastructure/deps/health-deps";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
 import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
@@ -9,7 +10,7 @@ export async function GET(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/health", READ_TIER);
-    return jsonOk(await getHealthSnapshot(), id);
+    return jsonOk(await getHealthSnapshot(liveHealthDeps), id);
   } catch (error) {
     return mapRouteError(error, id);
   }
