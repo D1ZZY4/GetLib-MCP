@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+</details>
+
+## [1.2.1] - 2026-09-10
+
+<details>
+<summary>1.2.1 changes (click to expand)</summary>
+
 ### Added
 
 - Revocable hashed API keys for programmatic access with a
