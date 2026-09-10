@@ -5,6 +5,7 @@ import { Button, Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "@/web/features/settings/services/runtime-api.service";
 import {
@@ -127,6 +128,24 @@ export function DevelopmentsPage() {
                 <Skeleton className="h-9 w-24 rounded-xl" />
                 <Skeleton className="h-9 w-24 rounded-xl" />
               </div>
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-28 rounded" />
+              <Skeleton className="h-3 w-56 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <DefinitionListSkeleton rows={5} />
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-28 rounded" />
+              <Skeleton className="h-3 w-56 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <DefinitionListSkeleton rows={4} />
             </Card.Content>
           </Card>
         </div>

@@ -6,36 +6,8 @@ import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { availabilityTone } from "@/web/components/ui/status-tone";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
-import type { AssistantTransport } from "../services/install-api.service";
+import { copyText, transportLabel } from "../services/install-api.service";
 import { PageContainer } from "@/web/components/layout/page-container";
-
-function transportLabel(transport: AssistantTransport): string {
-  if (transport === "stdio") return "STDIO";
-  if (transport === "sse") return "SSE";
-  return "Streamable HTTP";
-}
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const area = document.createElement("textarea");
-      area.value = text;
-      area.setAttribute("readonly", "");
-      area.style.position = "absolute";
-      area.style.left = "-9999px";
-      document.body.appendChild(area);
-      area.select();
-      document.execCommand("copy");
-      document.body.removeChild(area);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
 
 export function InstallAssistant() {
   const [copiedId, setCopiedId] = useState<string | null>(null);

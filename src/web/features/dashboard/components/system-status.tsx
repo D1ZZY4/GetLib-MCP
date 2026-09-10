@@ -77,7 +77,7 @@ export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot 
                           ? "In-memory entries"
                           : item.label === "Latency"
                             ? `Checked ${formatLogTime(dashboard.database.checkedAt)}`
-                            : `${dashboard.mcp.errorRate * 100}% errors`}
+                            : `${Math.round(dashboard.mcp.errorRate * 1000) / 10}% errors`}
             </p>
           </Card.Content>
         </Card>

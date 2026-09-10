@@ -29,6 +29,9 @@ export function RankingBarList({ entries, label, emptyMessage }: RankingBarListP
             </p>
             <span className="shrink-0 text-xs text-muted tabular-nums">
               {entry.fetches} fetches
+              <span className="sr-only">
+                ({Math.round((entry.fetches / top) * 100)} percent of top)
+              </span>
             </span>
           </div>
           <div

@@ -22,6 +22,8 @@ export function McpApiKeys() {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const [revokingId, setRevokingId] = useState<number | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (name.trim().length === 0 || creating) return;
@@ -53,14 +55,25 @@ export function McpApiKeys() {
     }
   };
 
-  const handleRevoke = async (id: number) => {
+  const handleRevoke = async (id: number, name: string) => {
+    // Two-step inline confirm: revocation is immediate and permanent,
+    // so the first press only arms the button.
+    if (confirmId !== id) {
+      setConfirmId(id);
+      setRevokeError(null);
+      return;
+    }
+    setConfirmId(null);
     setRevokingId(id);
+    setRevokeError(null);
     try {
       await revokeApiKey(id);
       if (freshKey?.id === id) setFreshKey(null);
       retry();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : LOAD_ERROR);
+      setRevokeError(
+        err instanceof Error ? `Could not revoke "${name}". ${err.message}` : LOAD_ERROR,
+      );
     } finally {
       setRevokingId(null);
     }
@@ -195,11 +208,19 @@ export function McpApiKeys() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onPress={() => void handleRevoke(key.id)}
+                      onPress={() => void handleRevoke(key.id, key.name)}
                       isDisabled={revokingId === key.id}
-                      aria-label={`Revoke ${key.name}`}
+                      aria-label={
+                        confirmId === key.id
+                          ? `Confirm revoking ${key.name}. This cannot be undone.`
+                          : `Revoke ${key.name}`
+                      }
                     >
-                      {revokingId === key.id ? "Revoking" : "Revoke"}
+                      {revokingId === key.id
+                        ? "Revoking"
+                        : confirmId === key.id
+                          ? "Confirm revoke"
+                          : "Revoke"}
                     </Button>
                   )}
                 </li>
@@ -208,6 +229,14 @@ export function McpApiKeys() {
           </Card.Content>
         </Card>
       )}
+      {revokeError ? (
+        <p role="alert" className="text-sm text-danger">
+          {revokeError}{" "}
+          <button type="button" onClick={retry} className="underline">
+            Retry
+          </button>
+        </p>
+      ) : null}
     </PageContainer>
   );
 }

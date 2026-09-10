@@ -86,7 +86,7 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
   const summaryItems = [
     { label: "Requests used", value: String(stats.usage.requestsUsed), hint: "Last 10 days" },
     { label: "Docs pages", value: String(stats.usage.docsPages), hint: "Indexed pages" },
-    { label: "Success rate", value: `${stats.usage.successRate}%`, hint: "Fetch success" },
+    { label: "Success rate", value: `${(stats.usage.successRate * 100).toFixed(1)}%`, hint: "Fetch success" },
   ] as const;
   const topFetches = rankLibraryFetches(stats.fetches, 3);
 

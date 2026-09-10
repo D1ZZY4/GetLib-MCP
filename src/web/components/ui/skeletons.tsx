@@ -12,7 +12,7 @@ export function StatCardSkeleton({ icon = false, compact = false }: { icon?: boo
   return (
     <Card variant="secondary">
       <Card.Content>
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-2" aria-hidden="true">
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3 w-20 rounded" />
             <Skeleton className="h-9 w-14 rounded" />
@@ -33,7 +33,7 @@ export function PanelCardSkeleton({ rows = 4 }: { rows?: number }) {
         <Skeleton className="h-3 w-48 rounded" />
       </Card.Header>
       <Card.Content>
-        <div className="space-y-2.5">
+        <div className="space-y-2.5" aria-hidden="true">
           {Array.from({ length: rows }).map((_, index) => (
             <Skeleton
               key={index}

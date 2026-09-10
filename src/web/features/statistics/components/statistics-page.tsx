@@ -85,7 +85,7 @@ export function StatisticsPage() {
                   Success rate
                 </p>
                 <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                  {stats.usage.successRate}
+                  {(stats.usage.successRate * 100).toFixed(1)}
                   <span className="text-base font-normal text-muted">%</span>
                 </p>
               </Card.Content>

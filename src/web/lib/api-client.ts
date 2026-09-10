@@ -14,17 +14,11 @@ interface ApiErrorEnvelope {
 }
 
 /**
- * Trust boundary: the backend owns shape validation. Without `guard` the
- * caller asserts `T` matches the endpoint contract. With `guard` a shape
- * mismatch throws instead of leaking a half-typed object. Per-service
- * guards can be added incrementally without touching existing callers.
+ * Trust boundary: the backend owns shape validation and callers assert
+ * `T` matches the endpoint contract. Bodies are size-capped in bytes
+ * (not UTF-16 units) on both success and error paths.
  */
-export async function fetchJson<T>(
-  path: string,
-  init?: RequestInit,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
-  guard?: (value: unknown) => value is T,
-): Promise<T> {
+export async function fetchJson<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init?.signal;
   if (callerSignal) {
@@ -38,12 +32,14 @@ export async function fetchJson<T>(
       throw new Error(await errorMessage(response, path));
     }
     const text = await response.text();
-    if (text.length > MAX_JSON_BYTES) {
+    if (byteLength(text) > MAX_JSON_BYTES) {
       throw new Error(`Response from ${path} exceeds the ${MAX_JSON_BYTES}-byte client limit.`);
     }
-    const raw: unknown = JSON.parse(text);
-    if (guard && !guard(raw)) {
-      throw new Error(`Response from ${path} failed shape validation.`);
+    let raw: unknown;
+    try {
+      raw = JSON.parse(text) as unknown;
+    } catch {
+      throw new Error(`Response from ${path} did not return valid JSON.`);
     }
     return raw as T;
   } catch (error) {
@@ -56,9 +52,22 @@ export async function fetchJson<T>(
   }
 }
 
+function byteLength(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
 async function errorMessage(response: Response, path: string): Promise<string> {
   try {
-    const body: unknown = await response.json();
+    const text = await response.text();
+    // Same client limit as the success path: error bodies must not
+    // become an unbounded read either.
+    if (byteLength(text) > MAX_JSON_BYTES) return `Request to ${path} failed with HTTP ${response.status}.`;
+    let body: unknown;
+    try {
+      body = JSON.parse(text) as unknown;
+    } catch {
+      return `Request to ${path} failed with HTTP ${response.status}.`;
+    }
     const message =
       typeof body === "object" && body !== null ? (body as ApiErrorEnvelope).error?.message : undefined;
     if (typeof message === "string" && message.length > 0) return message;

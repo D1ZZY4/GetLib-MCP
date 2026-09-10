@@ -19,6 +19,9 @@ files are never edited, only extended by new ones.
   only). Owner: `SupabaseDatabaseRepository` + API key use case.
 - `2026090905_api_keys_unique_hash.sql` - uniqueness on
   `api_keys.key_hash`. Additive only; shipped files are never edited.
+- `2026090906_bootstrap_password_hash.sql` - nullable `password_hash`
+  on `app_bootstrap` for same-account rotation detection. Additive
+  only; shipped files are never edited.
 
 Rules:
 

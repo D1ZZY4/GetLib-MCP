@@ -18,6 +18,7 @@ export function useSourceAccess() {
   const [blocked, setBlocked] = useState<string[]>([]);
   const [wildcards, setWildcards] = useState<string[]>([]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [notice, setNotice] = useState<string | null>(null);
   const seeded = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -36,10 +37,7 @@ export function useSourceAccess() {
     if (!seeded.current || !data) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      setSaveStatus("saving");
-      saveSources(buildSourcesBody(data, toggles, blocked, wildcards))
-        .then(() => setSaveStatus("saved"))
-        .catch(() => setSaveStatus("error"));
+      void saveNow();
     }, 400);
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -51,6 +49,26 @@ export function useSourceAccess() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, []);
+
+  /** Flush any pending debounced save immediately. Backs the save-error retry. */
+  const saveNow = async (): Promise<void> => {
+    if (!seeded.current || !data) return;
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    setSaveStatus("saving");
+    try {
+      await saveSources(buildSourcesBody(data, toggles, blocked, wildcards));
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("error");
+    }
+  };
+
+  const retrySave = (): void => {
+    void saveNow();
+  };
 
   const groups = useMemo(
     () =>
@@ -68,16 +86,21 @@ export function useSourceAccess() {
     setToggles((current) => ({ ...current, [id]: enabled }));
   };
 
-  const addEntry = (list: "blocked" | "wildcards", name: string) => {
+  const addEntry = (list: "blocked" | "wildcards", name: string): boolean => {
     const normalized = name.trim();
-    if (normalized === "") return;
-    if (list === "blocked") {
-      setBlocked((current) => (current.includes(normalized) ? current : [...current, normalized]));
-    } else {
-      setWildcards((current) =>
-        current.includes(normalized) ? current : [...current, normalized],
-      );
+    if (normalized === "") return false;
+    const exists = (list === "blocked" ? blocked : wildcards).includes(normalized);
+    if (exists) {
+      setNotice(`"${normalized}" is already in the list.`);
+      return false;
     }
+    setNotice(null);
+    if (list === "blocked") {
+      setBlocked((current) => [...current, normalized]);
+    } else {
+      setWildcards((current) => [...current, normalized]);
+    }
+    return true;
   };
 
   const removeEntry = (list: "blocked" | "wildcards", name: string) => {
@@ -96,6 +119,8 @@ export function useSourceAccess() {
     error,
     retry,
     saveStatus,
+    retrySave,
+    notice,
     totalEntries: data?.totalEntries ?? 0,
     toggleSource,
     addEntry,

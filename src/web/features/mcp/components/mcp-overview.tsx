@@ -81,7 +81,7 @@ export function McpOverview() {
             <StatCardSkeleton compact />
           </div>
           <div className="grid gap-4 md:grid-cols-3" aria-hidden="true">
-            {Array.from({ length: 6 }).map((_, index) => (
+            {Array.from({ length: 9 }).map((_, index) => (
               <Card key={index} className="h-full">
                 <Card.Header>
                   <Skeleton className="h-4 w-28 rounded" />

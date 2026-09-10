@@ -8,6 +8,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 import { ListRowSkeleton } from "@/web/components/ui/skeletons";
+import { exampleArgsFor } from "../services/playground.service";
 import { runTool } from "../services/mcp.service";
 
 export function McpToolList() {
@@ -22,7 +23,9 @@ export function McpToolList() {
     setRunningTool(name);
     setRunError(null);
     try {
-      const run = await runTool(name, {});
+      // Run with the documented example arguments instead of a bare
+      // object so required-arg tools execute instead of failing vaguely.
+      const run = await runTool(name, JSON.parse(exampleArgsFor(name)) as Record<string, unknown>);
       setOutput(JSON.stringify(run.result, null, 2));
     } catch {
       setRunError(`We couldn't run ${name}. Try again.`);

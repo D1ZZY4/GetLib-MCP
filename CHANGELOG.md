@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from results.
 - Point install snippets at the requesting deployment and note
   unexpected hosts on SSE routes.
+- Confirm destructive revokes inline, guard polling overlap,
+  retry failed source saves, and clarify loading semantics.
 - Harden API key issuance to the strict tier and drop the last
   barrel re-exports.
 - Verify API keys by indexed hash lookup, redact key material

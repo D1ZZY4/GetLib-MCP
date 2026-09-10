@@ -4,6 +4,9 @@ const SESSION_KEY = "getlib-session";
 
 export function readSession(): MockSession | null {
   try {
+    // Explicit SSR guard: useState(readSession) runs on the server render
+    // too, where window does not exist. Fail to signed-out, never throw.
+    if (typeof window === "undefined") return null;
     const raw = window.localStorage.getItem(SESSION_KEY);
     if (raw === null) return null;
     const parsed: unknown = JSON.parse(raw);
@@ -21,6 +24,7 @@ export function readSession(): MockSession | null {
 
 export function writeSession(session: MockSession): void {
   try {
+    if (typeof window === "undefined") return;
     window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch {
     // Storage is optional; the session still applies for this visit.
@@ -29,6 +33,7 @@ export function writeSession(session: MockSession): void {
 
 export function clearSession(): void {
   try {
+    if (typeof window === "undefined") return;
     window.localStorage.removeItem(SESSION_KEY);
   } catch {
     // Nothing to clean up.

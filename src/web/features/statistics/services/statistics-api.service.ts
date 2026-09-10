@@ -21,6 +21,7 @@ export interface UsageStats {
   requestsUsed: number;
   docsPages: number;
   activeLibraries: number;
+  /** 0-1 fraction, same scale as telemetry and dashboard rates. */
   successRate: number;
 }
 

@@ -18,6 +18,8 @@ export function SourceAccessPage() {
     error,
     retry,
     saveStatus,
+    retrySave,
+    notice,
     totalEntries,
     toggleSource,
     addEntry,
@@ -49,6 +51,21 @@ export function SourceAccessPage() {
           </>
         }
       />
+
+      {notice ? (
+        <p role="status" className="text-sm text-muted">
+          {notice}
+        </p>
+      ) : null}
+
+      {saveStatus === "error" ? (
+        <p role="alert" className="text-sm text-danger">
+          Couldn&apos;t save changes.{" "}
+          <button type="button" onClick={retrySave} className="underline">
+            Retry now
+          </button>
+        </p>
+      ) : null}
 
       {loading ? (
         <div role="status" aria-label="Loading sources" className="flex flex-col gap-4">

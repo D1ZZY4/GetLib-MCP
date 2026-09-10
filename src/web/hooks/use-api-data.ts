@@ -35,6 +35,10 @@ export function useApiData<T>(
   const dataRef = useRef<T | null>(null);
   dataRef.current = data;
   const seqRef = useRef(0);
+  // Overlap guard: a slow poll must not stack concurrent requests.
+  // Skipped ticks simply wait for the next interval; the seq guard
+  // below still protects against stale wins.
+  const pendingRef = useRef(false);
   const refreshIntervalMs = options?.refreshIntervalMs;
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export function useApiData<T>(
       setLoading(true);
       setError(null);
     }
+    pendingRef.current = true;
     loadRef
       .current()
       .then((result) => {
@@ -69,6 +74,7 @@ export function useApiData<T>(
         }
       })
       .finally(() => {
+        pendingRef.current = false;
         if (!cancelled && seqRef.current === seq) setLoading(false);
       });
     return () => {
@@ -81,7 +87,7 @@ export function useApiData<T>(
   useEffect(() => {
     if (refreshIntervalMs === undefined || refreshIntervalMs <= 0) return;
     const tick = () => {
-      if (!document.hidden) {
+      if (!document.hidden && !pendingRef.current) {
         setAttempt((n) => n + 1);
       }
     };

@@ -162,8 +162,8 @@ export function SettingsPage() {
               </Card.Header>
               <Card.Content>
                 <p className="text-sm text-muted">
-                  Theme controls live in the sidebar. Additional preferences land here as
-                  they are added.
+                  Theme controls live in the sidebar. More preferences will appear here
+                  when this dashboard gains user-configurable display options.
                 </p>
               </Card.Content>
             </Card>
