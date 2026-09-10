@@ -58,11 +58,14 @@ export function useApiData<T>(
           setError(null);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         // A failed background poll keeps the last good data on screen;
-        // only a failed first load surfaces the error state.
+        // only a failed first load surfaces the error state. Preserve the
+        // real failure message when it is safe to display so diagnosis does
+        // not lose the cause behind a generic fallback.
         if (!cancelled && dataRef.current === null) {
-          setError(fallbackError);
+          const message = error instanceof Error && error.message.trim().length > 0 ? error.message : fallbackError;
+          setError(message);
         }
       })
       .finally(() => {

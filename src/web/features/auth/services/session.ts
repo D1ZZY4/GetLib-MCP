@@ -7,14 +7,11 @@ export function readSession(): MockSession | null {
     const raw = window.localStorage.getItem(SESSION_KEY);
     if (raw === null) return null;
     const parsed: unknown = JSON.parse(raw);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "email" in parsed &&
-      typeof (parsed as { email: unknown }).email === "string"
-    ) {
-      const session = parsed as MockSession;
-      return { name: session.name || session.email, email: session.email };
+    if (typeof parsed === "object" && parsed !== null && "email" in parsed) {
+      const record = parsed as { email: unknown; name?: unknown };
+      if (typeof record.email !== "string") return null;
+      const name = typeof record.name === "string" && record.name.length > 0 ? record.name : record.email;
+      return { name, email: record.email };
     }
   } catch {
     // Corrupt storage means signed out.

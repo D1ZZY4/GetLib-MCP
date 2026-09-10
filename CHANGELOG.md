@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   silently.
 - Centralize the remaining tone mappings and use scale sizes and
   alias imports across views.
+- Time out API calls with shape guards, surface real fetch errors,
+  and harden stored session parsing.
 
 ### Fixed
 
