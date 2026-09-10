@@ -47,8 +47,12 @@ export function transportModeIds(): TransportModeId[] {
 
 export interface ClientSessionSnapshot {
   id: string;
-  transport: "streamable-http" | "sse";
+  // stdio excluded by contract: local-process connections are never
+  // tracked as control-plane clients (see clients.service).
+  transport: Exclude<TransportModeId, "stdio">;
+  /** ISO-8601 creation timestamp. */
   connectedAt: string;
+  /** ISO-8601 last-seen timestamp. */
   lastSeenAt: string;
   userAgent?: string;
 }
@@ -57,6 +61,7 @@ export interface ClientSessionSnapshot {
  * Port for connected-client snapshots. Transport implementations provide
  * listers; the application layer aggregates them without importing
  * transport modules, keeping the dependency direction
- * Transport -> Application -> Domain intact.
+ * Transport -> Application -> Domain intact. Listers are synchronous by
+ * contract: a throwing lister is treated as an empty sighting.
  */
 export type ClientLister = () => ClientSessionSnapshot[];

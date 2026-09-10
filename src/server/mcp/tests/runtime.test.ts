@@ -67,6 +67,19 @@ describe("GET_LIB_MODE environment switch", () => {
     );
   });
 
+  test("ephemeral preview and staging never inherit production policy", () => {
+    expect(
+      resolveEnvironment({ libMode: undefined, vercelEnv: "preview", nodeEnv: undefined }),
+    ).toBe("development");
+    expect(
+      resolveEnvironment({ libMode: undefined, vercelEnv: "staging", nodeEnv: "production" }),
+    ).toBe("production");
+    // Explicit opt-in still wins for previews that want production policy.
+    expect(
+      resolveEnvironment({ libMode: "production", vercelEnv: "preview", nodeEnv: undefined }),
+    ).toBe("production");
+  });
+
   test("defaults to production when empty and signal-free", () => {
     expect(
       resolveEnvironment({ libMode: undefined, vercelEnv: undefined, nodeEnv: undefined }),
@@ -256,7 +269,7 @@ describe("database boundary", () => {
     expect(db.mode).toBe("mock");
     const status = await db.getStatus();
     expect(status.health).toBe("mock");
-    await db.saveBootstrap({ account: "a@b.c", credentialsChanged: false, updatedAt: new Date().toISOString() });
+    await db.saveBootstrap({ account: "a@b.c", credentialsChanged: false, updatedAt: new Date().toISOString(), passwordHash: null });
     const stored = await db.getBootstrap();
     expect(stored?.account).toBe("a@b.c");
   });

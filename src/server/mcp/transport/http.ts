@@ -12,7 +12,7 @@ import { liveApiKeyAuthDeps } from "../infrastructure/deps/apikeys-deps";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER, RateLimitError } from "../utils/rate-limit";
 import { generateRequestId } from "../utils/guard";
 import { createServer } from "../server";
-import { assertAllowedOrigin, OriginRejectedError } from "./request-guard";
+import { assertAllowedOrigin, noteUnexpectedHost, OriginRejectedError } from "./request-guard";
 
 export interface ClientSession extends ClientSessionSnapshot {
   transport: "streamable-http";
@@ -87,6 +87,7 @@ async function getTransport(): Promise<WebStandardStreamableHTTPServerTransport>
 
 export async function handleHttpRequest(req: Request): Promise<Response> {
   const id = generateRequestId();
+  noteUnexpectedHost(req);
   try {
     assertAllowedOrigin(req);
   } catch (error) {

@@ -55,7 +55,17 @@ export function resolveEnvironment(signals: EnvironmentSignals): RuntimeEnvironm
   const vercelEnv = signals.vercelEnv?.trim().toLowerCase();
   const nodeEnv = signals.nodeEnv?.trim().toLowerCase();
   if (vercelEnv === "production" || nodeEnv === "production") return "production";
-  if (vercelEnv === "development" || nodeEnv === "development" || nodeEnv === "test") {
+  // Ephemeral environments must never inherit production policy: a Vercel
+  // preview pointing at production keys would otherwise serve (or fail
+  // fast against) real production data. Explicit GET_LIB_MODE=production
+  // remains the only way to opt a preview into production.
+  if (
+    vercelEnv === "development" ||
+    vercelEnv === "preview" ||
+    vercelEnv === "staging" ||
+    nodeEnv === "development" ||
+    nodeEnv === "test"
+  ) {
     return "development";
   }
   return "production";
@@ -109,6 +119,16 @@ function firstPresent(names: string[]): string | undefined {
     if (value !== undefined) return value;
   }
   return undefined;
+}
+
+/**
+ * Which Supabase URL variable won, plus any shadowed siblings. Multiple
+ * set URL vars pointing at different projects would silently target the
+ * first - callers log the shadowed names (never values) at startup.
+ */
+export function supabaseUrlSelection(): { used: string | undefined; shadowed: string[] } {
+  const set = SUPABASE_URL_KEYS.filter((name) => readEnv(name) !== undefined);
+  return { used: set[0], shadowed: set.slice(1) };
 }
 
 /**

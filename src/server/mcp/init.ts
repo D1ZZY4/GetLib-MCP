@@ -1,8 +1,9 @@
 import { ensureBootstrapAccount } from "@/application/auth/auth.service";
 import { liveAuthDeps } from "./infrastructure/deps/auth-deps";
 import { getDatabaseStatus } from "./infrastructure/database";
+import { config } from "./config";
 import { log } from "./utils/logger";
-import { detectEnvironment, resolveDatabaseMode } from "./runtime";
+import { detectEnvironment, resolveDatabaseMode, supabaseUrlSelection } from "./runtime";
 import { ensureRegistryLoaded } from "./registry/registry-loader";
 import { validateProductionPolicy } from "./runtime";
 // Transport modules self-register their client-snapshot listers with the
@@ -53,7 +54,9 @@ export async function initializeApplication(): Promise<void> {
 
 async function runInitialization(): Promise<void> {
   if (initialized) return;
-  initialized = true;
+  // NOTE: `initialized` flips only on success at the end. A failed run
+  // (production policy or bootstrap throw) must stay retryable instead
+  // of poisoning later calls into a silent early return.
   const environment = detectEnvironment();
   try {
     validateProductionPolicy();
@@ -62,6 +65,26 @@ async function runInitialization(): Promise<void> {
     if (environment === "production") {
       throw error;
     }
+  }
+  if (environment === "production" && !config.authEnabled) {
+    // Authentication disabled in production is a valid mode, but it must
+    // never happen by accident (e.g. a missing env var). Loud by design.
+    log({
+      level: "error",
+      msg: "init.auth-disabled-production",
+      detail: "GETLIB_AUTHENTICATICATION_ENABLE is not enabled: the dashboard and MCP serve without sign-in.",
+    });
+  }
+  const urlSelection = supabaseUrlSelection();
+  if (urlSelection.shadowed.length > 0) {
+    // Names only, never values: two URL vars set means one project wins
+    // silently, which is how dev data ends up targeted as production.
+    log({
+      level: "warn",
+      msg: "init.supabase-url-shadowed",
+      used: urlSelection.used,
+      shadowed: urlSelection.shadowed,
+    });
   }
   const databaseMode = resolveDatabaseMode(environment);
   ensureRegistryLoaded();
@@ -100,6 +123,7 @@ async function runInitialization(): Promise<void> {
     if (environment === "production") throw error;
   }
   log({ level: "info", msg: "init.ready", environment, databaseMode });
+  initialized = true;
 }
 
 export function resetInitialization(): void {
