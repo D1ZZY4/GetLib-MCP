@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
-### Fixed
+### Added
 
 - Validate every external payload through centralized schemas so
   malformed upstream bodies never slip into domain models, and
@@ -66,6 +66,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details>
 <summary>1.1.4 changes (click to expand)</summary>
 
+### Added
+
+- Centralize the evidence verdict tone mapping used by
+  discovery surfaces.
+- Refresh live views silently in the background, pausing while
+  the tab is hidden and never clearing loaded data on a failed
+  poll.
+
 ### Fixed
 
 - Reject whitespace-only tool inputs with clean validation errors
@@ -74,30 +82,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   distinctive subject tokens so unrelated guides never pass.
 - Point manifest-only audit directories at auto scan instead of
   disagreeing with it.
+- Read production logs and dashboard activity from durable
+  storage with ring fallback instead of process memory.
+- Treat blank resolve queries as absent so they never trip the
+  extraction guard.
+
+### Changed
+
 - Extract pure durable-log mappers so production reads stay
   unit-testable without a database.
-- Centralize the evidence verdict tone mapping used by
-  discovery surfaces.
 - Cap lockfile detection fan-out to bounded batches so large
   projects cannot spike file-descriptor pressure.
 - Document accepted database aliases and the health-before-
   bootstrap startup order.
 - Run validation in CI on push and pull request with pinned bun.
-
-### Changed
-
 - Move the docs pipeline beside the services that own it and fix
   the import paths.
 - Finish the shared primitive rollout across detail views and
   feature pages, guard background polls against stale wins, and
   cover empty catalog states.
-- Read production logs and dashboard activity from durable
-  storage with ring fallback instead of process memory.
-- Treat blank resolve queries as absent so they never trip the
-  extraction guard.
-- Refresh live views silently in the background, pausing while
-  the tab is hidden and never clearing loaded data on a failed
-  poll.
 
 </details>
 
