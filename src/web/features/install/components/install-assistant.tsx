@@ -5,6 +5,7 @@ import { Button, Card, Skeleton, Tabs } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { availabilityTone } from "@/web/components/ui/status-tone";
+import { Pill } from "@/web/components/ui/pill";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
 import { copyText, transportLabel } from "../services/install-api.service";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -111,11 +112,9 @@ export function InstallAssistant() {
               <Card.Header>
                 <div className="flex items-center justify-between gap-2">
                   <Card.Title className="font-mono text-sm">{mode.label}</Card.Title>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${availabilityTone(mode.status)}`}
-                  >
+                  <Pill tone={availabilityTone(mode.status)}>
                     {mode.status === "available" ? "Available" : "Planned"}
-                  </span>
+                  </Pill>
                 </div>
                 <Card.Description>{mode.explanation}</Card.Description>
               </Card.Header>
@@ -142,18 +141,17 @@ export function InstallAssistant() {
                 <div className="flex items-center justify-between gap-2">
                   <Card.Title>{assistant.name}</Card.Title>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <span
-                      title="Transports this AI agent supports"
-                      className="rounded-full bg-accent/10 px-2.5 py-1 font-mono text-xs font-medium text-accent"
-                    >
+                    <Pill tone="bg-accent/10 text-accent font-mono" title="Transports this AI agent supports">
                       {assistant.transports.map(transportLabel).join(" / ")}
-                    </span>
-                    <span
-                      data-status={assistant.status}
-                      className="rounded-full px-2.5 py-1 text-xs font-medium data-[status=connected]:bg-success/15 data-[status=connected]:text-success data-[status=available]:bg-surface-tertiary data-[status=available]:text-muted"
+                    </Pill>
+                    <Pill
+                      tone=""
+                      className="data-[status=connected]:bg-success/15 data-[status=connected]:text-success data-[status=available]:bg-surface-tertiary data-[status=available]:text-muted"
                     >
-                      {assistant.status === "connected" ? "Connected" : "Available"}
-                    </span>
+                      <span data-status={assistant.status} className="contents">
+                        {assistant.status === "connected" ? "Connected" : "Available"}
+                      </span>
+                    </Pill>
                   </div>
                 </div>
                 <Card.Description>{assistant.description}</Card.Description>

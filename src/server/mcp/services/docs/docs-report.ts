@@ -3,6 +3,7 @@ import { isIndexContent } from "../fetcher";
 import { buildEvidenceBlock, buildHonestMiss, extractHeadingOutline, type EvidenceCheck } from "../../utils/evidence";
 import { withNotice } from "../../utils/guard";
 import { computeQualityScore } from "../../utils/quality";
+import { NO_EVIDENCE_HINT, summarizeEvidence } from "@/domain/evidence/verdict";
 
 export interface DocsReportInput {
   libraryId: string;
@@ -27,17 +28,9 @@ export interface DocsResponse {
   resolved: boolean;
 }
 
-function summarize(input: DocsReportInput): Record<string, unknown> {
+function summarize(input: DocsReportInput) {
   const { evidence, topic, escalated } = input;
-  return {
-    ok: evidence.ok,
-    matchRatio: evidence.matchRatio,
-    occurrences: evidence.occurrences,
-    matchedTokens: evidence.matchedTokens,
-    missingTokens: evidence.missingTokens,
-    escalated,
-    verdict: !topic ? "untargeted" : evidence.ok ? "strong" : evidence.matchRatio > 0 ? "weak" : "miss",
-  };
+  return summarizeEvidence(evidence, topic, escalated);
 }
 
 /**
@@ -66,7 +59,7 @@ function renderMiss(input: DocsReportInput, barelyMentioned: boolean): DocsRespo
       sourceType: fetchResult.sourceType,
       truncated: false,
       qualityScore: 0,
-      qualityHints: ["No topic-specific evidence found in any fetched source"],
+      qualityHints: [NO_EVIDENCE_HINT],
       evidence: summarize(input),
       sourcesTried: sourcesTried.map((s) => s.url),
       content: missText,

@@ -74,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   across agent rules and skills.
 - Publish a modular tsc dist tree with rewritten imports behind
   dist/index.js and declare full npm publish metadata.
+- Share one evidence verdict helper and one Pill primitive across
+  report and dashboard surfaces.
 
 </details>
 

@@ -5,6 +5,7 @@ import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { verdictTone } from "@/web/components/ui/verdict-tone";
+import { Pill } from "@/web/components/ui/pill";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { DetailHeaderSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
@@ -81,15 +82,9 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
             }
             badge={
               <>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${verdictTone(data.verdict)}`}
-                >
-                  {VERDICT_LABEL[data.verdict] ?? data.verdict}
-                </span>
+                <Pill tone={verdictTone(data.verdict)}>{VERDICT_LABEL[data.verdict] ?? data.verdict}</Pill>
                 {data.truncated ? (
-                  <span className="shrink-0 rounded-full bg-surface-tertiary px-2.5 py-1 text-xs font-medium text-muted">
-                    Truncated
-                  </span>
+                  <Pill tone="bg-surface-tertiary text-muted">Truncated</Pill>
                 ) : null}
               </>
             }

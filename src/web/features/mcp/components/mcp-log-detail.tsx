@@ -7,6 +7,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton, DetailHeaderSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
+import { Pill } from "@/web/components/ui/pill";
 import { formatLogTime } from "@/web/lib/format";
 import { fetchLogs } from "../services/mcp.service";
 
@@ -49,13 +50,9 @@ export function McpLogDetail({ requestId }: { requestId: string }) {
             title={<span className="font-mono">{entry.name}</span>}
             description={`${formatLogTime(entry.timestamp)} · ${entry.durationMs}ms${entry.requestId ? ` · request ${entry.requestId}` : ""}`}
             badge={
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                  entry.ok ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
-                }`}
-              >
+              <Pill tone={entry.ok ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}>
                 {entry.ok ? "ok" : "fail"}
-              </span>
+              </Pill>
             }
           />
           <Card>

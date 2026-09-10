@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card } from "@heroui/react";
 import { verdictTone } from "@/web/components/ui/verdict-tone";
+import { Pill } from "@/web/components/ui/pill";
 import type { DiscoverResult } from "../services/discover.service";
 
 const VERDICT_LABEL: Record<DiscoverResult["evidence"]["verdict"], string> = {
@@ -34,11 +35,7 @@ export function SearchResults({ result }: { result: DiscoverResult }) {
           {result.sources.length} {result.sources.length === 1 ? "source" : "sources"} for
           &ldquo;{result.query}&rdquo;
         </p>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${verdictTone(result.evidence.verdict)}`}
-        >
-          {VERDICT_LABEL[result.evidence.verdict]}
-        </span>
+        <Pill tone={verdictTone(result.evidence.verdict)}>{VERDICT_LABEL[result.evidence.verdict]}</Pill>
       </div>
       <ul className="grid gap-4 md:grid-cols-2" aria-label="Search results">
         {result.sources.map((source) => {

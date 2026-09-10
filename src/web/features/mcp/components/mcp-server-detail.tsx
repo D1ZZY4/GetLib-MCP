@@ -8,6 +8,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton, DetailHeaderSkeleton } from "@/web/components/ui/skeletons";
 import { statusTone } from "@/web/components/ui/status-tone";
+import { Pill } from "@/web/components/ui/pill";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchServers } from "../services/mcp.service";
 
@@ -49,11 +50,7 @@ export function McpServerDetail({ serverId }: { serverId: string }) {
           <PageHeader
             title={<span className="font-mono">{server.name}</span>}
             description={`v${server.version} · ${server.transports.join(" + ")}`}
-            badge={
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${statusTone(server.status)}`}>
-                {server.status}
-              </span>
-            }
+            badge={<Pill tone={statusTone(server.status)}>{server.status}</Pill>}
           />
           <Card>
             <Card.Header>

@@ -1,6 +1,7 @@
 import { buildEvidenceBlock, buildHonestMiss, extractHeadingOutline, type EvidenceCheck } from "@/server/mcp/utils/evidence";
 import { withNotice } from "@/server/mcp/utils/guard";
 import { computeQualityScore } from "@/server/mcp/utils/quality";
+import { NO_EVIDENCE_HINT, summarizeEvidence } from "@/domain/evidence/verdict";
 
 export interface ReportInput {
   displayName: string;
@@ -21,16 +22,8 @@ export interface ToolResponse {
   structuredContent: Record<string, unknown>;
 }
 
-function summarize(evidence: EvidenceCheck, topic: string, escalated: boolean): Record<string, unknown> {
-  return {
-    ok: evidence.ok,
-    matchRatio: evidence.matchRatio,
-    occurrences: evidence.occurrences,
-    matchedTokens: evidence.matchedTokens,
-    missingTokens: evidence.missingTokens,
-    escalated,
-    verdict: !topic ? "untargeted" : evidence.ok ? "strong" : evidence.matchRatio > 0 ? "weak" : "miss",
-  };
+function summarize(evidence: EvidenceCheck, topic: string, escalated: boolean) {
+  return summarizeEvidence(evidence, topic, escalated);
 }
 
 /** Explicit "no topic-specific evidence" response - never a substituted generic page. */
@@ -56,7 +49,7 @@ function renderMiss(input: ReportInput): ToolResponse {
       sourceUrl: input.sourceUrl,
       truncated: false,
       qualityScore: 0,
-      qualityHints: ["No topic-specific evidence found in any fetched source"],
+      qualityHints: [NO_EVIDENCE_HINT],
       evidence: summarize(input.evidence, topic, input.escalated),
       sourcesTried: sourcesTried.map((s) => s.url),
       content: missText,

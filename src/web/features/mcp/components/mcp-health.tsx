@@ -6,6 +6,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionGridSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { statusTone } from "@/web/components/ui/status-tone";
+import { Pill } from "@/web/components/ui/pill";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
 import type { HealthStatus } from "@/web/types/mcp";
@@ -16,11 +17,7 @@ const LOAD_ERROR = "We couldn't load health status. Try again in a moment.";
 function StatusPill({ status }: { status: HealthStatus }) {
   const tone = statusTone(status);
   const label = status === "healthy" ? "Healthy" : status === "degraded" ? "Degraded" : "Unavailable";
-  return (
-    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}>
-      {label}
-    </span>
-  );
+  return <Pill tone={tone}>{label}</Pill>;
 }
 
 export function McpHealth() {

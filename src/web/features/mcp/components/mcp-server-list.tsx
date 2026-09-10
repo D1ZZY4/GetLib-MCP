@@ -6,6 +6,7 @@ import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { statusTone } from "@/web/components/ui/status-tone";
+import { Pill } from "@/web/components/ui/pill";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchServers } from "../services/mcp.service";
 
@@ -64,9 +65,7 @@ export function McpServerList() {
                       {server.name}
                     </Link>
                   </Card.Title>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusTone(server.status)}`}>
-                    {server.status}
-                  </span>
+                  <Pill tone={statusTone(server.status)}>{server.status}</Pill>
                 </div>
                 <Card.Description>
                   v{server.version} · {server.transports.join(" + ")}
