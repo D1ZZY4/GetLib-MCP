@@ -20,7 +20,7 @@ bun run dev      # dashboard with Turbopack
 bun run mcp      # MCP server over stdio (14 tools, 2 resources, 6 prompts)
 bun run build:mcp # emit the modular npx/CLI entry to dist/index.js (runs on prepublishOnly)
 bun run build
-bun run start    # also serves Streamable HTTP at /api/mcp and /api/mcp/http plus SSE at /api/mcp/sse
+bun run start    # also serves Streamable HTTP at /api/mcp/http and SSE at /api/mcp/sse
 bun run typecheck
 bun run lint     # typecheck + no-em-dash repository check + architecture boundary check
 bun run validate # typecheck + no-em-dash check + boundary check + tests + production build
@@ -83,10 +83,7 @@ because it is a generated lockfile) and the architecture boundary check
 (`scripts/check-boundaries.ts`: dependency direction across web, app,
 application, domain, infrastructure, and MCP layers). All
 `GETLIB_*` environment variables are validated in
-`src/server/mcp/config.ts`, the single configuration boundary, except
-`GET_LIB_MODE` / `GETLIB_DATABASE_MODE`, which are owned by the runtime
-policy in `src/server/mcp/runtime.ts`. Engineering rules live in
-`.agents/rules/` (the `AGENTS.md` stub below is Next.js boilerplate).
+`src/server/mcp/config.ts`, the single configuration boundary.
 
 ## Deployment
 
