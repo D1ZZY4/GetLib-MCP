@@ -47,7 +47,7 @@ export function McpClients() {
                 <li key={client.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate font-mono text-sm">
-                      <Link href={`/mcp/clients/${client.id}`} className="hover:text-accent hover:underline">
+                      <Link href={`/mcp/clients/${client.id}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                         {client.id}
                       </Link>
                     </p>

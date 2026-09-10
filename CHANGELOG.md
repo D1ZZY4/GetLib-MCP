@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   validate bootstrap rows, and count durable logs.
 - Warn when source settings cannot persist instead of failing
   silently.
+- Centralize the remaining tone mappings and use scale sizes and
+  alias imports across views.
 
 ### Fixed
 

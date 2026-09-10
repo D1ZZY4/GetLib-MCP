@@ -59,11 +59,11 @@ export function DashboardSkeleton() {
           <Skeleton className="h-3 w-64 max-w-full rounded" />
         </Card.Header>
         <Card.Content>
-          <Skeleton className="h-[220px] rounded-xl" />
+          <Skeleton className="h-55 rounded-xl" />
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <Skeleton className="h-[76px] rounded-xl" />
-            <Skeleton className="h-[76px] rounded-xl" />
-            <Skeleton className="h-[76px] rounded-xl" />
+            <Skeleton className="h-19 rounded-xl" />
+            <Skeleton className="h-19 rounded-xl" />
+            <Skeleton className="h-19 rounded-xl" />
           </div>
           <div className="mt-4 space-y-2.5">
             <Skeleton className="h-4 rounded" style={{ width: "88%" }} />

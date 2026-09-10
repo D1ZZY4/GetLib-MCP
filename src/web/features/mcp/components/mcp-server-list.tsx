@@ -43,7 +43,7 @@ export function McpServerList() {
               <Card.Header>
                 <div className="flex items-center justify-between gap-2">
                   <Card.Title className="font-mono text-sm">
-                    <Link href={`/mcp/servers/${server.id}`} className="hover:text-accent hover:underline">
+                    <Link href={`/mcp/servers/${server.id}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       {server.name}
                     </Link>
                   </Card.Title>

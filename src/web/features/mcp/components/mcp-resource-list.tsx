@@ -40,7 +40,7 @@ export function McpResourceList() {
               {catalog.resources.map((resource) => (
                 <li key={resource.name} className="py-3 first:pt-0 last:pb-0">
                   <p className="text-sm font-medium">
-                    <Link href={`/mcp/resources/${resource.name}`} className="hover:text-accent hover:underline">
+                    <Link href={`/mcp/resources/${resource.name}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       {resource.name}
                     </Link>
                   </p>

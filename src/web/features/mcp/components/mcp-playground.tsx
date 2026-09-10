@@ -168,7 +168,7 @@ export function McpPlayground() {
                 </Card.Description>
               </Card.Header>
               <Card.Content>
-                <pre className="max-h-[480px] overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed tabular-nums">
+                <pre className="max-h-120 overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed tabular-nums">
                   <code>{output}</code>
                 </pre>
               </Card.Content>

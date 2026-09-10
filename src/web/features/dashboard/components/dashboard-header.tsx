@@ -16,8 +16,8 @@ export function DashboardHeader({ dashboard }: DashboardHeaderProps) {
   return (
     <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">Dashboard</h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
+        <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">Dashboard</h1>
+        <p className="mt-1 max-w-xl text-sm text-muted">
           {needsAttention > 0
             ? `${needsAttention} ${needsAttention === 1 ? "item needs" : "items need"} your attention. Review system status, activity, and risks below.`
             : "Systems are healthy. Review activity and risks below."}{" "}

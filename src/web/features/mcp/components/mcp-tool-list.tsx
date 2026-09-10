@@ -65,7 +65,7 @@ export function McpToolList() {
                     <li key={tool.name} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
                         <p className="truncate font-mono text-sm">
-                          <Link href={`/mcp/tools/${tool.name}`} className="hover:text-accent hover:underline">
+                          <Link href={`/mcp/tools/${tool.name}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                             {tool.name}
                           </Link>
                         </p>

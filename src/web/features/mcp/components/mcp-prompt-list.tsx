@@ -40,7 +40,7 @@ export function McpPromptList() {
               {catalog.prompts.map((prompt) => (
                 <li key={prompt.name} className="py-3 first:pt-0 last:pb-0">
                   <p className="font-mono text-sm">
-                    <Link href={`/mcp/prompts/${prompt.name}`} className="hover:text-accent hover:underline">
+                    <Link href={`/mcp/prompts/${prompt.name}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       {prompt.name}
                     </Link>
                   </p>

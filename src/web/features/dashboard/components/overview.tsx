@@ -35,7 +35,7 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
           <Card.Description>Request activity and top fetches.</Card.Description>
         </Card.Header>
         <Card.Content>
-          <Skeleton className="h-[220px] rounded-xl" />
+          <Skeleton className="h-55 rounded-xl" />
         </Card.Content>
       </Card>
     );

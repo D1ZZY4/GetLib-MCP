@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Card, Skeleton, Tabs } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
+import { availabilityTone } from "@/web/components/ui/status-tone";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
 import type { AssistantTransport } from "../services/install-api.service";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -130,11 +131,7 @@ export function InstallAssistant() {
                 <div className="flex items-center justify-between gap-2">
                   <Card.Title className="font-mono text-sm">{mode.label}</Card.Title>
                   <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                      mode.status === "available"
-                        ? "bg-success/10 text-success"
-                        : "bg-warning/10 text-warning"
-                    }`}
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${availabilityTone(mode.status)}`}
                   >
                     {mode.status === "available" ? "Available" : "Planned"}
                   </span>

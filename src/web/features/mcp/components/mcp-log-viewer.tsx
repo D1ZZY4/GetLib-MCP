@@ -167,7 +167,7 @@ export function McpLogViewer() {
                   className="flex items-center justify-between gap-3 py-2 font-mono text-xs"
                 >
                   <span className="truncate">
-                    <Link href={`/mcp/logs/${entry.id}`} className="hover:text-accent hover:underline">
+                    <Link href={`/mcp/logs/${entry.id}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       {entry.name}
                     </Link>{" "}
                     <span className="text-muted">· {formatLogTime(entry.timestamp)}</span>

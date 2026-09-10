@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card } from "@heroui/react";
 import type { MockAttention } from "@/web/types/library";
+import { severityFill } from "@/web/components/ui/status-tone";
 import { ArrowRightIcon } from "@/web/components/ui/icons";
 
 interface AttentionHighlightsPanelProps {
@@ -14,12 +15,6 @@ const STATUS_BY_SEVERITY: Record<MockAttention["severity"], "danger" | "warning"
   high: "danger",
   medium: "warning",
   low: "success",
-};
-
-const STATUS_FILL: Record<MockAttention["severity"], string> = {
-  high: "border-danger/20 bg-danger/10",
-  medium: "border-warning/25 bg-warning/10",
-  low: "border-success/20 bg-success/10",
 };
 
 export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProps) {
@@ -47,7 +42,7 @@ export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProp
         ) : (
           <div className="grid items-start gap-3" role="list" aria-label="Attention items">
             {items.map((item) => (
-              <Alert key={item.id} status={STATUS_BY_SEVERITY[item.severity]} role="listitem" className={STATUS_FILL[item.severity]}>
+              <Alert key={item.id} status={STATUS_BY_SEVERITY[item.severity]} role="listitem" className={severityFill(item.severity)}>
                 <Alert.Indicator />
                 <Alert.Content>
                   <Alert.Title>{item.libraryName}</Alert.Title>
@@ -61,7 +56,7 @@ export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProp
                     {item.actionHref !== undefined ? (
                       <Link
                         href={item.actionHref}
-                        className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline"
+                        className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                       >
                         {item.actionLabel ?? "Take action"}
                         <ArrowRightIcon className="size-3" />

@@ -63,7 +63,7 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
                 href={data.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-mono text-xs text-accent hover:underline"
+                className="rounded font-mono text-xs text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 {data.sourceUrl}
               </a>

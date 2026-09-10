@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@heroui/react";
 import type { MockLibrary } from "@/web/types/library";
+import { libraryStatusTone } from "@/web/components/ui/status-tone";
 import { ArrowRightIcon } from "@/web/components/ui/icons";
 
 interface ProjectSummaryCardProps {
@@ -47,7 +48,7 @@ export function ProjectSummaryCard({ libraries }: ProjectSummaryCardProps) {
                 </div>
                 <span
                   data-status={lib.status}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium data-[status=up-to-date]:bg-success/10 data-[status=up-to-date]:text-success data-[status=outdated]:bg-warning/10 data-[status=outdated]:text-warning data-[status=vulnerable]:bg-danger/10 data-[status=vulnerable]:text-danger"
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${libraryStatusTone(lib.status)}`}
                 >
                   <span
                     aria-hidden="true"
