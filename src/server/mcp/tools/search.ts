@@ -13,12 +13,6 @@ import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
 import { liveSearchDeps } from "../infrastructure/deps/search-deps";
 
-// Re-exported so callers that reason about search sourcing (gl_compat, gl_migration)
-// and the existing test mocks keep a single stable import path.
-export { findTopicUrls } from "../services/search/topic-match";
-export { searchMDN, webSearch } from "../services/search/engines";
-export { isAuthoritativeUrl } from "../services/search/url-rank";
-
 const InputSchema = z.object({
   query: nonBlankString(SEARCH_QUERY_MAX)
     .describe(

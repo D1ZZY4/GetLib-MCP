@@ -2,8 +2,10 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
 import { registerClientLister } from "@/application/clients/clients.service";
 import {
+  SESSION_SECRET_MISSING_MESSAGE,
   SessionSecretMissingError,
   requireManagementAuth,
+  UNAUTHORIZED_MESSAGE,
   UnauthorizedError,
 } from "@/application/auth/session";
 import { liveApiKeyAuthDeps } from "../infrastructure/deps/apikeys-deps";
@@ -122,7 +124,7 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
         {
           error: {
             code: "unauthorized",
-            message: "Authentication is required for this endpoint.",
+            message: UNAUTHORIZED_MESSAGE,
             requestId: id,
           },
         },
@@ -136,7 +138,7 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
         {
           error: {
             code: "internal_error",
-            message: "Session signing is not configured.",
+            message: SESSION_SECRET_MISSING_MESSAGE,
             requestId: id,
           },
         },

@@ -12,8 +12,7 @@ import {
 } from "@/application/library/snippets.service";
 import { liveSnippetsDeps } from "../infrastructure/deps/snippets-deps";
 
-// Re-exported so gl_examples and the existing tests keep one stable import path.
-export { buildIndex } from "../services/snippets/build-index";
+// Re-exported so the existing tests keep one stable import path.
 export { buildIndexShared, clearSnippetBuildInFlight, snippetBuildBudgetMs };
 
 const InputSchema = z.object({

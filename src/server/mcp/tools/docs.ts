@@ -14,9 +14,6 @@ import {
   fetchLibraryDocsUseCase,
 } from "@/application/library/docs.service";
 
-// Re-exported so the existing test import path stays valid.
-export { isValidPackageName } from "../services/docs/docs-resolve";
-
 const TIMEOUT_RESPONSE = timeoutResponse(
   "Documentation lookup timed out. Retry with a narrower topic or an explicit version.",
   { timedOut: true },
