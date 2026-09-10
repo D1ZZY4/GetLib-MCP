@@ -25,6 +25,27 @@ export interface BootstrapRecord {
   updatedAt: string;
 }
 
+/**
+ * Long-lived API key record. Only the sha256 hash is ever persisted;
+ * the plaintext key is shown once at creation and cannot be recovered
+ * afterwards. Revocation flips the flag; rows are kept for auditability.
+ */
+export interface ApiKeyRecord {
+  id: number;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+  revoked: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface NewApiKey {
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+}
+
 export interface PersistedLogEntry {
   requestId?: string;
   kind: string;
@@ -65,4 +86,15 @@ export interface DatabaseRepository {
    * persisted logs, not whatever survives in this process's memory.
    */
   listLogs(limit: number): Promise<StoredLogEntry[]>;
+  /** All API key rows, newest first. Never rejects: returns [] when unreadable. */
+  listApiKeys(): Promise<ApiKeyRecord[]>;
+  /**
+   * Persist a new API key hash. Rejects on failure so creation never
+   * reports a key that was not stored.
+   */
+  saveApiKey(record: NewApiKey): Promise<ApiKeyRecord>;
+  /** Revoke by id. Returns false when the row is missing or unwritable. */
+  revokeApiKey(id: number): Promise<boolean>;
+  /** Best-effort last-used stamp. Never rejects. */
+  touchApiKeyLastUsed(id: number): Promise<void>;
 }

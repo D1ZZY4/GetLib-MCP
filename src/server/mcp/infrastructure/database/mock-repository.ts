@@ -1,7 +1,9 @@
 import type {
+  ApiKeyRecord,
   BootstrapRecord,
   DatabaseRepository,
   DatabaseStatus,
+  NewApiKey,
   PersistedLogEntry,
   StoredLogEntry,
 } from "./types";
@@ -14,6 +16,8 @@ export class MockDatabaseRepository implements DatabaseRepository {
   readonly mode = "mock" as const;
   private bootstrap: BootstrapRecord | null = null;
   private logs: PersistedLogEntry[] = [];
+  private apiKeys: ApiKeyRecord[] = [];
+  private nextApiKeyId = 1;
 
   async getStatus(): Promise<DatabaseStatus> {
     return {
@@ -53,8 +57,40 @@ export class MockDatabaseRepository implements DatabaseRepository {
     return this.logs.length;
   }
 
+  async listApiKeys(): Promise<ApiKeyRecord[]> {
+    return this.apiKeys.map((key) => ({ ...key }));
+  }
+
+  async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {
+    const stored: ApiKeyRecord = {
+      id: this.nextApiKeyId++,
+      name: record.name,
+      keyHash: record.keyHash,
+      keyPrefix: record.keyPrefix,
+      revoked: false,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+    };
+    this.apiKeys.unshift({ ...stored });
+    return { ...stored };
+  }
+
+  async revokeApiKey(id: number): Promise<boolean> {
+    const found = this.apiKeys.find((key) => key.id === id);
+    if (!found || found.revoked) return false;
+    found.revoked = true;
+    return true;
+  }
+
+  async touchApiKeyLastUsed(id: number): Promise<void> {
+    const found = this.apiKeys.find((key) => key.id === id);
+    if (found) found.lastUsedAt = new Date().toISOString();
+  }
+
   reset(): void {
     this.bootstrap = null;
     this.logs = [];
+    this.apiKeys = [];
+    this.nextApiKeyId = 1;
   }
 }

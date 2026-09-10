@@ -2,9 +2,11 @@ import type { DatabaseMode } from "../../runtime";
 import { log } from "../../utils/logger";
 import { getSupabaseServiceClient } from "../supabase/client";
 import type {
+  ApiKeyRecord,
   BootstrapRecord,
   DatabaseRepository,
   DatabaseStatus,
+  NewApiKey,
   PersistedLogEntry,
   StoredLogEntry,
 } from "./types";
@@ -214,8 +216,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
-  async listLogs(limit: number): Promise<StoredLogEntry[]> {    const client = privilegedClient();
-    if (!client) {
+  async listLogs(limit: number): Promise<StoredLogEntry[]> {    const client = privilegedClient();    if (!client) {
       reportUnconfigured("supabase.logs.unconfigured", this.mode);
       return [];
     }
@@ -238,6 +239,119 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       return [];
     }
   }
+
+  async listApiKeys(): Promise<ApiKeyRecord[]> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return [];
+    }
+    try {
+      const query = client
+        .from("api_keys")
+        .select("id,name,key_hash,key_prefix,revoked,created_at,last_used_at")
+        .order("id", { ascending: false })
+        .limit(200);
+      const { data, error } = await withTimeout(query, 5000, "Supabase api keys read timed out.");
+      if (error || !Array.isArray(data)) return [];
+      const records: ApiKeyRecord[] = [];
+      for (const row of data) {
+        const parsed = parseApiKeyRow(row);
+        if (parsed) records.push(parsed);
+      }
+      return records;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.read-failed", error: String(error) });
+      return [];
+    }
+  }
+
+  async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      throw new Error("Supabase is not configured.");
+    }
+    try {
+      const insert = client
+        .from("api_keys")
+        .insert({ name: record.name, key_hash: record.keyHash, key_prefix: record.keyPrefix })
+        .select("id,name,key_hash,key_prefix,revoked,created_at,last_used_at")
+        .abortSignal(AbortSignal.timeout(5000))
+        .maybeSingle();
+      const { data, error } = (await withTimeout(
+        insert,
+        5000,
+        "Supabase api key write timed out.",
+      )) as { data: unknown; error: { message: string } | null };
+      if (error || !data) throw new Error("Supabase api key insert failed.");
+      const parsed = parseApiKeyRow(data);
+      if (!parsed) throw new Error("Supabase api key insert returned an unexpected row.");
+      return parsed;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.save-failed", error: String(error) });
+      throw error;
+    }
+  }
+
+  async revokeApiKey(id: number): Promise<boolean> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return false;
+    }
+    try {
+      const update = client.from("api_keys").update({ revoked: true }).eq("id", id);
+      const { error } = (await withTimeout(update, 5000, "Supabase api key revoke timed out.")) as {
+        error: { message: string } | null;
+      };
+      if (error) return false;
+      return true;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.revoke-failed", error: String(error) });
+      return false;
+    }
+  }
+
+  async touchApiKeyLastUsed(id: number): Promise<void> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return;
+    }
+    try {
+      const update = client
+        .from("api_keys")
+        .update({ last_used_at: new Date().toISOString() })
+        .eq("id", id);
+      await withTimeout(update, 5000, "Supabase api key touch timed out.");
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.touch-failed", error: String(error) });
+    }
+  }
+}
+
+function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
+  if (typeof row !== "object" || row === null) return null;
+  const record = row as Record<string, unknown>;
+  const { id, name, key_hash, key_prefix, revoked, created_at, last_used_at } = record;
+  if (typeof id !== "number" || !Number.isFinite(id)) return null;
+  if (typeof name !== "string" || typeof key_hash !== "string" || typeof key_prefix !== "string") {
+    return null;
+  }
+  if (typeof revoked !== "boolean" || typeof created_at !== "string") return null;
+  if (last_used_at !== null && last_used_at !== undefined && typeof last_used_at !== "string") {
+    return null;
+  }
+  return {
+    id,
+    name,
+    keyHash: key_hash,
+    keyPrefix: key_prefix,
+    revoked,
+    createdAt: created_at,
+    lastUsedAt: typeof last_used_at === "string" ? last_used_at : null,
+  };
 }
 
 function parseLogRow(row: unknown): StoredLogEntry | null {

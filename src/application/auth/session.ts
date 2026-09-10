@@ -7,12 +7,14 @@ import { log } from "@/server/mcp/utils/logger";
  * Session boundary for authenticated management and MCP access.
  *
  * When authentication is disabled every caller proceeds with an explicit
- * anonymous context (rules #25). When enabled, callers present the session
- * token issued by POST /api/management/auth/signin, either as the
- * getlib_session HttpOnly cookie (dashboard) or an Authorization: Bearer
- * token (MCP clients, scripts). Tokens are stateless HMAC-SHA256 over
- * email + expiry, so they validate on every serverless instance without
- * shared storage.
+ * anonymous context (rules #25). When enabled, callers present either the
+ * session token issued by POST /api/management/auth/signin (as the
+ * getlib_session HttpOnly cookie for the dashboard, or an Authorization:
+ * Bearer token for scripts) or a long-lived API key (Authorization:
+ * Bearer glk_..., managed on the API keys page). Session tokens are
+ * stateless HMAC-SHA256 over email + expiry, so they validate on every
+ * serverless instance without shared storage; API keys verify against
+ * stored hashes through the injected seam.
  */
 
 export const SESSION_COOKIE = "getlib_session";
@@ -114,20 +116,36 @@ export function sessionEmailFromRequest(req: Request, now: number = Date.now()):
 export interface AuthContext {
   /** Authenticated identity, or null for the explicit anonymous context. */
   email: string | null;
+  /** Present only when the caller authenticated with an API key. */
+  apiKey?: { id: number; name: string };
+}
+
+/**
+ * Capability seams of the auth boundary. API key verification goes
+ * through the injected seam; session tokens stay stateless and
+ * database-free.
+ */
+export interface ApiKeyAuthDeps {
+  verifyApiKey: (presentedKey: string) => Promise<{ id: number; name: string } | null>;
 }
 
 /**
  * Management/MCP authorization boundary. Auth-disabled mode always
- * allows with an anonymous context. Auth-enabled mode requires a valid
- * session and throws UnauthorizedError (mapped to 401) otherwise.
+ * allows with an anonymous context. Auth-enabled mode accepts a valid
+ * session first (cookie or Bearer, stateless), then a Bearer API key
+ * (revocable, hash-verified), and throws UnauthorizedError (mapped to
+ * 401) otherwise. The failure never reveals which credential was wrong.
  */
-export function requireManagementAuth(req: Request): AuthContext {
+export async function requireManagementAuth(req: Request, deps: ApiKeyAuthDeps): Promise<AuthContext> {
   if (!config.authEnabled) return { email: null };
   const email = sessionEmailFromRequest(req);
-  if (!email) {
-    throw new UnauthorizedError();
+  if (email) return { email };
+  const bearer = bearerToken(req);
+  if (bearer) {
+    const apiKey = await deps.verifyApiKey(bearer);
+    if (apiKey) return { email: null, apiKey };
   }
-  return { email };
+  throw new UnauthorizedError();
 }
 
 export function sessionCookieAttributes(): string {

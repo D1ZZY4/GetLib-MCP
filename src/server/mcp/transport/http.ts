@@ -6,6 +6,7 @@ import {
   requireManagementAuth,
   UnauthorizedError,
 } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "../infrastructure/deps/apikeys-deps";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER, RateLimitError } from "../utils/rate-limit";
 import { generateRequestId } from "../utils/guard";
 import { createServer } from "../server";
@@ -100,7 +101,7 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
     // Writes execute tools - stricter budget. Reads (GET without a session
     // handshake aside) share the polling budget.
     checkRateLimit(req, "mcp/http", req.method === "GET" ? READ_TIER : EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
   } catch (error) {
     if (error instanceof RateLimitError) {
       return errorBody(

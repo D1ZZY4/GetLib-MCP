@@ -58,6 +58,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
           { href: "/mcp/resources", label: "Resources" },
           { href: "/mcp/prompts", label: "Prompts" },
           { href: "/mcp/playground", label: "Playground" },
+          { href: "/mcp/api-keys", label: "API keys" },
           { href: "/mcp/clients", label: "Clients" },
           { href: "/mcp/logs", label: "Logs" },
           { href: "/mcp/health", label: "Health" },

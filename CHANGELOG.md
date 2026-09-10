@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Added
+
+- Revocable hashed API keys for programmatic access with a
+  management page, Bearer verification on transports, and a
+  dedicated table plus migration.
+
 </details>
 
 ## [1.1.6] - 2026-09-10

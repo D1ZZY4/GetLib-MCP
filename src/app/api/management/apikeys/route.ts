@@ -1,0 +1,65 @@
+import { z } from "zod";
+import { requireManagementAuth } from "@/application/auth/session";
+import {
+  ApiKeyValidationError,
+  createApiKey,
+  listApiKeys,
+  revokeApiKey,
+} from "@/application/apikeys/apikeys.service";
+import { liveApiKeyAuthDeps, liveApiKeyDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
+import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
+import { nonBlankString } from "@/server/mcp/utils/schemas";
+import { jsonError, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
+
+const CreateBody = z.object({
+  name: nonBlankString(100),
+});
+
+const RevokeBody = z.object({
+  id: z.number().int().min(1),
+});
+
+export async function GET(req: Request) {
+  const id = requestId();
+  try {
+    checkRateLimit(req, "management/apikeys", READ_TIER);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
+    return jsonOk({ keys: await listApiKeys(liveApiKeyDeps) }, id);
+  } catch (error) {
+    return mapRouteError(error, id);
+  }
+}
+
+export async function POST(req: Request) {
+  const id = requestId();
+  try {
+    checkRateLimit(req, "management/apikeys", EXECUTION_TIER);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
+    const body = CreateBody.parse(await readJsonBody(req));
+    return jsonOk(await createApiKey(liveApiKeyDeps, body.name), id);
+  } catch (error) {
+    if (error instanceof ApiKeyValidationError) {
+      return jsonError("validation_error", error.message, 422, id);
+    }
+    return mapRouteError(error, id);
+  }
+}
+
+export async function DELETE(req: Request) {
+  const id = requestId();
+  try {
+    checkRateLimit(req, "management/apikeys", EXECUTION_TIER);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
+    const body = RevokeBody.parse(await readJsonBody(req));
+    const revoked = await revokeApiKey(liveApiKeyDeps, body.id);
+    if (!revoked) {
+      return jsonError("not_found", `API key ${body.id} does not exist or is already revoked.`, 404, id);
+    }
+    return jsonOk({ revoked: body.id }, id);
+  } catch (error) {
+    if (error instanceof ApiKeyValidationError) {
+      return jsonError("validation_error", error.message, 422, id);
+    }
+    return mapRouteError(error, id);
+  }
+}

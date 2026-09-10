@@ -76,9 +76,32 @@ describe("session extraction", () => {
   });
 });
 
-describe("management authorization boundary", () => {  test("allows anonymous context when authentication is disabled", () => {
+describe("management authorization boundary", () => {  test("allows anonymous context when authentication is disabled", async () => {
     // Default test env leaves GETLIB_AUTHENTICATICATION_ENABLE unset (false).
-    expect(requireManagementAuth(requestWith())).toEqual({ email: null });
+    await expect(requireManagementAuth(requestWith(), { verifyApiKey: async () => null })).resolves.toEqual({
+      email: null,
+    });
+  });
+
+  test("rejects unauthenticated callers when authentication is enabled", async () => {
+    setConfigOverride({ authEnabled: true, sessionSecret: "test-session-secret" });
+    await expect(
+      requireManagementAuth(requestWith(), { verifyApiKey: async () => null }),
+    ).rejects.toThrow(UnauthorizedError);
+  });
+
+  test("accepts a valid API key when authentication is enabled", async () => {
+    setConfigOverride({ authEnabled: true, sessionSecret: "test-session-secret" });
+    const deps = {
+      verifyApiKey: async (presented: string) =>
+        presented === "glk_live" ? { id: 7, name: "ci" } : null,
+    };
+    await expect(
+      requireManagementAuth(requestWith({ authorization: "Bearer glk_live" }), deps),
+    ).resolves.toEqual({ email: null, apiKey: { id: 7, name: "ci" } });
+    await expect(
+      requireManagementAuth(requestWith({ authorization: "Bearer glk_dead" }), deps),
+    ).rejects.toThrow(UnauthorizedError);
   });
 
   test("UnauthorizedError carries a neutral message", () => {

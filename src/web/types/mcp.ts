@@ -20,6 +20,23 @@ export interface ClientsSnapshot {
   clients: McpClientSession[];
 }
 
+export interface ApiKeyView {
+  id: number;
+  name: string;
+  prefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revoked: boolean;
+}
+
+export interface ApiKeysSnapshot {
+  keys: ApiKeyView[];
+}
+
+export interface CreatedApiKey extends ApiKeyView {
+  key: string;
+}
+
 export type HealthStatus = "healthy" | "degraded" | "unavailable";
 
 export interface DependencyCheck {
