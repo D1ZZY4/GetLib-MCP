@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Normalize agent rule wording and complete the canonical env
   spelling migration with full database persistence.
 - Polish README route wording and configuration boundary docs.
+- Rewrite the boundary checker implementation.
 
 </details>
 
