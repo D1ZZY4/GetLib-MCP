@@ -63,6 +63,16 @@ describe("logger redaction", () => {
     expect(out).not.toContain("v1.payload.sig");
     expect(out).not.toContain("getlib_session=x");
   });
+
+  test("scrubs API keys and PII-ish fields", () => {
+    log({ level: "warn", msg: "mcp", error: "denied glk_abcDEF123_-" });
+    log({ level: "error", msg: "auth", email: "ops@example.com", key_hash: "deadbeef" });
+    const out = capturedError.join("\n");
+    expect(out).not.toContain("glk_abcDEF123_-");
+    expect(out).toContain("glk_[redacted]");
+    expect(out).not.toContain("ops@example.com");
+    expect(out).not.toContain("deadbeef");
+  });
 });
 
 describe("logger stream routing", () => {

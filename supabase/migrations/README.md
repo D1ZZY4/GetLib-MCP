@@ -1,7 +1,11 @@
 # Supabase migrations (per-concern, versioned)
 
-One file per persistence concern, named `<version>_init_<concern>.sql`.
-Files apply in filename order and must not depend on each other.
+One file per persistence concern, named `<version>_<concern>.sql`
+(`<version>` is a zero-padded date prefix; early files used an
+`_init_` infix, later additive files do not).
+Files apply in filename order. Additive files may build on tables from
+earlier files (e.g. the request_id index requires `mcp_logs`); shipped
+files are never edited, only extended by new ones.
 
 - `2026090901_init_auth.sql` - authentication bootstrap state (`app_bootstrap`
   plus the idempotent seed row). Owner: `SupabaseDatabaseRepository` + auth
@@ -13,6 +17,8 @@ Files apply in filename order and must not depend on each other.
   `mcp_logs.request_id`. Additive only; shipped files are never edited.
 - `2026090904_api_keys.sql` - long-lived API keys (`api_keys`, hashes
   only). Owner: `SupabaseDatabaseRepository` + API key use case.
+- `2026090905_api_keys_unique_hash.sql` - uniqueness on
+  `api_keys.key_hash`. Additive only; shipped files are never edited.
 
 Rules:
 

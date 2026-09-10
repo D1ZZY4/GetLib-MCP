@@ -71,10 +71,22 @@ const SENSITIVE_KEYS = new Set([
   "refresh_token",
   "client_secret",
   "private_key",
+  "key_hash",
+  "keyhash",
+  "key_prefix",
+  "keyprefix",
+  "presented_key",
+  "presentedkey",
+  "session_token",
+  "sessiontoken",
+  "email",
 ]);
 
 const BEARER_PATTERN = /Bearer [A-Za-z0-9\-._~+/=]+/g;
 const BASIC_PATTERN = /Basic [A-Za-z0-9\-._~+/=]+/g;
+// Long-lived API keys in free text: glk_<base64url> outside an
+// Authorization header (which BEARER_PATTERN already covers).
+const API_KEY_PATTERN = /\bglk_[A-Za-z0-9_-]+\b/g;
 // Header-style credentials in free text: api_key: <value>, x-api-key=<value>.
 const HEADER_KEY_PATTERN = /((?:api[_-]?key|x-api-key)\s*[:=]\s*)['"]?[A-Za-z0-9\-._~+/=]+['"]?/gi;
 // Query-string secrets in logged URLs: ?token=<value>&api_key=<value>.
@@ -86,6 +98,7 @@ function redactValue(key: string, value: unknown): unknown {
     return value
       .replace(BEARER_PATTERN, "Bearer [redacted]")
       .replace(BASIC_PATTERN, "Basic [redacted]")
+      .replace(API_KEY_PATTERN, "glk_[redacted]")
       .replace(HEADER_KEY_PATTERN, "$1[redacted]")
       .replace(QUERY_TOKEN_PATTERN, "$1[redacted]");
   }

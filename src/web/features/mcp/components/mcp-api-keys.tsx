@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Skeleton } from "@heroui/react";
+import { Button, Card, Label, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -20,6 +20,7 @@ export function McpApiKeys() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [freshKey, setFreshKey] = useState<CreatedApiKey | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [revokingId, setRevokingId] = useState<number | null>(null);
 
   const handleCreate = async () => {
@@ -27,6 +28,7 @@ export function McpApiKeys() {
     setCreating(true);
     setCreateError(null);
     setCopied(false);
+    setCopyFailed(false);
     try {
       const created = await createApiKey(name.trim());
       setFreshKey(created);
@@ -44,8 +46,10 @@ export function McpApiKeys() {
     try {
       await navigator.clipboard.writeText(freshKey.key);
       setCopied(true);
+      setCopyFailed(false);
     } catch {
       setCopied(false);
+      setCopyFailed(true);
     }
   };
 
@@ -66,7 +70,7 @@ export function McpApiKeys() {
     <PageContainer>
       <PageHeader
         title="API keys"
-        description="Long-lived credentials for MCP clients and scripts. Use one as an Authorization: Bearer header instead of a 12-hour session token. Keys are stored hashed and shown once."
+        description="Long-lived credentials for MCP clients and scripts. Use one as an Authorization: Bearer header with full management access instead of a 12-hour session token. Keys are stored hashed and shown once. Revoking takes effect immediately and cannot be undone."
       />
 
       {freshKey ? (
@@ -74,12 +78,12 @@ export function McpApiKeys() {
           <Card.Header>
             <Card.Title>Copy this key now</Card.Title>
             <Card.Description>
-              It will never be shown again. Anyone holding it can call this server as an API client.
+              It will never be shown again. Anyone holding it can call this server with full management access.
             </Card.Description>
           </Card.Header>
           <Card.Content>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <code className="min-w-0 flex-1 truncate rounded-xl border border-border bg-surface-secondary px-3 py-2 font-mono text-sm">
+              <code className="min-w-0 flex-1 overflow-x-auto rounded-xl border border-border bg-surface-secondary px-3 py-2 font-mono text-sm select-all">
                 {freshKey.key}
               </code>
               <Button variant="secondary" size="sm" onPress={handleCopy}>
@@ -89,6 +93,11 @@ export function McpApiKeys() {
                 Dismiss
               </Button>
             </div>
+            <p role="status" aria-live="polite" className="mt-2 text-xs text-muted">
+              {copyFailed
+                ? "Copy failed - select the key text manually and press Ctrl+C."
+                : "Tip: click the key text to select it manually."}
+            </p>
           </Card.Content>
         </Card>
       ) : null}
@@ -99,8 +108,10 @@ export function McpApiKeys() {
           <Card.Description>Name it after the client or script that will hold it.</Card.Description>
         </Card.Header>
         <Card.Content>
-          <div className="flex gap-2">
+          <Label htmlFor="api-key-name">Key name</Label>
+          <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
             <input
+              id="api-key-name"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -108,12 +119,16 @@ export function McpApiKeys() {
                 if (event.key === "Enter") void handleCreate();
               }}
               placeholder="e.g. opencode-laptop"
-              aria-label="New API key name"
               autoComplete="off"
               maxLength={100}
               className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
             />
-            <Button size="sm" onPress={() => void handleCreate()} isDisabled={creating}>
+            <Button
+              size="sm"
+              onPress={() => void handleCreate()}
+              isDisabled={creating}
+              className="shrink-0"
+            >
               {creating ? "Creating" : "Create key"}
             </Button>
           </div>
@@ -133,7 +148,7 @@ export function McpApiKeys() {
               <Skeleton className="h-3 w-56 max-w-full rounded" />
             </Card.Header>
             <Card.Content>
-              <FormRowSkeleton />
+              <FormRowSkeleton orientation="horizontal" />
             </Card.Content>
           </Card>
           <Card>

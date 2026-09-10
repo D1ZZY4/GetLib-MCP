@@ -89,6 +89,12 @@ export interface DatabaseRepository {
   /** All API key rows, newest first. Never rejects: returns [] when unreadable. */
   listApiKeys(): Promise<ApiKeyRecord[]>;
   /**
+   * Single row by exact hash for verification. Uses the key_hash index
+   * instead of scanning the table. Never rejects: returns null when
+   * unreadable or absent.
+   */
+  findApiKeyByHash(keyHash: string): Promise<ApiKeyRecord | null>;
+  /**
    * Persist a new API key hash. Rejects on failure so creation never
    * reports a key that was not stored.
    */

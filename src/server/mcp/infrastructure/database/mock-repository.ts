@@ -61,6 +61,11 @@ export class MockDatabaseRepository implements DatabaseRepository {
     return this.apiKeys.map((key) => ({ ...key }));
   }
 
+  async findApiKeyByHash(keyHash: string): Promise<ApiKeyRecord | null> {
+    const found = this.apiKeys.find((key) => key.keyHash === keyHash);
+    return found ? { ...found } : null;
+  }
+
   async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {
     const stored: ApiKeyRecord = {
       id: this.nextApiKeyId++,

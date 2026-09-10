@@ -8,7 +8,7 @@ import { Card, Skeleton } from "@heroui/react";
  * bare gray boxes per feature.
  */
 
-export function StatCardSkeleton({ icon = false }: { icon?: boolean }) {
+export function StatCardSkeleton({ icon = false, compact = false }: { icon?: boolean; compact?: boolean }) {
   return (
     <Card variant="secondary">
       <Card.Content>
@@ -16,7 +16,7 @@ export function StatCardSkeleton({ icon = false }: { icon?: boolean }) {
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3 w-20 rounded" />
             <Skeleton className="h-9 w-14 rounded" />
-            <Skeleton className="h-3 w-24 rounded" />
+            {compact ? null : <Skeleton className="h-3 w-24 rounded" />}
           </div>
           {icon ? <Skeleton className="size-9 shrink-0 rounded-xl" /> : null}
         </div>
@@ -63,11 +63,11 @@ export function ListRowSkeleton({
     </div>
   );
 }
-
-export function DefinitionGridSkeleton({ columns = 3 }: { columns?: number }) {  return (
+export function DefinitionGridSkeleton({ columns = 3 }: { columns?: number }) {
+  return (
     <div
       aria-hidden="true"
-      className={`grid gap-2 ${columns === 3 ? "grid-cols-3" : "grid-cols-2"}`}
+      className={`grid grid-cols-1 gap-2 ${columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
     >
       {Array.from({ length: columns }).map((_, index) => (
         <div key={index} className="space-y-1.5">
@@ -104,7 +104,15 @@ export function DefinitionListSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-export function FormRowSkeleton() {
+export function FormRowSkeleton({ orientation = "vertical" }: { orientation?: "vertical" | "horizontal" }) {
+  if (orientation === "horizontal") {
+    return (
+      <div aria-hidden="true" className="flex flex-col gap-2 sm:flex-row">
+        <Skeleton className="h-10 flex-1 rounded-xl" />
+        <Skeleton className="h-10 w-full rounded-xl sm:w-28" />
+      </div>
+    );
+  }
   return (
     <div aria-hidden="true" className="flex flex-col gap-2">
       <Skeleton className="h-3 w-24 rounded" />

@@ -2,7 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import type { ApiKeyRecord, DatabaseRepository, NewApiKey } from "@/server/mcp/infrastructure/database";
 
 export const API_KEY_PREFIX = "glk_";
-const API_KEY_NAME_MAX = 100;
+export const API_KEY_NAME_MAX = 100;
 
 /**
  * Capability seams of the API key use case. Persistence goes through
@@ -12,7 +12,7 @@ const API_KEY_NAME_MAX = 100;
 export interface ApiKeyDeps {
   getDatabase: () => Pick<
     DatabaseRepository,
-    "listApiKeys" | "saveApiKey" | "revokeApiKey" | "touchApiKeyLastUsed"
+    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "revokeApiKey" | "touchApiKeyLastUsed"
   >;
 }
 
@@ -94,22 +94,25 @@ export async function revokeApiKey(deps: ApiKeyDeps, id: number): Promise<boolea
 }
 
 /**
- * Verify a presented Bearer value against stored hashes. Revoked and
- * unknown keys return null (the caller maps that to 401 without saying
- * which). Comparison is constant-time; the last-used stamp is
+ * Verify a presented Bearer value against the stored hash via the
+ * indexed lookup (no table scan, no per-row timing oracle). Revoked
+ * and unknown keys return null (the caller maps that to 401 without
+ * saying which). Comparison is constant-time; the last-used stamp is
  * best-effort and never fails verification.
  */
 export async function verifyApiKey(deps: ApiKeyDeps, presented: string): Promise<ApiKeyIdentity | null> {
   if (!presented.startsWith(API_KEY_PREFIX)) return null;
   const candidate = hashKey(presented);
-  const records = await deps.getDatabase().listApiKeys();
-  for (const record of records) {
-    const stored = Buffer.from(record.keyHash, "hex");
-    if (stored.length !== candidate.length || record.revoked) continue;
-    if (timingSafeEqual(stored, candidate)) {
-      await deps.getDatabase().touchApiKeyLastUsed(record.id);
-      return { id: record.id, name: record.name };
-    }
+  const record = await deps.getDatabase().findApiKeyByHash(candidate.toString("hex"));
+  if (!record) return null;
+  const stored = Buffer.from(record.keyHash, "hex");
+  if (stored.length !== candidate.length || !timingSafeEqual(stored, candidate)) return null;
+  if (record.revoked) return null;
+  try {
+    await deps.getDatabase().touchApiKeyLastUsed(record.id);
+  } catch {
+    // Best-effort observability: a stamp failure must never turn valid
+    // credentials into a 500.
   }
-  return null;
+  return { id: record.id, name: record.name };
 }

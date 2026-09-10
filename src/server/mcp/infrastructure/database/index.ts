@@ -4,8 +4,6 @@ import { SupabaseDatabaseRepository } from "./supabase-repository";
 import type { DatabaseRepository, DatabaseStatus } from "./types";
 
 export type { ApiKeyRecord, BootstrapRecord, DatabaseHealth, DatabaseRepository, DatabaseStatus, NewApiKey, PersistedLogEntry, StoredLogEntry } from "./types";
-export { MockDatabaseRepository } from "./mock-repository";
-export { SupabaseDatabaseRepository } from "./supabase-repository";
 
 const repositories = new Map<DatabaseMode, DatabaseRepository>();
 

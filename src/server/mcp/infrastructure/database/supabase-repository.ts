@@ -266,8 +266,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
-  async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {
-    const client = privilegedClient();
+  async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {    const client = privilegedClient();
     if (!client) {
       reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
       throw new Error("Supabase is not configured.");
@@ -301,15 +300,51 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       return false;
     }
     try {
-      const update = client.from("api_keys").update({ revoked: true }).eq("id", id);
-      const { error } = (await withTimeout(update, 5000, "Supabase api key revoke timed out.")) as {
-        error: { message: string } | null;
-      };
-      if (error) return false;
-      return true;
+      // Only unrevoked rows: the returned count distinguishes "revoked
+      // now" from "missing or already revoked" so callers can answer 404
+      // truthfully on every backend (the mock does the same).
+      const update = client
+        .from("api_keys")
+        .update({ revoked: true })
+        .eq("id", id)
+        .eq("revoked", false)
+        .select("id");
+      const { data, error } = (await withTimeout(
+        update,
+        5000,
+        "Supabase api key revoke timed out.",
+      )) as { data: Array<{ id: number }> | null; error: { message: string } | null };
+      if (error || !data) return false;
+      return data.length > 0;
     } catch (error) {
       log({ level: "warn", msg: "supabase.apikeys.revoke-failed", error: String(error) });
       return false;
+    }
+  }
+
+  async findApiKeyByHash(keyHash: string): Promise<ApiKeyRecord | null> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return null;
+    }
+    try {
+      const query = client
+        .from("api_keys")
+        .select("id,name,key_hash,key_prefix,revoked,created_at,last_used_at")
+        .eq("key_hash", keyHash)
+        .abortSignal(AbortSignal.timeout(5000))
+        .maybeSingle();
+      const { data, error } = (await withTimeout(
+        query,
+        5000,
+        "Supabase api key lookup timed out.",
+      )) as { data: unknown; error: { message: string } | null };
+      if (error || !data) return null;
+      return parseApiKeyRow(data);
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.find-failed", error: String(error) });
+      return null;
     }
   }
 
