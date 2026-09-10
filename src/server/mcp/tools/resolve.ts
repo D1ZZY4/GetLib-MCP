@@ -9,6 +9,7 @@ import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
+import { liveResolveDeps } from "../infrastructure/deps/resolve-deps";
 
 const InputSchema = z.object({
   libraryName: nonBlankString(RESOLVE_NAME_MAX)
@@ -71,7 +72,7 @@ IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library re
       const { libraryName, query } = InputSchema.parse(rawArgs);
      return withTelemetry("gl_resolve_library", async (ctx) => {
        return withToolTimeout(async () => {
-         const { response, resolved } = await resolveLibraryUseCase({ libraryName, query });
+         const { response, resolved } = await resolveLibraryUseCase({ libraryName, query }, liveResolveDeps);
          ctx.resolved = resolved;
          return response;
        }, TIMEOUT_RESPONSE);

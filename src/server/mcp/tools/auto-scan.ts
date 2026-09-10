@@ -1,5 +1,7 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
+import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { withTelemetry } from "../services/telemetry";
 import { autoScanUseCase } from "@/application/scan/auto-scan.service";
 import { liveAutoScanDeps } from "../infrastructure/deps/auto-scan-deps";
@@ -28,6 +30,11 @@ const InputSchema = z.object({
     .describe("Max tokens per library (default: 1500). Lower = more libraries covered."),
 });
 
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Auto-scan timed out. Retry with a narrower topic or fewer dependencies.",
+  { timedOut: true },
+);
+
 export function registerAutoScanTools(): void {
   defineTool({
     name: "gl_auto_scan",
@@ -50,16 +57,18 @@ Fetches best practices for your installed DEPENDENCIES - to scan your own source
     run: async (rawArgs: unknown) => {
       const { projectPath, topic = "latest best practices", tokensPerLib } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_auto_scan", async (ctx) => {
-        const { response, resolved } = await autoScanUseCase(
-          {
-            ...(projectPath !== undefined ? { projectPath } : {}),
-            topic,
-            tokensPerLib,
-          },
-          liveAutoScanDeps,
-        );
-        ctx.resolved = resolved;
-        return response;
+        return withToolTimeout(async () => {
+          const { response, resolved } = await autoScanUseCase(
+            {
+              ...(projectPath !== undefined ? { projectPath } : {}),
+              topic,
+              tokensPerLib,
+            },
+            liveAutoScanDeps,
+          );
+          ctx.resolved = resolved;
+          return response;
+        }, TIMEOUT_RESPONSE);
       });
     },
   });

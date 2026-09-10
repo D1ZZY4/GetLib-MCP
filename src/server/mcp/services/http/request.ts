@@ -11,6 +11,49 @@ import { installSsrfGuard } from "./ssrf";
 /** In-flight deduplication: prevents N concurrent fetches of the same URL. */
 export const inFlightRequests = new Map<string, Promise<string | null>>();
 
+/**
+ * Single mem + disk + singleflight fetch-cache tier shared by every
+ * content fetcher (markdown, Jina, GitHub, releases, examples).
+ *
+ * Mechanics are identical everywhere: memory hit wins, disk hit warms
+ * memory, concurrent callers share the in-flight load, and only truthy
+ * results are persisted via cacheDoc (which sanitizes once before
+ * storage, SEC-009). Callers keep their own fetch bodies, TTLs, and any
+ * pre-checks (circuit breakers stay outside so an open circuit never
+ * even consults the cache path). doc-fetch.ts keeps its bespoke variant
+ * because it also tracks the fetch origin via companion keys.
+ */
+export async function withFetchCache(
+  key: string,
+  ttlMs: number,
+  load: () => Promise<string | null>,
+): Promise<string | null> {
+  const memCached = docCache.get(key);
+  if (memCached) return memCached;
+
+  const diskCached = await diskDocCache.get(key);
+  if (diskCached) {
+    docCache.set(key, diskCached);
+    return diskCached;
+  }
+
+  const inFlight = inFlightRequests.get(key);
+  if (inFlight) return inFlight;
+
+  const fetchPromise = (async (): Promise<string | null> => {
+    const content = await load();
+    if (content) cacheDoc(key, content, ttlMs);
+    return content;
+  })();
+
+  inFlightRequests.set(key, fetchPromise);
+  try {
+    return await fetchPromise;
+  } finally {
+    inFlightRequests.delete(key);
+  }
+}
+
 const MAX_REDIRECTS = 5;
 
 export function hashContent(content: string): string {

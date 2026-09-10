@@ -2,16 +2,14 @@ import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
+import { nonBlankString } from "../utils/schemas";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import { migrationUseCase } from "@/application/library/migration.service";
 import { liveMigrationDeps } from "../infrastructure/deps/migration-deps";
 
 const InputSchema = z.object({
-  libraryId: z
-    .string()
-    .min(1)
-    .max(300)
+  libraryId: nonBlankString(300)
     .describe("Library ID from gl_resolve_library (e.g. 'vercel/next.js')"),
   fromVersion: z
     .string()

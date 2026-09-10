@@ -31,6 +31,28 @@ async function fetchFirstSuccessful(
   }
 }
 
+/**
+ * Index deep-link tactic shared by single-page consumers: when a fetch
+ * result is still a link index, follow the top-ranked deep link and take
+ * the first page with substantive content. Unlike deepFetchForTopic
+ * (multi-page assemble with relevance gate and timeout), this returns
+ * one page and never fabricates topic URLs - the depth policy stays with
+ * the caller.
+ */
+export async function fetchFirstIndexDeepLink(
+  content: string,
+  topic: string,
+  baseUrl: string,
+): Promise<{ content: string; url: string } | null> {
+  if (!isIndexContent(content)) return null;
+  const deepLinks = rankIndexLinks(content, topic, baseUrl);
+  for (const deepUrl of deepLinks) {
+    const deepContent = await fetchAsMarkdownRace(deepUrl);
+    if (deepContent && deepContent.length > 300) return { content: deepContent, url: deepUrl };
+  }
+  return null;
+}
+
 export async function fetchMultiplePages(
   urls: string[],
   maxPages: number,

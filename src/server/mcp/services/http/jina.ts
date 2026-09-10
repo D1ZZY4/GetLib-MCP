@@ -1,10 +1,9 @@
 import { JINA_BASE_URL, CACHE_TTLS } from "../../constants";
 import { extractDomain, isCircuitOpen, recordSuccess, recordFailure } from "../circuit-breaker";
 import { backoffDelayMs } from "./negative-cache";
-import { docCache, diskDocCache } from "../cache";
 import { assertPublicUrl } from "../../utils/guard";
 import { log } from "../../utils/logger";
-import { fetchWithTimeout, readBodyCapped, cacheDoc, inFlightRequests } from "./request";
+import { fetchWithTimeout, readBodyCapped, withFetchCache } from "./request";
 import { isGarbageContent } from "../content-guards";
 
 /** Fetch via Jina Reader - converts any URL to clean markdown */
@@ -22,22 +21,7 @@ export async function fetchViaJina(url: string): Promise<string | null> {
   const jinaUrl = `${JINA_BASE_URL}/${url}`;
   const cacheKey = `jina:${url}`;
 
-  // Check memory cache first
-  const memCached = docCache.get(cacheKey);
-  if (memCached) return memCached;
-
-  // Check disk cache (survives across npx invocations)
-  const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
-    docCache.set(cacheKey, diskCached); // warm memory cache
-    return diskCached;
-  }
-
-  // Deduplicate concurrent requests for the same URL
-  const inFlight = inFlightRequests.get(cacheKey);
-  if (inFlight) return inFlight;
-
-  const fetchPromise = (async (): Promise<string | null> => {
+  return withFetchCache(cacheKey, CACHE_TTLS.JINA_RESULT, async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const res = await fetchWithTimeout(jinaUrl, 25_000, {
@@ -73,7 +57,6 @@ export async function fetchViaJina(url: string): Promise<string | null> {
           return null;
         }
         recordSuccess(jinaDomain);
-        cacheDoc(cacheKey, text, CACHE_TTLS.JINA_RESULT);
         return text;
       } catch {
         recordFailure(jinaDomain);
@@ -81,12 +64,5 @@ export async function fetchViaJina(url: string): Promise<string | null> {
       }
     }
     return null;
-  })();
-
-  inFlightRequests.set(cacheKey, fetchPromise);
-  try {
-    return await fetchPromise;
-  } finally {
-    inFlightRequests.delete(cacheKey);
-  }
+  });
 }

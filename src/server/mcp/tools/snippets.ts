@@ -3,6 +3,7 @@ import { z } from "zod";
 import { withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
+import { nonBlankString } from "../utils/schemas";
 import {
   buildIndexShared,
   clearSnippetBuildInFlight,
@@ -16,10 +17,7 @@ export { buildIndex } from "../services/snippets/build-index";
 export { buildIndexShared, clearSnippetBuildInFlight, snippetBuildBudgetMs };
 
 const InputSchema = z.object({
-  libraryId: z
-    .string()
-    .min(1)
-    .max(300)
+  libraryId: nonBlankString(300)
     .describe(
       "Library ID from gl_resolve_library (e.g. 'vercel/next.js', 'npm:express') or a direct docs URL",
     ),

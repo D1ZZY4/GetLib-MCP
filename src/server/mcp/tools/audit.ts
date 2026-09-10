@@ -1,5 +1,7 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
+import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { withTelemetry } from "../services/telemetry";
 import { auditProjectUseCase } from "@/application/audit/audit.service";
 import { liveAuditDeps } from "../infrastructure/deps/audit-deps";
@@ -53,6 +55,11 @@ const InputSchema = z.object({
     .describe("Max source files to scan"),
 });
 
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Audit timed out. Retry with fewer files or narrower categories.",
+  { timedOut: true },
+);
+
 export function registerAuditTools(): void {
   defineTool({
     name: "gl_audit",
@@ -77,17 +84,19 @@ If doc fetches fail with empty results, the user likely needs to set GETLIB_GITH
     run: async (rawArgs: unknown) => {
       const { projectPath, categories, tokens, maxFiles } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_audit", async (ctx) => {
-        const { response, resolved } = await auditProjectUseCase(
-          {
-            ...(projectPath !== undefined ? { projectPath } : {}),
-            categories,
-            tokens,
-            maxFiles,
-          },
-          liveAuditDeps,
-        );
-        ctx.resolved = resolved;
-        return response;
+        return withToolTimeout(async () => {
+          const { response, resolved } = await auditProjectUseCase(
+            {
+              ...(projectPath !== undefined ? { projectPath } : {}),
+              categories,
+              tokens,
+              maxFiles,
+            },
+            liveAuditDeps,
+          );
+          ctx.resolved = resolved;
+          return response;
+        }, TIMEOUT_RESPONSE);
       });
     },
   });

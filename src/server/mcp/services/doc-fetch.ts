@@ -23,6 +23,11 @@ export async function fetchDocs(
   llmsFullTxtUrl?: string,
   topic?: string,
 ): Promise<FetchResult> {
+  // Base-URL key by design: topic and version are applied post-fetch by
+  // the caller (extraction/ranking), so one entry serves every topic for
+  // this page. Versioned docs live under distinct URLs and therefore key
+  // distinctly; the same URL requested at two versions intentionally
+  // shares the entry because the fetched page is identical.
   const key = `docs:${docsUrl}`;
   const inFlight = inFlightDocs.get(key);
   if (inFlight) return inFlight;

@@ -1,7 +1,6 @@
 import { CACHE_TTLS } from "../../constants";
-import { docCache, diskDocCache } from "../cache";
 import { convertHtmlToMarkdown } from "../../utils/html-to-md";
-import { cacheDoc, inFlightRequests } from "./request";
+import { withFetchCache } from "./request";
 import { tryFetch } from "./try-fetch";
 import { fetchViaJina } from "./jina";
 import { isGarbageContent } from "../content-guards";
@@ -31,20 +30,7 @@ export function docsifyToRaw(url: string): string | null {
 export async function fetchAsMarkdown(url: string): Promise<string | null> {
   const cacheKey = `md:${url}`;
 
-  const memCached = docCache.get(cacheKey);
-  if (memCached) return memCached;
-
-  const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
-    docCache.set(cacheKey, diskCached);
-    return diskCached;
-  }
-
-  // Deduplicate concurrent requests
-  const inFlight = inFlightRequests.get(cacheKey);
-  if (inFlight) return inFlight;
-
-  const fetchPromise = (async (): Promise<string | null> => {
+  return withFetchCache(cacheKey, CACHE_TTLS.DOCS_PAGE, async () => {
     // Path 0: Docsify hash-route URLs - the fragment never reaches the server,
     // so a direct fetch would return the homepage shell for EVERY page. Try the
     // conventional raw-markdown location first; skip the direct path entirely.
@@ -52,13 +38,11 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
     if (docsifyRaw) {
       const rawMd = await tryFetch(docsifyRaw, 1);
       if (rawMd && rawMd.length >= 200 && !isGarbageContent(rawMd).garbage) {
-        cacheDoc(cacheKey, rawMd, CACHE_TTLS.DOCS_PAGE);
         return rawMd;
       }
       // Hash-routed page without raw .md - only Jina can render it correctly.
       const jinaHash = await fetchViaJina(url);
       if (jinaHash && jinaHash.length >= 100) {
-        cacheDoc(cacheKey, jinaHash, CACHE_TTLS.DOCS_PAGE);
         return jinaHash;
       }
       return null;
@@ -70,14 +54,12 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
       // Check if it's already markdown/plain text (llms.txt, README)
       const tagDensity = (directHtml.match(/<[a-z]/gi) ?? []).length / Math.max(directHtml.length, 1);
       if (tagDensity < 0.005 && directHtml.length > 100 && !isGarbageContent(directHtml).garbage) {
-        cacheDoc(cacheKey, directHtml, CACHE_TTLS.DOCS_PAGE);
         return directHtml;
       }
 
       // Extract markdown from HTML
       const markdown = convertHtmlToMarkdown(directHtml);
       if (markdown.length >= 200 && !isGarbageContent(markdown).garbage) {
-        cacheDoc(cacheKey, markdown, CACHE_TTLS.DOCS_PAGE);
         return markdown;
       }
     }
@@ -85,19 +67,11 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
     // Path 2: Jina Reader (handles JS-rendered pages, but rate-limited)
     const jinaResult = await fetchViaJina(url);
     if (jinaResult && jinaResult.length >= 100) {
-      cacheDoc(cacheKey, jinaResult, CACHE_TTLS.DOCS_PAGE);
       return jinaResult;
     }
 
     return null;
-  })();
-
-  inFlightRequests.set(cacheKey, fetchPromise);
-  try {
-    return await fetchPromise;
-  } finally {
-    inFlightRequests.delete(cacheKey);
-  }
+  });
 }
 
 /**
@@ -107,19 +81,7 @@ export async function fetchAsMarkdown(url: string): Promise<string | null> {
 export async function fetchAsMarkdownRace(url: string): Promise<string | null> {
   const cacheKey = `md:${url}`;
 
-  const memCached = docCache.get(cacheKey);
-  if (memCached) return memCached;
-
-  const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
-    docCache.set(cacheKey, diskCached);
-    return diskCached;
-  }
-
-  const inFlight = inFlightRequests.get(cacheKey);
-  if (inFlight) return inFlight;
-
-  const fetchPromise = (async (): Promise<string | null> => {
+  return withFetchCache(cacheKey, CACHE_TTLS.DOCS_PAGE, async () => {
     try {
       const docsifyRaw = docsifyToRaw(url);
       const result = await Promise.any([
@@ -157,17 +119,9 @@ export async function fetchAsMarkdownRace(url: string): Promise<string | null> {
         })(),
       ]);
 
-      cacheDoc(cacheKey, result, CACHE_TTLS.DOCS_PAGE);
       return result;
     } catch {
       return null;
     }
-  })();
-
-  inFlightRequests.set(cacheKey, fetchPromise);
-  try {
-    return await fetchPromise;
-  } finally {
-    inFlightRequests.delete(cacheKey);
-  }
+  });
 }

@@ -11,6 +11,7 @@ import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
+import { liveSearchDeps } from "../infrastructure/deps/search-deps";
 
 // Re-exported so callers that reason about search sourcing (gl_compat, gl_migration)
 // and the existing test mocks keep a single stable import path.
@@ -83,7 +84,7 @@ Examples:
       const { query, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_search", async (ctx) => {
         return withToolTimeout(async () => {
-          const { response, resolved } = await searchLibrariesUseCase({ query, tokens });
+          const { response, resolved } = await searchLibrariesUseCase({ query, tokens }, liveSearchDeps);
           ctx.resolved = resolved;
           return response;
         }, TIMEOUT_RESPONSE);

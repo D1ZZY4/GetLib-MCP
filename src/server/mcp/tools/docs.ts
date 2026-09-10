@@ -2,8 +2,10 @@ import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
+import { nonBlankString } from "../utils/schemas";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
+import { liveDocsDeps } from "../infrastructure/deps/docs-deps";
 import {
   DOCS_LIBRARY_ID_MAX,
   DOCS_PROJECT_PATH_MAX,
@@ -21,10 +23,7 @@ const TIMEOUT_RESPONSE = timeoutResponse(
 );
 
 const InputSchema = z.object({
-  libraryId: z
-    .string()
-    .min(1)
-    .max(DOCS_LIBRARY_ID_MAX)
+  libraryId: nonBlankString(DOCS_LIBRARY_ID_MAX)
     .describe(
       "Library ID from gl_resolve_library (e.g. 'vercel/next.js', 'npm:express') or a docs URL",
     ),
@@ -78,7 +77,7 @@ Do not call this tool more than 3 times per question.`,
       const input = InputSchema.parse(rawArgs);
       return withTelemetry("gl_get_docs", async (ctx) => {
         return withToolTimeout(async () => {
-          const { response, resolved } = await fetchLibraryDocsUseCase(input);
+          const { response, resolved } = await fetchLibraryDocsUseCase(input, liveDocsDeps);
           ctx.resolved = resolved;
           return response;
         }, TIMEOUT_RESPONSE);

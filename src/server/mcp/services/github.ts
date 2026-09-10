@@ -1,10 +1,9 @@
 import { CACHE_TTLS } from "../constants";
 import { config } from "../config";
 import type { FetchResult } from "../types";
-import { docCache, diskDocCache } from "./cache";
-import { log } from "../utils/logger";
-import { fetchWithTimeout, cacheDoc, githubAuthHeaders, readBodyCapped } from "./http/request";
+import { fetchWithTimeout, githubAuthHeaders, readBodyCapped, withFetchCache } from "./http/request";
 import { externalSchemas, parseExternal } from "../utils/validate-external";
+import { log } from "../utils/logger";
 import { tryFetch } from "./http/try-fetch";
 
 /** Fetch GitHub README or a specific file from a repo */
@@ -19,42 +18,37 @@ export async function fetchGitHubContent(
 
   const cacheKey = `gh:${repoPath}:${path}`;
 
-  const memCached = docCache.get(cacheKey);
-  if (memCached) {
-    return { content: memCached, url: githubUrl, sourceType: "github-readme" };
-  }
-
-  const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
-    docCache.set(cacheKey, diskCached);
-    return { content: diskCached, url: githubUrl, sourceType: "github-readme" };
-  }
-
-  for (const branch of ["main", "master"]) {
-    const rawUrl = `https://raw.githubusercontent.com/${repoPath}/${branch}/${path}`;
-    const content = await tryFetch(rawUrl, 1, githubAuthHeaders());
-    if (content) {
-      cacheDoc(cacheKey, content, CACHE_TTLS.GITHUB_README);
-      return { content, url: rawUrl, sourceType: "github-readme" };
+  let wonUrl: string | null = null;
+  const content = await withFetchCache(cacheKey, CACHE_TTLS.GITHUB_README, async () => {
+    for (const branch of ["main", "master"]) {
+      const rawUrl = `https://raw.githubusercontent.com/${repoPath}/${branch}/${path}`;
+      const branchContent = await tryFetch(rawUrl, 1, githubAuthHeaders());
+      if (branchContent) {
+        wonUrl = rawUrl;
+        return branchContent;
+      }
     }
-  }
 
-  // Fallback: GitHub REST API. Works unauthenticated (60 req/hr); GETLIB_GITHUB_TOKEN
-  // raises the limit to 5000/hr. Previously gated entirely behind the token, which
-  // disabled the fallback for the common no-token case.
-  const token = config.githubToken;
-  const apiHeaders: Record<string, string> = { Accept: "application/vnd.github.raw+json" };
-  if (token) apiHeaders.Authorization = `Bearer ${token}`;
-  for (const branch of ["main", "master"]) {
-    const apiUrl = `https://api.github.com/repos/${repoPath}/contents/${path}?ref=${branch}`;
-    const content = await tryFetch(apiUrl, 0, apiHeaders);
-    if (content) {
-      cacheDoc(cacheKey, content, CACHE_TTLS.GITHUB_README);
-      return { content, url: apiUrl, sourceType: "github-readme" };
+    // Fallback: GitHub REST API. Works unauthenticated (60 req/hr); GETLIB_GITHUB_TOKEN
+    // raises the limit to 5000/hr. Previously gated entirely behind the token, which
+    // disabled the fallback for the common no-token case.
+    const token = config.githubToken;
+    const apiHeaders: Record<string, string> = { Accept: "application/vnd.github.raw+json" };
+    if (token) apiHeaders.Authorization = `Bearer ${token}`;
+    for (const branch of ["main", "master"]) {
+      const apiUrl = `https://api.github.com/repos/${repoPath}/contents/${path}?ref=${branch}`;
+      const apiContent = await tryFetch(apiUrl, 0, apiHeaders);
+      if (apiContent) {
+        wonUrl = apiUrl;
+        return apiContent;
+      }
     }
-  }
 
-  return null;
+    return null;
+  });
+
+  if (!content || !wonUrl) return null;
+  return { content, url: wonUrl, sourceType: "github-readme" };
 }
 
 /** Fetch latest GitHub release notes (tag name + body) */
@@ -65,16 +59,8 @@ export async function fetchGitHubReleases(githubUrl: string): Promise<string | n
 
   const cacheKey = `gh-releases:${repoPath}`;
 
-  const memCached = docCache.get(cacheKey);
-  if (memCached) return memCached;
-
-  const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
-    docCache.set(cacheKey, diskCached);
-    return diskCached;
-  }
-
   try {
+    return await withFetchCache(cacheKey, CACHE_TTLS.GITHUB_RELEASES, async () => {
     // GitHub releases API has no server-side prerelease filter - we must fetch
     // a window and filter client-side. Canary-heavy projects (Next.js, etc.)
     // can have the top 3 entries all be prereleases, so fetch 30 (the API default)
@@ -115,8 +101,8 @@ export async function fetchGitHubReleases(githubUrl: string): Promise<string | n
     }
 
     const content = lines.join("\n");
-    cacheDoc(cacheKey, content, CACHE_TTLS.GITHUB_RELEASES);
     return content;
+    });
   } catch (err: unknown) {
     log({ level: "debug", msg: "fetchGitHubReleases.error", repo: repoPath, error: err instanceof Error ? err.message : String(err) });
     return null;
@@ -131,52 +117,44 @@ export async function fetchGitHubExamples(githubUrl: string): Promise<string | n
 
   const cacheKey = `gh-examples:${repoPath}`;
 
-  const memCached = docCache.get(cacheKey);
-  if (memCached) return memCached;
+  return withFetchCache(cacheKey, CACHE_TTLS.CHANGELOG, async () => {
+    // Try common docs paths that contain best practices / examples
+    const paths = [
+      "CHANGELOG.md",
+      "MIGRATION.md",
+      "docs/MIGRATION.md",
+      "docs/migration.md",
+      "docs/best-practices.md",
+      "docs/BEST_PRACTICES.md",
+      "docs/patterns.md",
+    ];
 
-  const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
-    docCache.set(cacheKey, diskCached);
-    return diskCached;
-  }
-
-  // Try common docs paths that contain best practices / examples
-  const paths = [
-    "CHANGELOG.md",
-    "MIGRATION.md",
-    "docs/MIGRATION.md",
-    "docs/migration.md",
-    "docs/best-practices.md",
-    "docs/BEST_PRACTICES.md",
-    "docs/patterns.md",
-  ];
-
-  // Try up to 6 candidates concurrently - return first hit
-  const candidates = paths.flatMap((path) =>
-    ["main", "master"].map((branch) => ({ path, branch })),
-  );
-
-  const CONCURRENCY = 6;
-  for (let i = 0; i < candidates.length; i += CONCURRENCY) {
-    const batch = candidates.slice(i, i + CONCURRENCY);
-    const results = await Promise.allSettled(
-      batch.map(async ({ path, branch }) => {
-        const url = `https://raw.githubusercontent.com/${repoPath}/${branch}/${path}`;
-        const content = await tryFetch(url, 0, githubAuthHeaders());
-        if (content && content.length > 300) {
-          return `## ${path} (GitHub)\n\n${content.slice(0, 4000)}`;
-        }
-        return null;
-      }),
+    // Try up to 6 candidates concurrently - return first hit
+    const candidates = paths.flatMap((path) =>
+      ["main", "master"].map((branch) => ({ path, branch })),
     );
 
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value) {
-        cacheDoc(cacheKey, result.value, CACHE_TTLS.CHANGELOG);
-        return result.value;
+    const CONCURRENCY = 6;
+    for (let i = 0; i < candidates.length; i += CONCURRENCY) {
+      const batch = candidates.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        batch.map(async ({ path, branch }) => {
+          const url = `https://raw.githubusercontent.com/${repoPath}/${branch}/${path}`;
+          const content = await tryFetch(url, 0, githubAuthHeaders());
+          if (content && content.length > 300) {
+            return `## ${path} (GitHub)\n\n${content.slice(0, 4000)}`;
+          }
+          return null;
+        }),
+      );
+
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          return result.value;
+        }
       }
     }
-  }
 
-  return null;
+    return null;
+  });
 }

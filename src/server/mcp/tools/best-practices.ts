@@ -2,6 +2,7 @@ import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
+import { nonBlankString } from "../utils/schemas";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
 import { withTelemetry } from "../services/telemetry";
 import { bestPracticesUseCase } from "@/application/library/best-practices.service";
@@ -13,10 +14,7 @@ const TIMEOUT_RESPONSE = timeoutResponse(
 );
 
 const InputSchema = z.object({
-  libraryId: z
-    .string()
-    .min(1)
-    .max(300)
+  libraryId: nonBlankString(300)
     .describe("Library ID (from gl_resolve_library), npm:package, pypi:package, or library name like 'nextjs', 'react'"),
   topic: z
     .string()
