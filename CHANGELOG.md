@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Verify API keys by indexed hash lookup, redact key material
   and emails from logs, harden the keys UI, and constrain hashes
   unique.
+- Strengthen the boundary checker with dynamic imports and
+  re-export rules, and harden CI with timeouts and caching.
 - Adopt shared structural skeletons across every loading state.
 - Route logs by host truthfully, survive deleted working
   directories, and ignore local credentials.
