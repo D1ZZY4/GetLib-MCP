@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Aggregate connected clients through registered transport
   listers instead of direct transport imports.
+- Fix import paths in moved report modules and their tests.
 - Share the outcome window definition and keep stdio diagnostics
   on the redacting logger off the protocol stream.
 - Trim env whitespace, reject unknown database modes, extend

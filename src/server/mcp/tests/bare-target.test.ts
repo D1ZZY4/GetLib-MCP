@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { resolveBareTarget } from "../services/docs/docs-resolve";
-import { resolveSnippetTarget } from "../tools/snippets-resolve";
+import { resolveSnippetTarget } from "../services/snippets/resolve";
 
 describe("resolveBareTarget", () => {
   test("resolves npm: ids", () => {

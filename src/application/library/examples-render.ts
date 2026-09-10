@@ -1,5 +1,5 @@
-import { withNotice } from "../utils/guard";
-import { sanitizeContent } from "../utils/sanitize";
+import { withNotice } from "@/server/mcp/utils/guard";
+import { sanitizeContent } from "@/server/mcp/utils/sanitize";
 import type { ExamplesResponse } from "./examples-fallback";
 
 export interface CodeSearchItem {

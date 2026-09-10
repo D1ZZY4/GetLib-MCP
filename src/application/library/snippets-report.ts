@@ -1,6 +1,6 @@
-import type { Snippet, SnippetIndex } from "../types";
-import { withNotice } from "../utils/guard";
-import { renderSnippets } from "../utils/snippet-extract";
+import type { Snippet, SnippetIndex } from "@/server/mcp/types";
+import { withNotice } from "@/server/mcp/utils/guard";
+import { renderSnippets } from "@/server/mcp/utils/snippet-extract";
 
 export interface SnippetResponse {
   [key: string]: unknown;

@@ -1,7 +1,7 @@
-import { withNotice } from "../utils/guard";
-import { lookupById, lookupByAlias } from "../sources/registry";
-import { buildIndex } from "../services/snippets/build-index";
-import { rankSnippets, renderSnippets } from "../utils/snippet-extract";
+import { withNotice } from "@/server/mcp/utils/guard";
+import { lookupById, lookupByAlias } from "@/server/mcp/sources/registry";
+import { buildIndex } from "@/server/mcp/services/snippets/build-index";
+import { rankSnippets, renderSnippets } from "@/server/mcp/utils/snippet-extract";
 
 export interface ExamplesResponse {
   [key: string]: unknown;

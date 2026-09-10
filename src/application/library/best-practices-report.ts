@@ -1,6 +1,6 @@
-import { buildEvidenceBlock, buildHonestMiss, extractHeadingOutline, type EvidenceCheck } from "../utils/evidence";
-import { withNotice } from "../utils/guard";
-import { computeQualityScore } from "../utils/quality";
+import { buildEvidenceBlock, buildHonestMiss, extractHeadingOutline, type EvidenceCheck } from "@/server/mcp/utils/evidence";
+import { withNotice } from "@/server/mcp/utils/guard";
+import { computeQualityScore } from "@/server/mcp/utils/quality";
 
 export interface ReportInput {
   displayName: string;
