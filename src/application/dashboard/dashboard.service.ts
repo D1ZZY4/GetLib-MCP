@@ -5,8 +5,10 @@ import { getMcpCatalog, getMcpServers } from "@/application/mcp/mcp-catalog.serv
 import { getDatabaseStatus, getDatabase } from "@/server/mcp/infrastructure/database";
 import type { StoredLogEntry } from "@/server/mcp/infrastructure/database";
 import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
-import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry";
+import { getRecentOutcomes } from "@/server/mcp/services/telemetry";
+import { getTelemetryTotals } from "@/application/statistics/statistics.service";
 import { listLogs } from "@/server/mcp/middleware/logging";
+import { log } from "@/server/mcp/utils/logger";
 
 /**
  * Dashboard application service - the single operational overview
@@ -231,7 +233,8 @@ async function liveActivities(): Promise<DashboardActivity[]> {
       if (stored.length > 0) {
         return stored.map(mapStoredLogToActivity);
       }
-    } catch {
+    } catch (error) {
+      log({ level: "warn", msg: "dashboard.activities.fallback", error: String(error) });
       // Fall through to the in-memory sources below.
     }
   }
@@ -299,11 +302,11 @@ function liveAttentions(params: {
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   const runtime = getRuntimeSnapshot();
   const auth = getAuthConfig();
-  const health = getHealthSnapshot();
+  const health = await getHealthSnapshot();
   const catalog = getMcpCatalog();
   const servers = getMcpServers();
   const database = await getDatabaseStatus();
-  const telemetry = getInvocationSummary();
+  const telemetry = await getTelemetryTotals();
   const clients = listClients();
 
   const mcp = {

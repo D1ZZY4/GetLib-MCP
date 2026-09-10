@@ -3,8 +3,8 @@ import { getHealthSnapshot } from "../health/health.service";
 import { getMcpCatalog } from "../mcp/mcp-catalog.service";
 
 describe("health application service", () => {
-  test("reports a healthy snapshot with live counts", () => {
-    const snapshot = getHealthSnapshot();
+  test("reports a healthy snapshot with live counts", async () => {
+    const snapshot = await getHealthSnapshot();
     expect(snapshot.status).toBe("healthy");
     expect(snapshot.name).toBe("getlib-mcp");
     expect(snapshot.tools).toBe(getMcpCatalog().tools.length);
@@ -12,8 +12,8 @@ describe("health application service", () => {
     expect(snapshot.uptimeSeconds).toBeGreaterThanOrEqual(0);
   });
 
-  test("telemetry rates stay within 0 and 1", () => {
-    const { telemetry } = getHealthSnapshot();
+  test("telemetry rates stay within 0 and 1", async () => {
+    const { telemetry } = await getHealthSnapshot();
     for (const rate of [telemetry.successRate, telemetry.resolveRate, telemetry.errorRate]) {
       expect(rate).toBeGreaterThanOrEqual(0);
       expect(rate).toBeLessThanOrEqual(1);

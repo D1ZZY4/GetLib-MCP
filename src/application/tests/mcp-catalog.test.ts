@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  LogLimitError,
+  ToolNameValidationError,
   executeTool,
   getMcpCatalog,
   getMcpServers,
@@ -36,8 +38,15 @@ describe("mcp catalog application service", () => {
   test("parseLogLimit clamps and validates", () => {
     expect(parseLogLimit(null)).toBe(50);
     expect(parseLogLimit("200")).toBe(100);
+    expect(() => parseLogLimit("0")).toThrowError(LogLimitError);
     expect(() => parseLogLimit("0")).toThrow("Invalid limit");
+    expect(() => parseLogLimit("abc")).toThrowError(LogLimitError);
     expect(() => parseLogLimit("abc")).toThrow("Invalid limit");
+    try {
+      parseLogLimit("0");
+    } catch (error) {
+      expect(error).not.toBeInstanceOf(ToolNameValidationError);
+    }
   });
 
   test("listMcpLogs respects the limit", async () => {

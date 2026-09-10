@@ -1,11 +1,14 @@
-import { getRuntimeSnapshot } from "@/server/mcp/runtime";
-import { getInvocationSummary, getRecentOutcomes } from "@/server/mcp/services/telemetry";
+import { getRuntimeSnapshot, resolveDatabaseMode } from "@/server/mcp/runtime";
+import { getDatabase } from "@/server/mcp/infrastructure/database";
+import { getInvocationSummary, getRecentOutcomes, OUTCOME_WINDOW } from "@/server/mcp/services/telemetry";
+import { log } from "@/server/mcp/utils/logger";
 
 /**
  * Statistics application service - server-side usage analytics shared by
  * Web, API, and MCP. Mock mode returns the historical deterministic demo
- * payload (flagged isMock); real modes aggregate live telemetry so every
- * surface uses one metric definition.
+ * payload (flagged isMock); real modes aggregate durable log storage so
+ * numbers survive serverless isolates, falling back to in-memory telemetry
+ * only when durable storage is unreachable or still empty.
  */
 
 export interface UsageDay {
@@ -86,38 +89,113 @@ function dayLabel(ts: number): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function getStatisticsSnapshot(): StatisticsSnapshot {
-  const runtime = getRuntimeSnapshot();
-  if (runtime.isMock) {
-    return { usage: mockUsage(), days: MOCK_DAYS, rows: MOCK_ROWS, fetches: MOCK_FETCHES, isMock: true };
-  }
-  const summary = getInvocationSummary();
-  const outcomes = getRecentOutcomes();
+interface OutcomePoint {
+  tool: string;
+  ts: number;
+  success: boolean;
+}
+
+/**
+ * Pure aggregation over one outcome list, shared by the durable and the
+ * in-memory paths so both report identical metric definitions. Unit
+ * tested without any database.
+ */
+export function summarizeOutcomePoints(points: OutcomePoint[]): {
+  days: UsageDay[];
+  fetches: LibraryFetch[];
+  successRate: number;
+} {
   const byDay = new Map<string, number>();
-  for (const o of outcomes) {
-    const label = dayLabel(o.ts);
+  for (const point of points) {
+    const label = dayLabel(point.ts);
     byDay.set(label, (byDay.get(label) ?? 0) + 1);
   }
   const days: UsageDay[] = [...byDay.entries()].slice(-10).map(([date, requests]) => ({ date, requests }));
   const byTool = new Map<string, number>();
-  for (const o of outcomes) {
-    byTool.set(o.tool, (byTool.get(o.tool) ?? 0) + 1);
+  for (const point of points) {
+    byTool.set(point.tool, (byTool.get(point.tool) ?? 0) + 1);
   }
-  const fetches: LibraryFetch[] = [...byTool.entries()].map(([tool, fetches]) => ({
+  const fetches: LibraryFetch[] = [...byTool.entries()].map(([tool, count]) => ({
     id: tool,
     name: tool,
-    fetches,
+    fetches: count,
   }));
-  return {
-    usage: {
-      requestsUsed: summary.totalCalls,
-      docsPages: 0,
-      activeLibraries: Object.keys(summary.byTool).length,
-      successRate: Math.round(summary.successRate * 1000) / 10,
-    },
-    days,
-    rows: [],
-    fetches,
-    isMock: false,
+  const successRate =
+    points.length === 0 ? 100 : Math.round((points.filter((p) => p.success).length / points.length) * 1000) / 10;
+  return { days, fetches, successRate };
+}
+
+// Bounded recent window for charts and per-tool counts. Totals come from
+// countLogs so they are never windowed. Same value as the in-memory
+// outcome ring (OUTCOME_WINDOW, the single window definition) so durable
+// and memory paths aggregate identical history.
+const STATS_LOG_WINDOW = OUTCOME_WINDOW;
+
+interface TelemetryTotals {
+  totalCalls: number;
+  successRate: number;
+  errorRate: number;
+}
+
+/**
+ * Single definition of call totals for every surface (statistics page,
+ * dashboard cards). Production reads durable storage; anything else uses
+ * this isolate's in-memory telemetry. Never throws.
+ */
+export async function getTelemetryTotals(): Promise<TelemetryTotals> {
+  if (resolveDatabaseMode() === "supabase-production") {
+    try {
+      const [total, stored] = await Promise.all([
+        getDatabase().countLogs(),
+        getDatabase().listLogs(STATS_LOG_WINDOW),
+      ]);
+      if (total > 0 && stored.length > 0) {
+        const ok = stored.filter((entry) => entry.ok).length;
+        const successRate = ok / stored.length;
+        return { totalCalls: total, successRate, errorRate: 1 - successRate };
+      }
+    } catch (error) {
+      log({ level: "warn", msg: "statistics.totals.fallback", error: String(error) });
+      // Fall through to in-memory telemetry below.
+    }
+  }
+  const summary = getInvocationSummary();
+  return { totalCalls: summary.totalCalls, successRate: summary.successRate, errorRate: summary.errorRate };
+}
+
+async function durableOutcomePoints(): Promise<OutcomePoint[] | null> {
+  if (resolveDatabaseMode() !== "supabase-production") return null;
+  try {
+    const stored = await getDatabase().listLogs(STATS_LOG_WINDOW);
+    if (stored.length === 0) return null;
+    return stored.map((entry) => ({
+      tool: entry.name,
+      ts: Date.parse(entry.timestamp),
+      success: entry.ok,
+    }));
+  } catch (error) {
+    log({ level: "warn", msg: "statistics.outcomes.fallback", error: String(error) });
+    return null;
+  }
+}
+
+function memoryOutcomePoints(): OutcomePoint[] {
+  return getRecentOutcomes().map((o) => ({ tool: o.tool, ts: o.ts, success: o.success }));
+}
+
+export async function getStatisticsSnapshot(): Promise<StatisticsSnapshot> {
+  const runtime = getRuntimeSnapshot();
+  if (runtime.isMock) {
+    return { usage: mockUsage(), days: MOCK_DAYS, rows: MOCK_ROWS, fetches: MOCK_FETCHES, isMock: true };
+  }
+  const totals = await getTelemetryTotals();
+  const points = (await durableOutcomePoints()) ?? memoryOutcomePoints();
+  const { days, fetches, successRate: windowRate } = summarizeOutcomePoints(points);
+  const usage: UsageStats = {
+    requestsUsed: totals.totalCalls,
+    docsPages: 0,
+    activeLibraries: fetches.length,
+    successRate: totals.totalCalls > 0 ? Math.round(totals.successRate * 1000) / 10 : windowRate,
   };
+  return { usage, days, rows: [], fetches, isMock: false };
 }

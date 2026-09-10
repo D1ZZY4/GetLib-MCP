@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   envelope factory across tools.
 - Audit sign-in rejections without values and keep display names
   behind the auth use case.
+- Probe database health live with caching, aggregate statistics
+  from durable storage, and type log-limit errors distinctly.
 
 ### Changed
 

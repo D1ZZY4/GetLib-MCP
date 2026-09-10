@@ -12,7 +12,7 @@ export interface RuntimeInfoSnapshot {
   vercelEnv: string | undefined;
   auth: ReturnType<typeof getAuthConfig>;
   database: Awaited<ReturnType<typeof getDatabaseStatus>>;
-  health: ReturnType<typeof getHealthSnapshot>;
+  health: Awaited<ReturnType<typeof getHealthSnapshot>>;
 }
 
 /**
@@ -22,10 +22,7 @@ export interface RuntimeInfoSnapshot {
  */
 export async function getRuntimeInfo(): Promise<RuntimeInfoSnapshot> {
   const runtime = getRuntimeSnapshot();
-  const [database, health] = await Promise.all([
-    getDatabaseStatus(),
-    Promise.resolve(getHealthSnapshot()),
-  ]);
+  const [database, health] = await Promise.all([getDatabaseStatus(), getHealthSnapshot()]);
   return {
     environment: runtime.environment,
     databaseMode: runtime.databaseMode,

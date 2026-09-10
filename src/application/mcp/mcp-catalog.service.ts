@@ -9,6 +9,12 @@ import { getTool, listTools, runTool } from "@/server/mcp/registry/tool-registry
 import { resolveDatabaseMode } from "@/server/mcp/runtime";
 import type { GlToolAnnotations } from "@/server/mcp/registry/tool-registry";
 import { transportModeIds, type TransportModeId } from "@/domain/mcp/catalog";
+import {
+  LOG_LIMIT_DEFAULT,
+  TOOL_NAME_PATTERN,
+  parseLogLimitValue,
+} from "@/server/mcp/utils/schemas";
+import { log } from "@/server/mcp/utils/logger";
 
 export interface McpToolInputKey {
   key: string;
@@ -40,8 +46,6 @@ export interface McpServerDescriptor {
 export interface McpServersSnapshot {
   servers: McpServerDescriptor[];
 }
-
-const TOOL_NAME_PATTERN = /^[a-z][a-z0-9_]{2,63}$/;
 
 function ensureLoaded(): void {
   ensureRegistryLoaded();
@@ -128,6 +132,13 @@ export class ToolNameValidationError extends Error {
   }
 }
 
+export class LogLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LogLimitError";
+  }
+}
+
 export interface ToolExecution {
   tool: string;
   result: unknown;
@@ -146,16 +157,15 @@ export async function executeTool(
   return { tool: name, result, requestId: requestId ?? "", durationMs: Date.now() - started };
 }
 
-const DEFAULT_LOG_LIMIT = 50;
-const MAX_LOG_LIMIT = 100;
+const DEFAULT_LOG_LIMIT = LOG_LIMIT_DEFAULT;
 
 export function parseLogLimit(raw: string | null): number {
-  if (raw === null || raw.length === 0) return DEFAULT_LOG_LIMIT;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    throw new ToolNameValidationError(`Invalid limit: "${raw}" - must be an integer between 1 and ${MAX_LOG_LIMIT}`);
+  try {
+    return parseLogLimitValue(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new LogLimitError(message);
   }
-  return Math.min(parsed, MAX_LOG_LIMIT);
 }
 
 export interface McpLogView {
@@ -202,7 +212,12 @@ export async function listMcpLogs(limit: number = DEFAULT_LOG_LIMIT): Promise<Mc
       logs: stored.map(mapStoredLogToView),
       total: stored.length,
     };
-  } catch {
+  } catch (error) {
+    log({
+      level: "warn",
+      msg: "mcp-catalog.logs.durable_read_failed",
+      error: error instanceof Error ? error.message : String(error),
+    });
     return ringLogs(limit);
   }
 }
