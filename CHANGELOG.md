@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   production policy to service key and session secret, guard
   concurrent init, rethrow authoritative bootstrap failures,
   validate bootstrap rows, and count durable logs.
+- Warn when source settings cannot persist instead of failing
+  silently.
 
 ### Fixed
 

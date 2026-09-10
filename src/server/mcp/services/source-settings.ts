@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 import { DISK_CACHE_DIR } from "../constants";
+import { log } from "../utils/logger";
 
 /**
  * Runtime settings for documentation sources - the enforcement backend of
@@ -86,9 +87,15 @@ async function persist(): Promise<void> {
   try {
     await mkdir(dirname(settingsPath()), { recursive: true });
     await writeFile(settingsPath(), JSON.stringify(snapshot, null, 2) + "\n", "utf-8");
-  } catch {
-    // Cache dir unwritable (read-only fs) - settings still apply in memory
-    // for this process lifetime.
+  } catch (error) {
+    // Cache dir unwritable (read-only or ephemeral fs, e.g. Vercel) -
+    // settings still apply in memory for this process lifetime, but the
+    // operator must know a restart will lose them.
+    log({
+      level: "warn",
+      msg: "source-settings.persist-failed",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
