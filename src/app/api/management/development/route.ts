@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import {
   getDevelopmentSettings,
   updateDatabaseMode,
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/development", READ_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     return jsonOk(getDevelopmentSettings(), id);
   } catch (error) {
     return mapRouteError(error, id);
@@ -26,7 +27,7 @@ export async function PUT(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/development", EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = ModeBody.parse(await readJsonBody(req));
     return jsonOk(updateDatabaseMode(body.mode), id);
   } catch (error) {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import {
   DOCS_LIBRARY_ID_MAX,
   DOCS_PROJECT_PATH_MAX,
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/docs", EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = DocsBody.parse(await readJsonBody(req));
     const started = Date.now();
     const { response, resolved } = await fetchLibraryDocsUseCase(

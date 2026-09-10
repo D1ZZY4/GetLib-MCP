@@ -1,4 +1,5 @@
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { resetDevelopmentData } from "@/application/development/development.service";
 import { liveDevelopmentDeps } from "@/server/mcp/infrastructure/deps/development-deps";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
@@ -8,7 +9,7 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/development/reset", EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     return jsonOk(await resetDevelopmentData(liveDevelopmentDeps), id);
   } catch (error) {
     return mapRouteError(error, id);

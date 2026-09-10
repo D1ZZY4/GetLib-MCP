@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { executeTool } from "@/application/mcp/mcp-catalog.service";
 import { liveMcpCatalogDeps } from "@/server/mcp/infrastructure/deps/mcp-catalog-deps";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/tools/run", EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = RunBody.parse(await readJsonBody(req));
     return jsonOk(await executeTool(liveMcpCatalogDeps, body.tool, body.args, id), id);
   } catch (error) {

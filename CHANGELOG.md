@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Revocable hashed API keys for programmatic access with a
   management page, Bearer verification on transports, and a
   dedicated table plus migration.
+- Accept API keys on every guarded route through the same live
+  verification seam.
 
 </details>
 

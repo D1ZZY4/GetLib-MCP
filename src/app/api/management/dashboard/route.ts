@@ -1,4 +1,5 @@
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { getDashboardSnapshot } from "@/application/dashboard/dashboard.service";
 import { liveDashboardDeps } from "@/server/mcp/infrastructure/deps/dashboard-deps";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/dashboard", READ_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     return jsonOk(await getDashboardSnapshot(liveDashboardDeps), id);
   } catch (error) {
     return mapRouteError(error, id);

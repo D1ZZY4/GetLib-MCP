@@ -1,4 +1,5 @@
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { listMcpLogs, parseLogLimit } from "@/application/mcp/mcp-catalog.service";
 import { liveMcpCatalogDeps } from "@/server/mcp/infrastructure/deps/mcp-catalog-deps";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/logs", READ_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const url = new URL(req.url);
     const limit = parseLogLimit(url.searchParams.get("limit"));
     return jsonOk(await listMcpLogs(liveMcpCatalogDeps, limit), id);

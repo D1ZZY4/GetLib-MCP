@@ -1,5 +1,6 @@
 import { closeSseSession, openSseSession } from "@/server/mcp/transport/sse";
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
 import { assertOriginOr403, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 
@@ -9,7 +10,7 @@ export async function GET(req: Request) {
     const originRejection = assertOriginOr403(req, id);
     if (originRejection) return originRejection;
     checkRateLimit(req, "mcp/sse", READ_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const { sessionId, stream } = await openSseSession();
     req.signal.addEventListener("abort", () => {
       closeSseSession(sessionId);

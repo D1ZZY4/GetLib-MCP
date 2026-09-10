@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { getSourcesSnapshot, updateSourcesSettings } from "@/application/sources/sources.service";
 import { liveSourcesDeps } from "@/server/mcp/infrastructure/deps/sources-deps";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/sources", READ_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     return jsonOk(getSourcesSnapshot(liveSourcesDeps), id);
   } catch (error) {
     return mapRouteError(error, id);
@@ -27,7 +28,7 @@ export async function PUT(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/sources", EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = SettingsBody.parse(await readJsonBody(req));
     return jsonOk(await updateSourcesSettings(liveSourcesDeps, body), id);
   } catch (error) {

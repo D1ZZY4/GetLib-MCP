@@ -1,5 +1,6 @@
 import { UnknownSseSessionError, postSseMessage } from "@/server/mcp/transport/sse";
 import { requireManagementAuth } from "@/application/auth/session";
+import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import {
   assertOriginOr403,
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
     const originRejection = assertOriginOr403(req, id);
     if (originRejection) return originRejection;
     checkRateLimit(req, "mcp/sse/messages", EXECUTION_TIER);
-    requireManagementAuth(req);
+    await requireManagementAuth(req, liveApiKeyAuthDeps);
     const url = new URL(req.url);
     const sessionId = url.searchParams.get("sessionId");
     if (!sessionId) {
