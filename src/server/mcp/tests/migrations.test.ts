@@ -63,6 +63,13 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/drop table/i);
   });
 
+  test("api key hashes are unique and additive-only", () => {
+    const sql = readMigration("2026090905_api_keys_unique_hash.sql");
+    expect(sql).toContain("api_keys_key_hash_unique");
+    expect(sql).not.toMatch(/create table/i);
+    expect(sql).not.toMatch(/drop table/i);
+  });
+
   test("no migration stores real secrets or drops tables", () => {
     for (const file of migrationFiles()) {
       const sql = readMigration(file);

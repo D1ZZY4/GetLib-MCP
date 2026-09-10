@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { listTools, runTool } from "../registry/tool-registry";
+import { listResources } from "../registry/resource-registry";
+import { listPrompts } from "../registry/prompt-registry";
 import { ensureRegistryLoaded } from "../registry/registry-loader";
 
 ensureRegistryLoaded();
@@ -7,6 +9,14 @@ ensureRegistryLoaded();
 describe("tool registry", () => {
   test("registers tools without drift", () => {
     expect(listTools().length).toBeGreaterThan(0);
+  });
+
+  test("capability counts match the documented surface", () => {
+    // Lower bounds mirror README ("14 tools, 2 resources, 6 prompts").
+    // Growth never breaks this; removal forces a deliberate README update.
+    expect(listTools().length).toBeGreaterThanOrEqual(14);
+    expect(listResources().length).toBeGreaterThanOrEqual(2);
+    expect(listPrompts().length).toBeGreaterThanOrEqual(6);
   });
 
   test("every tool uses the gl_ namespace with a description", () => {

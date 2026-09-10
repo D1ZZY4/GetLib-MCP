@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync } from "fs";
+import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { pipelineBudgetMs } from "@/application/library/search.service";
@@ -81,13 +81,17 @@ describe("F2 - snippet rebuild singleflight and stability", () => {
 
   test("memory mirror serves a saved index even when disk reads fail", async () => {
     const dir = mkdtempSync(join(tmpdir(), "gl-snippet-mirror-"));
-    const store = new SnippetStore(new DiskCache(dir));
-    const index = fakeIndex("mirror-lib");
-    await store.save(index);
-    const disk = (store as unknown as { disk: { get: (key: string) => Promise<string | undefined> } }).disk;
-    disk.get = async () => undefined;
-    const loaded = await store.load("mirror-lib", null);
-    expect(loaded?.snippets.length).toBe(1);
-    expect(loaded?.snippets[0]?.title).toBe("Middleware example");
+    try {
+      const store = new SnippetStore(new DiskCache(dir));
+      const index = fakeIndex("mirror-lib");
+      await store.save(index);
+      const disk = (store as unknown as { disk: { get: (key: string) => Promise<string | undefined> } }).disk;
+      disk.get = async () => undefined;
+      const loaded = await store.load("mirror-lib", null);
+      expect(loaded?.snippets.length).toBe(1);
+      expect(loaded?.snippets[0]?.title).toBe("Middleware example");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

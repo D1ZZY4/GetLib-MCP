@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   error from the application layer.
 - Harden API key issuance to the strict tier and drop the last
   barrel re-exports.
+- Clean up temp directories in tests and pin registry counts
+  plus the new migration contract.
 - Verify API keys by indexed hash lookup, redact key material
   and emails from logs, harden the keys UI, and constrain hashes
   unique.

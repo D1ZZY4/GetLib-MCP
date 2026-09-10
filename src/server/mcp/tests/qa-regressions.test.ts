@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, writeFileSync } from "fs";
+import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { ensureRegistryLoaded } from "../registry/registry-loader";
@@ -84,12 +84,16 @@ describe("F3 - distinctive-token gate for compat", () => {
 describe("F4 - audit reconciles with auto_scan on manifest-only dirs", () => {
   test("manifest-only directory names auto_scan instead of disagreeing", async () => {
     const dir = mkdtempSync(join(tmpdir(), "gl-audit-"));
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: { express: "^4.0.0" } }));
-    const result = (await runTool("gl_audit", { categories: ["all"], projectPath: dir })) as {
-      content: Array<{ text?: string }>;
-    };
-    const text = result.content[0]?.text ?? "";
-    expect(text).toContain("No source files found");
-    expect(text).toContain("gl_auto_scan");
+    try {
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: { express: "^4.0.0" } }));
+      const result = (await runTool("gl_audit", { categories: ["all"], projectPath: dir })) as {
+        content: Array<{ text?: string }>;
+      };
+      const text = result.content[0]?.text ?? "";
+      expect(text).toContain("No source files found");
+      expect(text).toContain("gl_auto_scan");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
