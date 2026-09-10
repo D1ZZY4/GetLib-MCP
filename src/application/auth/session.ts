@@ -1,6 +1,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { config } from "@/server/mcp/config";
 import { detectEnvironment } from "@/server/mcp/runtime";
+import { normalizeEmail } from "@/domain/auth/policy";
 import { log } from "@/server/mcp/utils/logger";
 
 /**
@@ -61,11 +62,14 @@ function sign(email: string, expiresAt: number): string {
 }
 
 export function createSessionToken(email: string, now: number = Date.now()): string {
+  // Normalized before signing so "Ops@X" and "ops@x" are one identity,
+  // matching password verification. Idempotent for clean addresses.
+  const normalized = normalizeEmail(email);
   const expiresAt = now + SESSION_TTL_MS;
-  const payload = Buffer.from(JSON.stringify({ email, exp: expiresAt }), "utf-8").toString(
+  const payload = Buffer.from(JSON.stringify({ email: normalized, exp: expiresAt }), "utf-8").toString(
     "base64url",
   );
-  return `v1.${payload}.${sign(email, expiresAt)}`;
+  return `v1.${payload}.${sign(normalized, expiresAt)}`;
 }
 
 export function verifySessionToken(token: string, now: number = Date.now()): string | null {
@@ -83,10 +87,15 @@ export function verifySessionToken(token: string, now: number = Date.now()): str
   }
   if (typeof parsed.email !== "string" || typeof parsed.exp !== "number") return null;
   if (!Number.isFinite(parsed.exp) || parsed.exp <= now) return null;
-  const expected = Buffer.from(sign(parsed.email, parsed.exp), "utf-8");
+  // Normalized before verifying so issuance and verification agree on
+  // one identity per account. Tokens minted before normalization with a
+  // non-normalized address stop validating here and the owner simply
+  // signs in again (12h TTL bounds the transition).
+  const email = normalizeEmail(parsed.email);
+  const expected = Buffer.from(sign(email, parsed.exp), "utf-8");
   const actual = Buffer.from(signature, "utf-8");
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
-  return parsed.email;
+  return email;
 }
 
 function cookieValue(req: Request, name: string): string | null {
@@ -141,6 +150,9 @@ export interface ApiKeyAuthDeps {
  */
 export async function requireManagementAuth(req: Request, deps: ApiKeyAuthDeps): Promise<AuthContext> {
   if (!config.authEnabled) return { email: null };
+  // Cookie session wins over Bearer API key when a client presents both:
+  // an interactive user session is the stronger identity signal, and
+  // dual-credential requests are pathological, never routine.
   const email = sessionEmailFromRequest(req);
   if (email) return { email };
   const bearer = bearerToken(req);

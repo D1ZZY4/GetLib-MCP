@@ -52,4 +52,21 @@ describe("assertPublicUrl SSRF pre-check", () => {
     allowed("https://8.8.8.8/");
     allowed("http://registry.npmjs.org/react");
   });
+
+  test("blocks unique-local IPv6 on both fc00::/8 and fd00::/8", () => {
+    blocked("http://[fc00::1]/");
+    blocked("http://[fd00::1]/");
+    blocked("http://[fd12:3456::1]/");
+  });
+
+  test("blocks short and mixed numeric IPv4 via WHATWG normalization", () => {
+    blocked("http://0x7f.1/");
+    blocked("http://127.1/");
+    blocked("http://0xC0.0xA8.1.1/");
+  });
+
+  test("blocks expanded IPv4-mapped IPv6", () => {
+    blocked("http://[0:0:0:0:0:ffff:127.0.0.1]/");
+    blocked("http://[::ffff:127.0.0.1]/");
+  });
 });

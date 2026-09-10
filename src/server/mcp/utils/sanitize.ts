@@ -21,14 +21,22 @@ const MAX_SANITIZE_LENGTH = 512_000; // 500KB cap before regex processing
  * (small caps, fullwidth, mathematical alphanumerics) to ASCII so
  * homoglyph variants of "ignore", "system", etc. still match.
  *
+ * Returns the normalized projection PLUS an index map: indexMap[i] is
+ * the UTF-16 offset in the original string of normalized char i.
+ * Normalization changes lengths (stripped chars, NFKD expansion), so
+ * match ranges must be translated through this map before splicing the
+ * original - slicing raw normalized offsets corrupts or misses content.
+ *
  * The output of this function is ONLY used for injection-pattern scanning,
  * not as the returned content - preserves the user-visible formatting.
  */
-function normalizeForInjectionScan(text: string): string {
-  // 1. Strip zero-width / invisible chars
-  let normalized = text.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\u00AD\u180B-\u180E\uFE00-\uFE0F]|[\u{E0000}-\u{E007F}]/gu, "");
-  // 2. NFKD normalize (handles fullwidth, some superscript)
-  normalized = normalized.normalize("NFKD").replace(/[̀-ͯ]/g, "");
+const STRIP_CHARS_RE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\u00AD\u180B-\u180E\uFE00-\uFE0F]|[\u{E0000}-\u{E007F}]/u;
+const COMBINING_RE = /[̀-ͯ]/g;
+function normalizeForInjectionScan(text: string): { text: string; indexMap: number[] } {
+  // 1. Strip zero-width / invisible chars (per code point so astral
+  //    plane chars are never split into lone surrogates).
+  // 2. NFKD normalize (handles fullwidth, some superscript), drop
+  //    combining marks, lowercase.
   // 3. Explicit small-caps homoglyph map (IPA extensions + modifier letters
   //    that NFKD does NOT cover). Coverage: enough to neutralize the
   //    common "ɪɢɴᴏʀᴇ ᴘʀᴇᴠɪᴏᴜs" / "sʏsᴛᴇᴍ" injection variants.
@@ -47,12 +55,21 @@ function normalizeForInjectionScan(text: string): string {
     // Greek lookalikes
     "α": "a", "ε": "e", "ο": "o", "ρ": "p", "σ": "s", "ι": "i", "ν": "v",
   };
-  normalized = normalized
-    .toLowerCase()
-    .split("")
-    .map((ch) => homoglyphMap[ch] ?? ch)
-    .join("");
-  return normalized;
+  let normalized = "";
+  const indexMap: number[] = [];
+  let offset = 0;
+  for (const ch of text) {
+    const origIndex = offset;
+    offset += ch.length;
+    if (STRIP_CHARS_RE.test(ch)) continue;
+    const folded = ch.normalize("NFKD").replace(COMBINING_RE, "").toLowerCase();
+    let mapped = "";
+    for (const c of folded) mapped += homoglyphMap[c] ?? c;
+    if (mapped.length === 0) continue;
+    normalized += mapped;
+    for (let k = 0; k < mapped.length; k++) indexMap.push(origIndex);
+  }
+  return { text: normalized, indexMap };
 }
 
 export function sanitizeContent(content: string): string {
@@ -81,11 +98,26 @@ export function sanitizeContent(content: string): string {
     sanitized = sanitized.replace(pattern, "");
   }
 
+  // Decode HTML entities BEFORE the injection scan and the surgical tag
+  // strips below. This order is mandatory in both directions: an encoded
+  // `&#73;gnore previous instructions` must be visible to the scan (else
+  // it bypasses every pattern pass), and a real `<script>` revealed by
+  // decoding must still hit the script strip. Docs that wrote `&lt;div&gt;`
+  // to SHOW a tag keep `<div>` as faithful text (only script/style and
+  // structural tags are stripped, never generic ones).
+  // Jina Reader, llms.txt and GitHub-raw markdown bypass html-to-md, so this
+  // is the only place their `&para;`/`&rarr;`/`&copy;` entities get decoded.
+  sanitized = decodeHtmlEntities(sanitized);
+  // Numeric NBSP (&#160; / &#xA0;) decodes to U+00A0 - fold to a normal space so the
+  // whitespace collapse below behaves and downstream tokenisation isn't polluted.
+  sanitized = sanitized.replace(/\u00A0/g, " ");
+
   // Remove prompt injection attempts. Scan a normalized projection so
   // Unicode homoglyph variants ("ɪɢɴᴏʀᴇ previous") collapse to their ASCII
-  // form before regex evaluation. When the normalized form matches, redact
-  // the *original* matched substring length so visible content stays aligned.
-  const normalized = normalizeForInjectionScan(sanitized);
+  // form before regex evaluation. Normalized offsets are translated back
+  // through the index map, because normalization changes string lengths
+  // and raw offsets would redact the wrong span.
+  const { text: normalized, indexMap } = normalizeForInjectionScan(sanitized);
   // Collect ALL match ranges across every pattern against the single frozen
   // `normalized` snapshot BEFORE touching `sanitized`. Redacting inside the
   // pattern loop desynchronized later patterns' offsets from the mutated
@@ -112,17 +144,22 @@ export function sanitizeContent(content: string): string {
     else merged.push({ ...r });
   }
   // Single reverse pass - earlier offsets stay valid because the string is
-  // only mutated after every offset has been resolved.
+  // only mutated after every offset has been resolved. Normalized offsets
+  // are translated through the index map first; a degenerate (empty or
+  // inverted) span is skipped rather than spliced blindly.
   for (let i = merged.length - 1; i >= 0; i--) {
-    const { start, end } = merged[i]!;
-    if (start < sanitized.length) {
+    const range = merged[i]!;
+    const start = range.start < indexMap.length ? indexMap[range.start]! : sanitized.length;
+    const end = range.end < indexMap.length ? indexMap[range.end]! : sanitized.length;
+    if (start < end && start < sanitized.length) {
       const safeEnd = Math.min(end, sanitized.length);
       sanitized = sanitized.slice(0, start) + "[content removed]" + sanitized.slice(safeEnd);
     }
   }
 
-  // Belt-and-braces: also run patterns on the original sanitized text in case
-  // normalization missed something.
+  // Belt-and-braces: also run patterns on the working text for the
+  // case-sensitive patterns (SYSTEM:/ASSISTANT:/HUMAN:) that the
+  // lowercased normalized projection cannot see.
   for (const pattern of INJECTION_PATTERNS) {
     sanitized = sanitized.replace(pattern, "[content removed]");
   }
@@ -130,7 +167,6 @@ export function sanitizeContent(content: string): string {
   // Remove HTML script/style tags that could confuse the LLM
   sanitized = sanitized.replace(/<script[\s\S]*?<\/script>/gi, "");
   sanitized = sanitized.replace(/<style[\s\S]*?<\/style>/gi, "");
-
   // Strip raw HTML structural preamble that leaks through when html-to-md
   // extraction fails to find a <main>/<article> region. These add zero
   // signal for an LLM consumer.
@@ -140,17 +176,6 @@ export function sanitizeContent(content: string): string {
   sanitized = sanitized.replace(/<\/?body\b[^>]*>/gi, "");
   // <meta>, <link>, <base> are self-closing structural tags
   sanitized = sanitized.replace(/<(?:meta|link|base)\b[^>]*\/?>/gi, "");
-
-  // Decode HTML entities LAST - after the surgical tag strips above. This order is
-  // mandatory: a doc that wrote `&lt;div&gt;` to SHOW a tag keeps `<div>` as faithful
-  // text (sanitize only strips script/style/structural tags, never generic ones),
-  // while any real `<script>`/`<head>` revealed by decoding was already removed.
-  // Jina Reader, llms.txt and GitHub-raw markdown bypass html-to-md, so this is the
-  // only place their `&para;`/`&rarr;`/`&copy;` entities get decoded.
-  sanitized = decodeHtmlEntities(sanitized);
-  // Numeric NBSP (&#160; / &#xA0;) decodes to U+00A0 - fold to a normal space so the
-  // whitespace collapse below behaves and downstream tokenisation isn't polluted.
-  sanitized = sanitized.replace(/\u00A0/g, " ");
 
   // Collapse excessive whitespace
   sanitized = sanitized.replace(/\n{4,}/g, "\n\n\n");

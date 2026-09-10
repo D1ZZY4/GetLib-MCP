@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unique.
 - Route logs by host truthfully, survive deleted working
   directories, and ignore local credentials.
+- Normalize session emails to one identity and harden content
+  sanitization with entity decoding and offset-safe redaction.
 
 ### Changed
 
