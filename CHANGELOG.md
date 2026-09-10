@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verification seam.
 - Detect same-account password rotations via a stored hash with
   a dedicated migration.
+- Close symlink and IPv6 bypasses in path guards, read manifests
+  through re-validated siblings, and redact nested secrets with
+  cycle protection.
 
 ### Fixed
 

@@ -1,7 +1,6 @@
 import { readFile } from "fs/promises";
-import { join } from "path";
 import { z } from "zod";
-import { safeguardPath } from "./guard";
+import { resolveSiblingFile, safeguardPath } from "./guard";
 import { parseExternal, safeJsonParse } from "./validate-external";
 import type { LibraryEntry } from "../types";
 
@@ -34,7 +33,7 @@ export async function detectVersionFromLockfile(
     return null;
   }
   try {
-    const raw = await readFile(join(safePath, "package-lock.json"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "package-lock.json"), "utf-8");
     const lock = parseExternal(packageLockSchema, safeJsonParse(raw));
     const pkgKey = `node_modules/${packageName}`;
     const v = lock?.packages?.[pkgKey]?.version ?? lock?.dependencies?.[packageName]?.version;
@@ -42,7 +41,7 @@ export async function detectVersionFromLockfile(
   } catch { /* not found */ }
 
   try {
-    const raw = await readFile(join(safePath, "pnpm-lock.yaml"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "pnpm-lock.yaml"), "utf-8");
     const escaped = escapeRegex(packageName);
     // Anchored on a real name boundary - an unanchored search matched
     // substrings of unrelated packages (eslint-plugin-react vs react).
@@ -52,7 +51,7 @@ export async function detectVersionFromLockfile(
   } catch { /* not found */ }
 
   try {
-    const raw = await readFile(join(safePath, "yarn.lock"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "yarn.lock"), "utf-8");
     const escaped = escapeRegex(packageName);
     // Same boundary anchoring as pnpm above (super-react@1 must not answer
     // a lookup for react).
@@ -62,7 +61,7 @@ export async function detectVersionFromLockfile(
   } catch { /* not found */ }
 
   try {
-    const raw = await readFile(join(safePath, "Cargo.lock"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "Cargo.lock"), "utf-8");
     const escaped = escapeRegex(packageName);
     const re = new RegExp(`\\[\\[package\\]\\]\\nname = "${escaped}"\\nversion = "([^"]+)"`, "m");
     const match = raw.match(re);
@@ -70,7 +69,7 @@ export async function detectVersionFromLockfile(
   } catch { /* not found */ }
 
   try {
-    const raw = await readFile(join(safePath, "poetry.lock"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "poetry.lock"), "utf-8");
     const escaped = escapeRegex(packageName);
     const re = new RegExp(`\\[\\[package\\]\\]\\nname = "${escaped}"\\nversion = "([^"]+)"`, "m");
     const match = raw.match(re);
@@ -78,7 +77,7 @@ export async function detectVersionFromLockfile(
   } catch { /* not found */ }
 
   try {
-    const raw = await readFile(join(safePath, "uv.lock"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "uv.lock"), "utf-8");
     const escaped = escapeRegex(packageName);
     const re = new RegExp(`\\[\\[package\\]\\]\\nname = "${escaped}"\\nversion = "([^"]+)"`, "m");
     const match = raw.match(re);
@@ -86,7 +85,7 @@ export async function detectVersionFromLockfile(
   } catch { /* not found */ }
 
   try {
-    const raw = await readFile(join(safePath, "go.sum"), "utf-8");
+    const raw = await readFile(resolveSiblingFile(safePath, "go.sum"), "utf-8");
     const escaped = escapeRegex(packageName);
     const re = new RegExp(`^${escaped}\\s+v([\\d.a-zA-Z-]+)`, "m");
     const match = raw.match(re);

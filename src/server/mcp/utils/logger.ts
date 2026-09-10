@@ -52,6 +52,8 @@ function shouldLog(level: LogLevel): boolean {
 
 // Field names that must never reach logs in readable form. Values under
 // these keys are replaced before either output format renders them.
+// Lookup strips separators so snake_case, camelCase, and kebab-case spell
+// the same secret (accessToken and access_token both match "accesstoken").
 const SENSITIVE_KEYS = new Set([
   "password",
   "pass",
@@ -68,9 +70,18 @@ const SENSITIVE_KEYS = new Set([
   "api-key",
   "x-api-key",
   "access_token",
+  "accesstoken",
   "refresh_token",
+  "refreshtoken",
   "client_secret",
+  "clientsecret",
   "private_key",
+  "privatekey",
+  "auth_token",
+  "authtoken",
+  "user_email",
+  "useremail",
+  "account",
   "key_hash",
   "keyhash",
   "key_prefix",
@@ -82,6 +93,10 @@ const SENSITIVE_KEYS = new Set([
   "email",
 ]);
 
+function sensitiveKey(key: string): boolean {
+  return SENSITIVE_KEYS.has(key.toLowerCase().replace(/[_-]/g, ""));
+}
+
 const BEARER_PATTERN = /Bearer [A-Za-z0-9\-._~+/=]+/g;
 const BASIC_PATTERN = /Basic [A-Za-z0-9\-._~+/=]+/g;
 // Long-lived API keys in free text: glk_<base64url> outside an
@@ -92,8 +107,10 @@ const HEADER_KEY_PATTERN = /((?:api[_-]?key|x-api-key)\s*[:=]\s*)['"]?[A-Za-z0-9
 // Query-string secrets in logged URLs: ?token=<value>&api_key=<value>.
 const QUERY_TOKEN_PATTERN = /([?&](?:token|api_key|apikey|access_token|secret|password|auth|key)=)[^&\s"']*/gi;
 
-function redactValue(key: string, value: unknown): unknown {
-  if (SENSITIVE_KEYS.has(key.toLowerCase())) return "[redacted]";
+const REDACT_MAX_DEPTH = 5;
+
+function redactValue(key: string, value: unknown, seen: WeakSet<object>, depth: number): unknown {
+  if (sensitiveKey(key)) return "[redacted]";
   if (typeof value === "string") {
     return value
       .replace(BEARER_PATTERN, "Bearer [redacted]")
@@ -102,14 +119,33 @@ function redactValue(key: string, value: unknown): unknown {
       .replace(HEADER_KEY_PATTERN, "$1[redacted]")
       .replace(QUERY_TOKEN_PATTERN, "$1[redacted]");
   }
+  if (Array.isArray(value)) {
+    if (depth >= REDACT_MAX_DEPTH || seen.has(value)) return "[redacted]";
+    seen.add(value);
+    return value.map((item) => redactValue("", item, seen, depth + 1));
+  }
+  if (typeof value === "object" && value !== null) {
+    // Class instances (Error, Date, Buffer...) keep their current
+    // rendering untouched - only plain data objects are traversed.
+    const proto: unknown = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) return value;
+    if (depth >= REDACT_MAX_DEPTH || seen.has(value)) return "[redacted]";
+    seen.add(value);
+    const clean: Record<string, unknown> = {};
+    for (const [nestedKey, nestedValue] of Object.entries(value)) {
+      clean[nestedKey] = redactValue(nestedKey, nestedValue, seen, depth + 1);
+    }
+    return clean;
+  }
   return value;
 }
 
 function redactEntry(entry: LogEntry): LogEntry {
+  const seen = new WeakSet<object>();
   const clean: LogEntry = { level: entry.level, msg: entry.msg };
   for (const key of Object.keys(entry)) {
     if (key === "level" || key === "msg") continue;
-    clean[key] = redactValue(key, entry[key]);
+    clean[key] = redactValue(key, entry[key], seen, 0);
   }
   return clean;
 }

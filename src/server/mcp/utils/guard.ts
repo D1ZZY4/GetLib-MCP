@@ -11,7 +11,7 @@
  * owner (tools/, services/).
  */
 
-import { resolve } from "path";
+import { join, resolve, sep } from "path";
 import { realpathSync } from "fs";
 import { randomBytes } from "crypto";
 import { log } from "./logger";
@@ -62,7 +62,11 @@ export function safeguardPath(inputPath: string): string {
     throw new Error(`Access to system path denied: ${resolved}`);
   }
 
-  if (/\/\.[a-z]/i.test(resolved) && !/\/\.(?:git|vscode|cursor|github|eslint|prettier|node-version|env)\b/.test(resolved)) {
+  // Hidden directories are denied by default; only well-known tooling
+  // metadata is exempt. Notably there is NO exemption for .env files:
+  // nothing in the codebase reads environment files through guarded
+  // paths, so secret-adjacent files stay blocked.
+  if (/\/\.[a-z]/i.test(resolved) && !/\/\.(?:git|vscode|cursor|github|eslint|prettier|node-version)\b/.test(resolved)) {
     throw new Error(`Access to hidden path denied: ${resolved}`);
   }
 
@@ -73,7 +77,7 @@ export function safeguardPath(inputPath: string): string {
   // The baseline is best-effort: when the cwd itself is gone there is
   // nothing to compare against, so the signal is skipped, never thrown.
   const cwd = currentWorkingDir();
-  if (cwd !== null && resolved !== cwd && !resolved.startsWith(cwd + "/")) {
+  if (cwd !== null && resolved !== cwd && !resolved.startsWith(cwd + sep)) {
     try {
       log({ level: "debug", msg: "guard.path.outside-cwd", path: resolved });
     } catch {
@@ -82,6 +86,39 @@ export function safeguardPath(inputPath: string): string {
   }
 
   return resolved;
+}
+
+/**
+ * Resolve a fixed file name inside an already-guarded directory and
+ * re-validate the final target. `readFile(join(root, name))` follows
+ * symlinks, so a symlinked `package-lock.json` would otherwise escape
+ * the boundary that guarded only the directory argument (TOCTOU via
+ * symlink file). Throws like safeguardPath on escape.
+ */
+export function resolveSiblingFile(root: string, fileName: string): string {
+  if (
+    fileName.length === 0 ||
+    fileName === "." ||
+    fileName === ".." ||
+    fileName.includes("/") ||
+    fileName.includes("\\")
+  ) {
+    throw new Error(`Invalid file name: ${fileName}`);
+  }
+  const candidate = join(root, fileName);
+  let resolved: string;
+  try {
+    resolved = realpathSync(candidate);
+  } catch (err: unknown) {
+    // ENOENT = nothing to dereference yet; keep the string path so the
+    // caller's not-found handling still applies.
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+    resolved = resolve(candidate);
+  }
+  if (resolved !== root && !resolved.startsWith(root + sep)) {
+    throw new Error(`Access outside project denied: ${fileName}`);
+  }
+  return safeguardPath(resolved);
 }
 
 /**
@@ -130,7 +167,10 @@ export function assertPublicUrl(url: string): void {
     /^192\.168\./.test(h) ||
     /^169\.254\./.test(h) ||
     /^0\./.test(h) ||
-    /^fc[0-9a-f]{2}:/i.test(h) ||
+    // Unique-local fc00::/7 covers both fc00::/8 and fd00::/8. Verified:
+    // WHATWG URL already normalizes short/hex IPv4 and compresses
+    // expanded IPv4-mapped forms, so only the ULA half needed a fix.
+    /^f[cd][0-9a-f]{2}:/i.test(h) ||
     /^fe[89ab][0-9a-f]:/i.test(h) ||
     /^::ffff:/i.test(h) ||
     /^0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,4}:0{0,1}1$/i.test(h) ||

@@ -1,6 +1,5 @@
 import { readFile } from "fs/promises";
-import { join } from "path";
-import { safeguardPath } from "../guard";
+import { resolveSiblingFile, safeguardPath } from "../guard";
 import { parsePackageJson, parseComposerJson, parseDenoJson, parseGemfile } from "./parsers-js";
 import { parseRequirementsTxt, parsePyproject } from "./parsers-python";
 import { parseCargoToml, parseGoMod, parsePomXml, parseGradle, parsePubspec } from "./parsers-native";
@@ -54,7 +53,7 @@ export async function detectDependencies(projectPath: string): Promise<Dependenc
 
   for (const manifest of MANIFESTS) {
     if (manifest.group && satisfiedGroups.has(manifest.group)) continue;
-    const content = await readFileIfExists(join(guarded, manifest.file));
+    const content = await readFileIfExists(resolveSiblingFile(guarded, manifest.file));
     if (!content) continue;
     const dependencies = manifest.parse(content);
     if (dependencies.length === 0) continue;
