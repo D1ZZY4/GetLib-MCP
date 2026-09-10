@@ -34,7 +34,7 @@ flowchart TD
 ## Konvensi Normatif
 
 - **WAJIB** berarti persyaratan commit yang **HARUS** dipenuhi sebelum commit dibuat.
-- **DILARANG** berarti pola yang tidak boleh digunakan pada staging, commit, push, atau changelog.
+- **DILARANG** menandai pola terlarang pada staging, commit, push, atau changelog.
 - Command git, path file, identifier versi, dan format pesan pada contoh **HARUS** dipertahankan persis kecuali ada instruksi eksplisit owner.
 - Tanpa instruksi push yang eksplisit, pekerjaan berhenti pada commit lokal dan pelaporan.
 

@@ -26,7 +26,7 @@ Sebelum menambah atau memindahkan code, agen **HARUS** menjawab tiga pertanyaan:
 ## Konvensi Normatif
 
 - **WAJIB** digunakan untuk boundary, ownership, dependency direction, dan technical integration.
-- **HARUS** digunakan untuk contract yang **HARUS** dipenuhi lintas module.
+- **HARUS** dipenuhi oleh setiap contract lintas module.
 - **DILARANG** digunakan untuk pola yang melewati boundary atau menyamarkan ketidakpastian desain.
 - Application service menjadi pusat use case yang dapat dipakai banyak interface.
 - Domain menjadi pemilik business rule dan invariant.

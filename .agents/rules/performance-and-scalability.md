@@ -18,7 +18,7 @@ Baca `blueprint.md` terlebih dahulu, lalu gunakan modul ini sebagai pendalaman o
 ## Konvensi Normatif
 
 - **WAJIB** berarti persyaratan performa yang **HARUS** dipenuhi bila perubahan menyentuh area yang dioptimalkan.
-- **DILARANG** berarti pola optimasi yang tidak boleh digunakan, termasuk micro-optimization tanpa bukti dan unbounded concurrency atau retry.
+- **DILARANG** menandai pola optimasi terlarang, termasuk micro-optimization tanpa bukti dan unbounded concurrency atau retry.
 - Optimasi **HARUS** berdasarkan measurement dengan baseline dan target yang eksplisit.
 - Perubahan performa tidak boleh mengorbankan correctness, security, atau maintainability tanpa tradeoff yang terdokumentasi.
 

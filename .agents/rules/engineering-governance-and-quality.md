@@ -18,7 +18,7 @@ Baca `blueprint.md` terlebih dahulu. Modul ini adalah pendalaman governance untu
 ## Konvensi Normatif
 
 - **WAJIB** berarti persyaratan governance yang **HARUS** dipenuhi sebelum perubahan dianggap selesai.
-- **DILARANG** berarti pola proses yang tidak boleh digunakan, termasuk menutup sinyal kegagalan validasi.
+- **DILARANG** menandai pola proses terlarang, termasuk menutup sinyal kegagalan validasi.
 - Setiap perubahan **HARUS** memiliki owner, alasan, boundary, risiko, contract, bukti, dan jalur pemulihan.
 - Prioritas keputusan mengikuti blueprint: security, integritas data, compatibility, boundary, reliability, testability, lalu presentasi.
 

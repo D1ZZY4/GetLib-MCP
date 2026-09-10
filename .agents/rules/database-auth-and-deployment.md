@@ -133,13 +133,13 @@ Configuration Supabase **HARUS** terisolasi per environment.
 Autentikasi dikendalikan oleh:
 
 ```text
-GETLIB_AUTHENTICATICATION_ENABLE=true
+GETLIB_AUTHENTICATION_ENABLE=true
 ```
 
 atau:
 
 ```text
-GETLIB_AUTHENTICATICATION_ENABLE=false
+GETLIB_AUTHENTICATION_ENABLE=false
 ```
 
 Ketika authentication enabled:
@@ -537,7 +537,7 @@ Pemisahan credential minimum: public atau publishable key hanya untuk path yang 
 ```mermaid
 flowchart TD
     START["Startup"] --> DET["Environment Detection"]
-    DET --> READ["Read GETLIB_AUTHENTICATICATION_ENABLE"]
+    DET --> READ["Read GETLIB_AUTHENTICATION_ENABLE"]
     READ --> ENABLED{"Auth Enabled?"}
     ENABLED -->|YES| CFG["Read Default Account / Password Config"]
     CFG --> FALLBACK["Fallback if Missing"]
@@ -667,6 +667,25 @@ flowchart TD
 - **WAJIB** menyesuaikan menu terhadap auth mode.
 - **WAJIB** menyembunyikan Sign out ketika tidak ada session yang dapat di-terminate.
 - **WAJIB** menjaga sensitive actions tetap protected.
+
+---
+
+# 16. Persistensi Menyeluruh di Database
+
+Seluruh state aplikasi **WAJIB** dipersistensi pada database, termasuk configuration, settings, fitur, metadata, dan state operasional lain atau semacamnya.
+
+Browser, process memory, dan local filesystem hanya boleh menjadi cache atau state transient. Ketiganya **DILARANG** menjadi sumber kebenaran.
+
+## Aturan
+
+- **WAJIB** mempersistensi configuration aplikasi pada database.
+- **WAJIB** mempersistensi settings user dan account pada database.
+- **WAJIB** mempersistensi state fitur dan metadata operasional pada database.
+- **WAJIB** memuat ulang state dari database pada initialization, bukan merekonstruksi dari default.
+- **DILARANG** menyimpan state authoritative hanya pada browser.
+- **DILARANG** menyimpan state authoritative hanya pada process memory.
+- **DILARANG** menyimpan state authoritative pada local filesystem sebagai pengganti database.
+- **WAJIB** menjaga konsistensi antara cache lokal dan database melalui invalidation yang eksplisit.
 
 ---
 

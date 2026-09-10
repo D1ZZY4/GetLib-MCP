@@ -18,9 +18,9 @@ Baca `blueprint.md` terlebih dahulu, lalu gunakan modul ini sebagai sumber otori
 ## Konvensi Normatif
 
 - **WAJIB** berarti persyaratan security yang **HARUS** dipenuhi sebelum perubahan dianggap selesai.
-- **DILARANG** berarti pola yang tidak boleh digunakan pada security boundary.
+- **DILARANG** menandai pola terlarang pada security boundary.
 - Enforcement **HARUS** berada pada server-side. Semua input eksternal dianggap tidak tepercaya.
-- Secret bersifat write-only atau masked dan tidak boleh bocor ke UI, log, error, telemetry, atau response public.
+- Secret bersifat write-only atau masked dan **DILARANG** bocor ke UI, log, error, telemetry, atau response public.
 
 ## Standar Bukti Implementasi
 
@@ -67,13 +67,13 @@ flowchart TD
 - **WAJIB** memeriksa authorization pada setiap protected operation.
 - **WAJIB** fail closed ketika policy tidak dapat diverifikasi.
 - **DILARANG** memakai frontend state, display name, atau client-supplied role sebagai security boundary.
-- **WAJIB** memisahkan mode `GETLIB_AUTHENTICATICATION_ENABLE` dari authorization.
+- **WAJIB** memisahkan mode `GETLIB_AUTHENTICATION_ENABLE` dari authorization.
 - Mode tanpa authentication tetap menerapkan rate limiting, validation, SSRF protection, origin validation, dan policy capability.
 - Session, token, cookie, dan credential **HARUS** memiliki expiry, rotation, dan revocation semantics yang sesuai contract.
 
 ## 4. Secret dan Data Sensitif
 
-Secret tidak boleh masuk source code, browser, log, telemetry, error, response public, snapshot, atau commit. `GETLIB_DEFAULT_ACCOUNT` dan `GETLIB_DEFAULT_PASS` dibaca melalui centralized typed configuration. Fallback `awesomemcp@getlib-local.com` dan `getlib123` hanya mengikuti bootstrap contract, **HARUS** memunculkan warning, dan **HARUS** segera diganti. Password bersifat write-only.
+Secret **DILARANG** masuk source code, browser, log, telemetry, error, response public, snapshot, atau commit. `GETLIB_DEFAULT_ACCOUNT` dan `GETLIB_DEFAULT_PASS` dibaca melalui centralized typed configuration. Fallback `awesomemcp@getlib-local.com` dan `getlib123` hanya mengikuti bootstrap contract, **HARUS** memunculkan warning, dan **HARUS** segera diganti. Password bersifat write-only.
 
 Siklus secret minimum:
 

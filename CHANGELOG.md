@@ -80,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   behavior change.
 - Strip comments from the MCP build script with no behavior change.
 - Document the license terms and the modular dist entry in README.
+- Normalize agent rule wording and complete the canonical env
+  spelling migration with full database persistence.
 
 </details>
 

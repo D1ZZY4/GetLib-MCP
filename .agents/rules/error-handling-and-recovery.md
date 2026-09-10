@@ -18,7 +18,7 @@ Baca `blueprint.md` terlebih dahulu, lalu gunakan modul ini sebagai pendalaman o
 ## Konvensi Normatif
 
 - **WAJIB** berarti persyaratan error handling yang **HARUS** dipenuhi sebelum perubahan dianggap selesai.
-- **DILARANG** berarti pola yang tidak boleh digunakan, termasuk menelan error atau membocorkan detail internal.
+- **DILARANG** menandai pola terlarang, termasuk menelan error atau membocorkan detail internal.
 - Setiap error **HARUS** memiliki kategori, retryability, correlation context, dan transformasi yang aman pada boundary.
 - Pesan kepada pengguna **WAJIB** jelas dan dapat ditindaklanjuti tanpa membocorkan secret, stack trace, atau data pengguna lain.
 

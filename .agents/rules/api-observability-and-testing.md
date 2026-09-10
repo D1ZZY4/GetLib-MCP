@@ -20,7 +20,7 @@ Modul ini dibaca setelah `blueprint.md` dan diterapkan bersama modul lain yang r
 ## Konvensi Normatif
 
 - **WAJIB** berarti persyaratan yang **HARUS** dipenuhi sebelum perubahan dianggap selesai.
-- **DILARANG** berarti pola yang **DILARANG** digunakan, termasuk sebagai workaround sementara yang masuk ke branch atau deployment.
+- **DILARANG** menandai pola terlarang, termasuk workaround sementara yang masuk ke branch atau deployment.
 - **HARUS** menyatakan perilaku kontrak yang diperlukan agar modul lain dapat berintegrasi secara konsisten.
 - Setiap perubahan yang menyentuh public contract, security boundary, data persistence, transport, atau observability **HARUS** menyertakan bukti validasi yang relevan.
 - Technical identifier, nama environment variable, status HTTP, dan schema pada contoh **HARUS** dipertahankan persis kecuali ada keputusan migrasi yang terdokumentasi.
@@ -734,7 +734,7 @@ Alur autentikasi:
 
 ```mermaid
 flowchart TD
-    CFG["Configuration"] --> AUTH["GETLIB_AUTHENTICATICATION_ENABLE"]
+    CFG["Configuration"] --> AUTH["GETLIB_AUTHENTICATION_ENABLE"]
     AUTH --> STATE{"Enabled / Disabled"}
     STATE -->|Enabled| A["Authentication"]
     A --> AZ["Authorization"]

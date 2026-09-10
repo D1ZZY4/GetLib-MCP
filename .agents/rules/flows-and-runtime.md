@@ -614,14 +614,14 @@ Application **DILARANG** melakukan arbitrary environment access dari seluruh cod
 Minimum configuration **HARUS** mencakup:
 
 ```text
-GETLIB_AUTHENTICATICATION_ENABLE
+GETLIB_AUTHENTICATION_ENABLE
 GETLIB_DEFAULT_ACCOUNT
 GETLIB_DEFAULT_PASS
 ```
 
 Spelling variable **HARUS** dipertahankan persis sesuai contract application.
 
-Keputusan kontrak: ejaan `GETLIB_AUTHENTICATICATION_ENABLE` adalah kontrak canonical dan dipertahankan persis untuk backward compatibility. Ejaan koreksi `GETLIB_AUTHENTICATION_ENABLE` **DILARANG** dipakai tanpa migration contract yang eksplisit. Apabila project memakai ejaan benar, buat migration contract yang membaca kedua ejaan dengan precedence terdokumentasi, lalu depresiasi ejaan lama.
+Keputusan kontrak: ejaan `GETLIB_AUTHENTICATION_ENABLE` adalah kontrak canonical. Ejaan lama yang typo **DILARANG** dipakai pada code baru. Apabila project masih memakai ejaan lama, buat migration contract yang membaca kedua ejaan dengan precedence terdokumentasi, lalu depresiasi ejaan lama.
 
 Additional variables dapat mencakup Supabase URL, publishable key, secret key, database connection configuration, runtime flags, dan provider credentials.
 
