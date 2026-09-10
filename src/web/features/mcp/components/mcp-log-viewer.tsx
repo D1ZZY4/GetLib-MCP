@@ -133,11 +133,25 @@ export function McpLogViewer() {
       </div>
 
       {loading ? (
-        <div role="status" aria-label="Loading logs" className="flex flex-col gap-2">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton key={index} className="h-10 rounded-xl" />
-          ))}
-        </div>
+        <Card role="status" aria-label="Loading logs">
+          <Card.Content>
+            <div className="mb-2 flex items-center gap-2" aria-hidden="true">
+              <Skeleton className="h-8 flex-1 rounded-xl" />
+              <Skeleton className="h-8 w-24 rounded-xl" />
+            </div>
+            <div className="divide-y divide-border" aria-hidden="true">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex items-center justify-between gap-3 py-2">
+                  <Skeleton className="h-4 w-2/5 rounded font-mono" />
+                  <div className="flex shrink-0 gap-2">
+                    <Skeleton className="h-4 w-8 rounded" />
+                    <Skeleton className="h-4 w-12 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card.Content>
+        </Card>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : logs.length === 0 ? (

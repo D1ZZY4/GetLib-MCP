@@ -6,6 +6,7 @@ import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { verdictTone } from "@/web/components/ui/verdict-tone";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { DetailHeaderSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchDocDetail } from "../services/discover.service";
 import { ArrowRightIcon } from "@/web/components/ui/icons";
@@ -47,10 +48,20 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
           </Card.Content>
         </Card>
       ) : loading ? (
-        <div role="status" aria-label="Loading document" className="flex flex-col gap-2">
-          <Skeleton className="h-8 w-2/3 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
+        <div role="status" aria-label="Loading document" className="flex flex-col gap-4">
+          <DetailHeaderSkeleton />
+          <Card>
+            <Card.Content>
+              <div className="space-y-2.5" aria-hidden="true">
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-11/12 rounded" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-3/5 rounded" />
+              </div>
+            </Card.Content>
+          </Card>
         </div>
       ) : error !== null || data === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />

@@ -23,8 +23,25 @@ export function McpServerList() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading servers" className="flex flex-col gap-2">
-          <Skeleton className="h-20 rounded-xl" />
+        <div role="status" aria-label="Loading servers" className="grid gap-4 md:grid-cols-2">
+          {[0, 1].map((index) => (
+            <Card key={index}>
+              <Card.Header>
+                <div className="flex items-center justify-between gap-2" aria-hidden="true">
+                  <Skeleton className="h-4 w-32 rounded" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-48 rounded" aria-hidden="true" />
+              </Card.Header>
+              <Card.Content>
+                <div className="flex gap-4" aria-hidden="true">
+                  <Skeleton className="h-4 w-16 rounded" />
+                  <Skeleton className="h-4 w-20 rounded" />
+                  <Skeleton className="h-4 w-16 rounded" />
+                </div>
+              </Card.Content>
+            </Card>
+          ))}
         </div>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />

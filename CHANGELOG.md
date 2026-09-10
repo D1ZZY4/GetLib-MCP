@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dedicated table plus migration.
 - Accept API keys on every guarded route through the same live
   verification seam.
+- Adopt shared structural skeletons across every loading state.
 - Route logs by host truthfully, survive deleted working
   directories, and ignore local credentials.
 

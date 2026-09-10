@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, Card, Skeleton } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
+import { ListRowSkeleton } from "@/web/components/ui/skeletons";
 import { runTool } from "../services/mcp.service";
 
 export function McpToolList() {
@@ -39,11 +40,15 @@ export function McpToolList() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading tools" className="flex flex-col gap-2">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-12 rounded-xl" />
-          ))}
-        </div>
+        <Card role="status" aria-label="Loading tools">
+          <Card.Content>
+            <div className="divide-y divide-border">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <ListRowSkeleton key={index} action="button" />
+              ))}
+            </div>
+          </Card.Content>
+        </Card>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.tools.length === 0 ? (

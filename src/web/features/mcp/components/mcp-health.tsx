@@ -4,6 +4,7 @@ import { Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { DefinitionGridSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { statusTone } from "@/web/components/ui/status-tone";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
@@ -36,10 +37,33 @@ export function McpHealth() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading health" className="grid gap-4 sm:grid-cols-3">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
+        <div role="status" aria-label="Loading health" className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <Card.Header>
+                <Skeleton className="h-4 w-28 rounded" />
+                <Skeleton className="h-3 w-48 rounded" />
+              </Card.Header>
+              <Card.Content>
+                <DefinitionGridSkeleton />
+              </Card.Content>
+            </Card>
+            <Card>
+              <Card.Header>
+                <Skeleton className="h-4 w-32 rounded" />
+                <Skeleton className="h-3 w-44 rounded" />
+              </Card.Header>
+              <Card.Content>
+                <DefinitionGridSkeleton />
+              </Card.Content>
+            </Card>
+          </div>
         </div>
       ) : error !== null || health === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />

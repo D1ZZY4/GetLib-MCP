@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Card, Skeleton } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { ListRowSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
 import { fetchClients } from "../services/clients.service";
@@ -24,10 +25,15 @@ export function McpClients() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading clients" className="flex flex-col gap-2">
-          <Skeleton className="h-12 rounded-xl" />
-          <Skeleton className="h-12 rounded-xl" />
-        </div>
+        <Card role="status" aria-label="Loading clients">
+          <Card.Content>
+            <div className="divide-y divide-border">
+              <ListRowSkeleton action="pill" />
+              <ListRowSkeleton action="pill" />
+              <ListRowSkeleton action="pill" />
+            </div>
+          </Card.Content>
+        </Card>
       ) : error !== null || snapshot === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : snapshot.total === 0 ? (

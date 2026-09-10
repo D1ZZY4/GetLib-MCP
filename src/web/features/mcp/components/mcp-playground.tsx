@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Key } from "@heroui/react";
 import { Button, Card, Label, ListBox, Select, Skeleton } from "@heroui/react";
+import { FormRowSkeleton } from "@/web/components/ui/skeletons";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -59,10 +60,18 @@ export function McpPlayground() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading playground" className="flex flex-col gap-2">
-          <Skeleton className="h-12 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
-        </div>
+        <Card role="status" aria-label="Loading playground">
+          <Card.Content>
+            <div className="flex flex-col gap-4">
+              <FormRowSkeleton />
+              <div className="space-y-1.5" aria-hidden="true">
+                <Skeleton className="h-3 w-32 rounded" />
+                <Skeleton className="h-40 rounded-xl" />
+              </div>
+              <Skeleton className="h-8 w-24 rounded-xl" aria-hidden="true" />
+            </div>
+          </Card.Content>
+        </Card>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.tools.length === 0 ? (

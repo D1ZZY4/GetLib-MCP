@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Card, Skeleton } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchHealth } from "../services/health.service";
 import { fetchClients } from "../services/clients.service";
@@ -71,10 +72,11 @@ export function McpOverview() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading MCP overview" className="grid gap-4 sm:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 rounded-xl" />
-          ))}
+        <div role="status" aria-label="Loading MCP overview" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
         </div>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retryAll} />

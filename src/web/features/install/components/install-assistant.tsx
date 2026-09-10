@@ -71,8 +71,17 @@ export function InstallAssistant() {
       <PageContainer>
         <PageHeader title="Install to your AI agents" description="Loading install instructions." />
         <div role="status" aria-label="Loading install instructions" className="flex flex-col gap-4">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-72 rounded-xl" />
+          <div aria-hidden="true">
+            <Skeleton className="h-5 w-40 rounded" />
+            <Skeleton className="mt-1 h-3 w-72 max-w-full rounded" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3" aria-hidden="true">
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </div>
+          <Skeleton className="h-10 w-64 max-w-full rounded-xl" aria-hidden="true" />
+          <Skeleton className="h-72 rounded-xl" aria-hidden="true" />
         </div>
       </PageContainer>
     );

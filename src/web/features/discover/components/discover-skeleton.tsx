@@ -6,12 +6,15 @@ export function DiscoverSkeleton({ rows = 4 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, index) => (
         <Card key={index}>
           <Card.Header>
-            <Skeleton className="h-4 w-28 rounded" />
-            <Skeleton className="h-3 w-36 rounded" />
+            <Skeleton className="h-4 w-28 rounded" aria-hidden="true" />
+            <Skeleton className="h-3 w-44 max-w-full rounded" aria-hidden="true" />
           </Card.Header>
           <Card.Content>
-            <Skeleton className="h-3 w-full rounded" />
-            <Skeleton className="h-3 w-4/5 rounded" />
+            <div className="space-y-2" aria-hidden="true">
+              <Skeleton className="h-3 w-full rounded" />
+              <Skeleton className="h-3 w-full rounded" />
+              <Skeleton className="h-3 rounded" style={{ width: `${72 - (index % 3) * 8}%` }} />
+            </div>
           </Card.Content>
         </Card>
       ))}

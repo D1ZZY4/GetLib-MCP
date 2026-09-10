@@ -18,11 +18,19 @@ export function McpResourceList() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading resources" className="flex flex-col gap-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 rounded-xl" />
-          ))}
-        </div>
+        <Card role="status" aria-label="Loading resources">
+          <Card.Content>
+            <div className="space-y-3" aria-hidden="true">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-1.5">
+                  <Skeleton className="h-4 w-1/3 rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                  <Skeleton className="h-3 w-2/3 rounded" />
+                </div>
+              ))}
+            </div>
+          </Card.Content>
+        </Card>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.resources.length === 0 ? (

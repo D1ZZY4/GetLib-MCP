@@ -4,6 +4,7 @@ import { Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { LibraryListEditor } from "./library-list-editor";
 import { SourceGroupCard } from "./source-group";
 import { useSourceAccess } from "../hooks/use-source-access";
@@ -52,11 +53,42 @@ export function SourceAccessPage() {
       {loading ? (
         <div role="status" aria-label="Loading sources" className="flex flex-col gap-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-40 rounded-xl" />
+            {[0, 1, 2].map((index) => (
+              <Card key={index} className="h-full">
+                <Card.Header>
+                  <Skeleton className="h-4 w-32 rounded" />
+                  <Skeleton className="h-3 w-48 max-w-full rounded" />
+                </Card.Header>
+                <Card.Content>
+                  <div className="space-y-3" aria-hidden="true">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="size-9 shrink-0 rounded-full" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-2/3 rounded" />
+                        <Skeleton className="h-3 w-full rounded" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="size-9 shrink-0 rounded-full" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-1/2 rounded" />
+                        <Skeleton className="h-3 w-4/5 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </Card.Content>
+              </Card>
             ))}
           </div>
-          <Skeleton className="h-40 rounded-xl" />
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-36 rounded" />
+              <Skeleton className="h-3 w-56 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <DefinitionListSkeleton rows={2} />
+            </Card.Content>
+          </Card>
         </div>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />

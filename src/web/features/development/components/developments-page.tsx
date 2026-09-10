@@ -105,8 +105,30 @@ export function DevelopmentsPage() {
 
       {loading ? (
         <div role="status" aria-label="Loading development status" className="flex flex-col gap-4">
-          <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-36 rounded" />
+              <Skeleton className="h-3 w-64 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <div className="grid gap-2 sm:grid-cols-2" aria-hidden="true">
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
+              </div>
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-28 rounded" />
+              <Skeleton className="h-3 w-52 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <div className="flex gap-2" aria-hidden="true">
+                <Skeleton className="h-9 w-24 rounded-xl" />
+                <Skeleton className="h-9 w-24 rounded-xl" />
+              </div>
+            </Card.Content>
+          </Card>
         </div>
       ) : error !== null || failed || runtime === null || settings === null ? (
         <LoadError

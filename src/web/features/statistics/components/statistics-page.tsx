@@ -4,6 +4,7 @@ import { Card, Skeleton } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { DocsShareChart } from "./docs-share-chart";
 import { FetchRadial } from "./fetch-radial";
 import { FetchRanking } from "./fetch-ranking";
@@ -25,9 +26,10 @@ export function StatisticsPage() {
       {loading ? (
         <div role="status" aria-label="Loading statistics" className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-24 rounded-xl" />
-            ))}
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
           </div>
           <Skeleton className="h-72 rounded-xl" />
           <div className="grid gap-4 lg:grid-cols-2">

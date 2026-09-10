@@ -18,11 +18,22 @@ export function McpPromptList() {
       />
 
       {loading ? (
-        <div role="status" aria-label="Loading prompts" className="flex flex-col gap-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 rounded-xl" />
-          ))}
-        </div>
+        <Card role="status" aria-label="Loading prompts">
+          <Card.Content>
+            <div className="space-y-3" aria-hidden="true">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-1.5">
+                  <Skeleton className="h-4 w-1/4 rounded" />
+                  <Skeleton className="h-3 w-3/5 rounded" />
+                  <div className="flex gap-1.5">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card.Content>
+        </Card>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.prompts.length === 0 ? (

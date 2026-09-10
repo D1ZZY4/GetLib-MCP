@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "../services/runtime-api.service";
 import { fetchSettings } from "../services/settings-api.service";
@@ -74,8 +75,24 @@ export function SettingsPage() {
 
       {loading ? (
         <div role="status" aria-label="Loading settings" className="flex flex-col gap-4">
-          <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-28 rounded" />
+              <Skeleton className="h-3 w-56 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <DefinitionListSkeleton rows={4} />
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-3 w-48 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <DefinitionListSkeleton rows={3} />
+            </Card.Content>
+          </Card>
         </div>
       ) : error !== null || runtime === null ? (
         <LoadError message={error ?? "We could not load settings."} onRetry={retry} />

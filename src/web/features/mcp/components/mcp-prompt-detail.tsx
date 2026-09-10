@@ -5,6 +5,7 @@ import { BackLink } from "@/web/components/ui/back-link";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
+import { DefinitionListSkeleton, DetailHeaderSkeleton } from "@/web/components/ui/skeletons";
 import { useMcpCatalog } from "../hooks/use-mcp-catalog";
 
 export function McpPromptDetail({ promptName }: { promptName: string }) {
@@ -16,9 +17,17 @@ export function McpPromptDetail({ promptName }: { promptName: string }) {
       <BackLink href="/mcp/prompts">Back to prompts</BackLink>
 
       {loading ? (
-        <div role="status" aria-label="Loading prompt" className="flex flex-col gap-2">
-          <Skeleton className="h-8 w-2/3 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
+        <div role="status" aria-label="Loading prompt" className="flex flex-col gap-4">
+          <DetailHeaderSkeleton />
+          <Card>
+            <Card.Header>
+              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-3 w-56 max-w-full rounded" />
+            </Card.Header>
+            <Card.Content>
+              <DefinitionListSkeleton rows={3} />
+            </Card.Content>
+          </Card>
         </div>
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
