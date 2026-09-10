@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tools stay thin adapters.
 - Share one bare-name fallback pipeline between dynamic resolve
   and the resolve use case.
+- Extract compat and dispatch use cases with injected seams so
+  tools stay thin adapters.
 
 </details>
 

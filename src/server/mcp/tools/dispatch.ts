@@ -20,11 +20,12 @@
 
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { detectIntent, renderRoutingTable } from "../services/intent-router";
-import { withNotice, safeguardPath, withToolTimeout } from "../utils/guard";
+import { withToolTimeout } from "../utils/guard";
+import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { withTelemetry } from "../services/telemetry";
-import { ROUTING_RATIONALE, ROUTING_FALLBACK } from "../sources/routing-rationale";
+import { dispatchUseCase } from "@/application/dispatch/dispatch.service";
+import { liveDispatchDeps } from "../infrastructure/deps/dispatch-deps";
 
 const InputSchema = z.object({
   query: nonBlankString(2000)
@@ -50,10 +51,10 @@ OUTPUT: a routing decision with tool name, args, reason, and a 0-to-1 confidence
 
 Use it for "use getlib mcp" in any phrasing.`;
 
-const TIMEOUT_RESPONSE = {
-  content: [{ type: "text" as const, text: "Dispatch timed out. Retry, or call gl_search directly with your query." }],
-  structuredContent: { timedOut: true, tool: "gl_search" as const, args: {}, reason: "timeout fallback", confidence: 0 },
-};
+const TIMEOUT_RESPONSE = timeoutResponse(
+  "Dispatch timed out. Retry, or call gl_search directly with your query.",
+  { timedOut: true, tool: "gl_search" as const, args: {}, reason: "timeout fallback", confidence: 0 },
+);
 
 export function registerDispatchTools(): void {
   defineTool({
@@ -71,69 +72,15 @@ export function registerDispatchTools(): void {
       const { query, projectPath } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_dispatch", async (ctx) => {
         return withToolTimeout(async () => {
-        const intent = detectIntent({
-          query,
-          ...(projectPath !== undefined ? { projectPath } : {}),
-        });
-
-        // Resolve project path for project-level tools
-        let resolvedPath: string | undefined;
-        if (
-          intent.tool === "gl_auto_scan" ||
-          intent.tool === "gl_audit"
-        ) {
-          try {
-            const rawPath = intent.args["projectPath"];
-            const pathArg = typeof rawPath === "string" ? rawPath : undefined;
-            resolvedPath = safeguardPath(pathArg ?? projectPath ?? process.cwd());
-            intent.args["projectPath"] = resolvedPath;
-          } catch {
-            // fall back to bare cwd marker - actual tool will re-validate
-          }
-        }
-
-        const lines: string[] = [];
-        lines.push(`# Dispatch - routed to \`${intent.tool}\``);
-        lines.push("");
-        lines.push(`> Confidence: **${(intent.confidence * 100).toFixed(0)}%**  •  Reason: ${intent.reason}`);
-        lines.push("");
-        lines.push("## Recommended call");
-        lines.push("```json");
-        lines.push(
-          JSON.stringify(
+          const { response, resolved } = await dispatchUseCase(
             {
-              tool: intent.tool,
-              args: intent.args,
+              query,
+              ...(projectPath !== undefined ? { projectPath } : {}),
             },
-            null,
-            2,
-          ),
-        );
-        lines.push("```");
-        lines.push("");
-        lines.push("## Why this routing?");
-
-        lines.push(ROUTING_RATIONALE[intent.tool] ?? ROUTING_FALLBACK);
-        lines.push("");
-        lines.push("## Next step");
-        lines.push(
-          `Invoke the recommended tool with the args above. The arguments are checked against the target tool's required fields. If the routing looks wrong, fall back to \`gl_search({ query: "${query.replace(/"/g, '\\"')}" })\` - it never fails to return *something* useful.`,
-        );
-        lines.push("");
-        lines.push("---");
-        lines.push("");
-        lines.push(renderRoutingTable());
-
-        ctx.resolved = true;
-        return {
-          content: [{ type: "text", text: withNotice(lines.join("\n")) }],
-          structuredContent: {
-            tool: intent.tool,
-            args: intent.args,
-            reason: intent.reason,
-            confidence: intent.confidence,
-          },
-        };
+            liveDispatchDeps,
+          );
+          ctx.resolved = resolved;
+          return response;
         }, TIMEOUT_RESPONSE);
       });
     }
