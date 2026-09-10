@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   canonical env spelling contract, and commit changelog discipline.
 - Adopt SSPL-1.0: add the official license text and declare it
   across agent rules and skills.
+- Publish a modular tsc dist tree with rewritten imports behind
+  dist/index.js and declare full npm publish metadata.
 
 </details>
 

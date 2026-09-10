@@ -10,7 +10,7 @@ COPY . .
 RUN bun run build
 RUN bun run build:mcp
 
-# Runtime on Node, not Bun: .next output and dist/mcp.js are platform JS,
+# Runtime on Node, not Bun: .next output and dist/index.js are platform JS,
 # and native helpers (SWC) resolve for linux at install time above, so the
 # Bun-built artifacts run unmodified. node_modules stays unpruned on
 # purpose - pruning devDeps without a verified build here risks dropping

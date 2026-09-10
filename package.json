@@ -3,11 +3,39 @@
   "version": "1.1.6",
   "type": "module",
   "description": "GetLib MCP - powerful modular self-hostable library docs MCP server and dashboard (Context7 alternative)",
+  "license": "SSPL-1.0",
+  "author": "D1ZZY4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/D1ZZY4/GetLib-MCP.git"
+  },
+  "homepage": "https://github.com/D1ZZY4/GetLib-MCP#readme",
+  "bugs": {
+    "url": "https://github.com/D1ZZY4/GetLib-MCP/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "context7-alternative",
+    "library-docs",
+    "documentation",
+    "claude",
+    "cursor",
+    "ai",
+    "devtools"
+  ],
+  "main": "./dist/index.js",
   "bin": {
-    "getlib-mcp": "./dist/mcp.js"
+    "getlib-mcp": "./dist/index.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -16,7 +44,7 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "mcp": "bun src/server/mcp/stdio-entry.ts",
-    "build:mcp": "bun build src/server/mcp/stdio-entry.ts --outfile dist/mcp.js --target node --format esm --minify --banner '#!/usr/bin/env node' && chmod +x dist/mcp.js",
+    "build:mcp": "bun scripts/build-mcp-modular.ts",
     "prepublishOnly": "bun run build:mcp",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
