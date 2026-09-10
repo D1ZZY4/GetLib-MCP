@@ -13,6 +13,10 @@
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.NEXT_PHASE === "phase-production-build") return;
+  // Server runtime: info/debug to stdout so platform log levels stay
+  // truthful (Vercel maps stderr to error). stdio keeps stderr-only.
+  const { setLogStreamMode } = await import("./server/mcp/utils/logger");
+  setLogStreamMode("split");
   const { initializeApplication } = await import("./server/mcp/init");
   await initializeApplication();
 }

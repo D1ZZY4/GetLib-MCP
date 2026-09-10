@@ -21,11 +21,32 @@ import { TOOL_TIMEOUT_MS } from "../constants";
 import { lookupByAlias, lookupById } from "../sources/registry";
 
 /**
+ * Current working directory, or null when it cannot be determined (e.g.
+ * the process started in a directory that was deleted afterwards -
+ * process.cwd() throws ENOENT there). Callers must treat null as
+ * "no baseline", never crash on it.
+ */
+function currentWorkingDir(): string | null {
+  try {
+    return resolve(process.cwd());
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolves a filesystem path and blocks access to sensitive system directories.
  * Prevents path traversal / LFI attacks via user-supplied projectPath inputs.
  */
 export function safeguardPath(inputPath: string): string {
-  let resolved = resolve(inputPath);
+  let resolved: string;
+  try {
+    resolved = resolve(inputPath);
+  } catch {
+    // Deleted cwd + relative input: resolve() itself needs the cwd.
+    // Fail closed with the same controlled error as a blocked path.
+    throw new Error(`Invalid project path: ${inputPath}`);
+  }
   // Dereference symlinks before the boundary check so a link sitting inside an
   // allowed dir but pointing at a blocked system path (e.g. ./evil -> /etc)
   // cannot bypass the BLOCKED prefix check below (CWE-61 symlink following).
@@ -49,13 +70,15 @@ export function safeguardPath(inputPath: string): string {
   // the enforced boundary; outside-cwd reads stay allowed because the stdio
   // cwd is the server install dir while the user project is often elsewhere.
   // Debug level: this fires on legitimate absolute paths, so warn would spam.
-  try {
-    const cwd = resolve(process.cwd());
-    if (resolved !== cwd && !resolved.startsWith(cwd + "/")) {
+  // The baseline is best-effort: when the cwd itself is gone there is
+  // nothing to compare against, so the signal is skipped, never thrown.
+  const cwd = currentWorkingDir();
+  if (cwd !== null && resolved !== cwd && !resolved.startsWith(cwd + "/")) {
+    try {
       log({ level: "debug", msg: "guard.path.outside-cwd", path: resolved });
+    } catch {
+      // Logging must never block the guarded read.
     }
-  } catch {
-    // Logging must never block the guarded read.
   }
 
   return resolved;

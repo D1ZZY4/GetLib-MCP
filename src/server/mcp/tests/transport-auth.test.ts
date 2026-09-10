@@ -71,6 +71,75 @@ describe("MCP transport auth matrix (auth enabled)", () => {
     expect(res.status).toBe(401);
   });
 
+  test("a valid API key opens the protocol without a session", async () => {
+    const { createApiKey } = await import("@/application/apikeys/apikeys.service");
+    const { liveApiKeyDeps } = await import("../infrastructure/deps/apikeys-deps");
+    const { resetDatabaseCache, getDatabase } = await import("../infrastructure/database");
+    resetDatabaseCache();
+    const created = await createApiKey(liveApiKeyDeps, "transport-auth-test");
+    try {
+      const res = await handleHttpRequest(
+        new Request("http://localhost/api/mcp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json, text/event-stream",
+            Authorization: `Bearer ${created.key}`,
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 7,
+            method: "initialize",
+            params: {
+              protocolVersion: "2025-06-18",
+              capabilities: {},
+              clientInfo: { name: "transport-auth-test", version: "0.0.0" },
+            },
+          }),
+        }),
+      );
+      expect(res.status).toBe(200);
+      const stored = await getDatabase().listApiKeys();
+      expect(stored.find((row) => row.id === created.id)?.lastUsedAt).not.toBeNull();
+    } finally {
+      resetDatabaseCache();
+    }
+  });
+
+  test("a revoked API key stays at 401", async () => {
+    const { createApiKey, revokeApiKey } = await import("@/application/apikeys/apikeys.service");
+    const { liveApiKeyDeps } = await import("../infrastructure/deps/apikeys-deps");
+    const { resetDatabaseCache } = await import("../infrastructure/database");
+    resetDatabaseCache();
+    const created = await createApiKey(liveApiKeyDeps, "transport-auth-test");
+    await revokeApiKey(liveApiKeyDeps, created.id);
+    try {
+      const res = await handleHttpRequest(
+        new Request("http://localhost/api/mcp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json, text/event-stream",
+            Authorization: `Bearer ${created.key}`,
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 8,
+            method: "initialize",
+            params: {
+              protocolVersion: "2025-06-18",
+              capabilities: {},
+              clientInfo: { name: "transport-auth-test", version: "0.0.0" },
+            },
+          }),
+        }),
+      );
+      expect(res.status).toBe(401);
+    } finally {
+      resetDatabaseCache();
+    }
+  });
+
   test("health stays public with 200", async () => {
     const res = await healthGet(new Request("http://localhost/api/management/health"));
     expect(res.status).toBe(200);

@@ -11,6 +11,8 @@ Files apply in filename order and must not depend on each other.
   production-only.
 - `2026090903_mcp_logs_request_id_idx.sql` - correlation lookup index on
   `mcp_logs.request_id`. Additive only; shipped files are never edited.
+- `2026090904_api_keys.sql` - long-lived API keys (`api_keys`, hashes
+  only). Owner: `SupabaseDatabaseRepository` + API key use case.
 
 Rules:
 
@@ -19,8 +21,9 @@ Rules:
   used for these tables.
 - Seeds must be idempotent (`on conflict do nothing`) so migrations are
   safe to re-run.
-- Never store passwords or secrets in seeds. The bootstrap seed holds the
-  documented fallback account name only; the password stays env-only.
+- Never store passwords, secrets, or plaintext API keys in seeds or
+  tables. The bootstrap seed holds the documented fallback account name
+  only; the password stays env-only. API keys persist as sha256 hashes.
 - Development and production must use separate Supabase projects. Apply
   with `supabase db push` (linked project) or
   `psql $DATABASE_URL -f <file>`.

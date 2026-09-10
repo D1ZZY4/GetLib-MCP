@@ -1,38 +1,47 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { log } from "../utils/logger";
+import { log, setLogStreamMode } from "../utils/logger";
 
 describe("logger redaction", () => {
-  const original = console.error;
-  let captured: string[];
+  const originalError = console.error;
+  const originalLog = console.log;
+  let capturedError: string[];
+  let capturedLog: string[];
 
   beforeEach(() => {
-    captured = [];
+    capturedError = [];
+    capturedLog = [];
     console.error = (...args: unknown[]) => {
-      captured.push(args.map((part) => String(part)).join(" "));
+      capturedError.push(args.map((part) => String(part)).join(" "));
     };
+    console.log = (...args: unknown[]) => {
+      capturedLog.push(args.map((part) => String(part)).join(" "));
+    };
+    setLogStreamMode("stderr");
   });
 
   afterEach(() => {
-    console.error = original;
+    console.error = originalError;
+    console.log = originalLog;
+    setLogStreamMode("stderr");
   });
 
   test("redacts sensitive fields", () => {
     log({ level: "error", msg: "signin failed", password: "s3cr3t", token: "abc" });
-    expect(captured.join("\n")).not.toContain("s3cr3t");
-    expect(captured.join("\n")).not.toContain("abc");
-    expect(captured.join("\n")).toContain("[redacted]");
+    expect(capturedError.join("\n")).not.toContain("s3cr3t");
+    expect(capturedError.join("\n")).not.toContain("abc");
+    expect(capturedError.join("\n")).toContain("[redacted]");
   });
 
   test("scrubs bearer credentials in free text", () => {
     log({ level: "warn", msg: "fetch failed", error: "401 with Bearer deadbeef auth" });
-    expect(captured.join("\n")).not.toContain("deadbeef");
-    expect(captured.join("\n")).toContain("Bearer [redacted]");
+    expect(capturedError.join("\n")).not.toContain("deadbeef");
+    expect(capturedError.join("\n")).toContain("Bearer [redacted]");
   });
 
   test("scrubs basic credentials and header-style api keys", () => {
     log({ level: "warn", msg: "upstream", error: "denied Basic c2VjcmV0OnBhc3M=" });
     log({ level: "warn", msg: "upstream", error: "invalid x-api-key=supersecret123" });
-    const out = captured.join("\n");
+    const out = capturedError.join("\n");
     expect(out).not.toContain("c2VjcmV0OnBhc3M=");
     expect(out).not.toContain("supersecret123");
     expect(out).toContain("Basic [redacted]");
@@ -41,7 +50,7 @@ describe("logger redaction", () => {
   test("scrubs query-string secrets in logged urls", () => {
     log({ level: "warn", msg: "tryFetch.ssrf_blocked", url: "https://api.example.com/data?token=abc123&limit=10" });
     log({ level: "warn", msg: "fetch", url: "https://api.example.com/data?api_key=key456" });
-    const out = captured.join("\n");
+    const out = capturedError.join("\n");
     expect(out).not.toContain("abc123");
     expect(out).not.toContain("key456");
     expect(out).toContain("token=[redacted]");
@@ -50,8 +59,51 @@ describe("logger redaction", () => {
 
   test("redacts session and cookie fields", () => {
     log({ level: "error", msg: "auth", session: "v1.payload.sig", cookie: "getlib_session=x" });
-    const out = captured.join("\n");
+    const out = capturedError.join("\n");
     expect(out).not.toContain("v1.payload.sig");
     expect(out).not.toContain("getlib_session=x");
+  });
+});
+
+describe("logger stream routing", () => {
+  const originalError = console.error;
+  const originalLog = console.log;
+  let capturedError: string[];
+  let capturedLog: string[];
+
+  beforeEach(() => {
+    capturedError = [];
+    capturedLog = [];
+    console.error = (...args: unknown[]) => {
+      capturedError.push(args.map((part) => String(part)).join(" "));
+    };
+    console.log = (...args: unknown[]) => {
+      capturedLog.push(args.map((part) => String(part)).join(" "));
+    };
+  });
+
+  afterEach(() => {
+    console.error = originalError;
+    console.log = originalLog;
+    setLogStreamMode("stderr");
+  });
+
+  test("stderr mode keeps every level on stderr for stdio safety", () => {
+    setLogStreamMode("stderr");
+    log({ level: "info", msg: "hello" });
+    log({ level: "error", msg: "boom" });
+    expect(capturedError.join("\n")).toContain("hello");
+    expect(capturedError.join("\n")).toContain("boom");
+    expect(capturedLog.join("\n")).toBe("");
+  });
+
+  test("split mode sends info to stdout and errors to stderr", () => {
+    setLogStreamMode("split");
+    log({ level: "info", msg: "hello" });
+    log({ level: "error", msg: "boom" });
+    expect(capturedLog.join("\n")).toContain("hello");
+    expect(capturedLog.join("\n")).not.toContain("boom");
+    expect(capturedError.join("\n")).toContain("boom");
+    expect(capturedError.join("\n")).not.toContain("hello");
   });
 });

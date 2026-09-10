@@ -54,6 +54,15 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/alter table/i);
   });
 
+  test("api keys table stores hashes, is RLS-locked, and stays additive", () => {
+    const sql = readMigration("2026090904_api_keys.sql");
+    expect(sql).toContain("create table if not exists public.api_keys");
+    expect(sql).toContain("key_hash");
+    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("api_keys_key_hash_idx");
+    expect(sql).not.toMatch(/drop table/i);
+  });
+
   test("no migration stores real secrets or drops tables", () => {
     for (const file of migrationFiles()) {
       const sql = readMigration(file);

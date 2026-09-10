@@ -125,6 +125,11 @@ profile.txt
 # ============================================================
 /gpg-key-backup/
 
+# Local opencode config with real tokens (root-only, never commit).
+# A committed opencode.json template without secrets is fine;
+# opencode.jsonc holds live credentials.
+opencode.jsonc
+
 # ============================================================
 # Attached assets (root-only, user uploads, never commit)
 # ============================================================

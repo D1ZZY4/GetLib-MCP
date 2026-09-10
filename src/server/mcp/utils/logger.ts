@@ -2,6 +2,33 @@ import { config } from "../config";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
+type LogStreamMode = "stderr" | "split";
+
+// Default is protocol-safe: the stdio transport reserves stdout for MCP
+// messages, so every level goes to stderr unless a host explicitly opts
+// into split mode. Vercel maps stderr lines to level:error, which buried
+// real errors under info noise - the Next.js instrumentation hook below
+// switches to split so info/debug land on stdout there.
+let streamMode: LogStreamMode = "stderr";
+
+/**
+ * Select where log lines are written. stdio entry keeps "stderr";
+ * server runtimes (Next.js instrumentation) use "split" so platform
+ * log levels stay truthful (info/debug to stdout, warn/error to
+ * stderr). Test-only callers must restore the previous mode.
+ */
+export function setLogStreamMode(mode: LogStreamMode): void {
+  streamMode = mode;
+}
+
+function writeLine(line: string, level: LogLevel): void {
+  if (streamMode === "split" && (level === "debug" || level === "info")) {
+    console.log(line);
+  } else {
+    console.error(line);
+  }
+}
+
 export interface LogEntry {
   level: LogLevel;
   msg: string;
@@ -80,7 +107,7 @@ export function log(entry: LogEntry): void {
 
   if (config.logFormat === "json") {
     const { level, msg, ...rest } = safe;
-    console.error(JSON.stringify({ ts: new Date().toISOString(), level, msg, ...rest }));
+    writeLine(JSON.stringify({ ts: new Date().toISOString(), level, msg, ...rest }), level);
   } else {
     // Collapse CR/LF so untrusted strings (fetched URLs, error messages) cannot
     // forge extra log lines (log injection) in the line-oriented text format.
@@ -99,6 +126,6 @@ export function log(entry: LogEntry): void {
       if (v === undefined) continue;
       parts.push(`${key}=${oneLine(typeof v === "string" ? v : JSON.stringify(v))}`);
     }
-    console.error(parts.join(" "));
+    writeLine(parts.join(" "), safe.level);
   }
 }

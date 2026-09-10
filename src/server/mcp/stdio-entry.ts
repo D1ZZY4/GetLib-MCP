@@ -9,9 +9,12 @@ import { createServer } from "./server";
 import { shutdownApplication } from "./shutdown";
 import { connectStdio } from "./transport/stdio";
 import { ensureRegistryLoaded } from "./registry/registry-loader";
-import { log } from "./utils/logger";
+import { log, setLogStreamMode } from "./utils/logger";
 
 async function main(): Promise<void> {
+  // Explicit: stdout stays reserved for the MCP protocol stream, so every
+  // log level goes to stderr on this transport (also the logger default).
+  setLogStreamMode("stderr");
   const args = process.argv.slice(2);
   if (args.includes("--version") || args.includes("-v")) {
     console.log(`${SERVER_NAME} v${SERVER_VERSION}`);
