@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Aggregate connected clients through registered transport
   listers instead of direct transport imports.
+- Mirror security headers in Next config, tolerate rate-limited
+  health checks in Docker, and index log correlation lookups.
 - Share tool-name and log-limit contracts with tests, fold
   provider em dashes in sanitized output, and fix the watermark
   doc import.

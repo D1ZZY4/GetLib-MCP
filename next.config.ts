@@ -12,6 +12,21 @@ const allowedDevOrigins = [
 const nextConfig: NextConfig = {
   allowedDevOrigins,
   poweredByHeader: false,
+  // Security headers mirror vercel.json so Docker and other non-Vercel
+  // hosts enforce the same baseline. Vercel merges both sources.
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

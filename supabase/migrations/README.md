@@ -9,6 +9,8 @@ Files apply in filename order and must not depend on each other.
 - `2026090902_init_mcp_observability.sql` - durable MCP tool-call log
   (`mcp_logs`). Owner: `SupabaseDatabaseRepository.saveLog`, written
   production-only.
+- `2026090903_mcp_logs_request_id_idx.sql` - correlation lookup index on
+  `mcp_logs.request_id`. Additive only; shipped files are never edited.
 
 Rules:
 
