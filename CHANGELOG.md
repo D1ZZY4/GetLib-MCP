@@ -17,22 +17,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dedicated table plus migration.
 - Accept API keys on every guarded route through the same live
   verification seam.
-- Inject the examples fallback seams and re-export the sources
-  error from the application layer.
+
+### Fixed
+
 - Harden API key issuance to the strict tier and drop the last
   barrel re-exports.
+- Verify API keys by indexed hash lookup, redact key material
+  and emails from logs, harden the keys UI, and constrain hashes
+  unique.
+- Route logs by host truthfully, survive deleted working
+  directories, and ignore local credentials.
+
+### Changed
+
+- Inject the examples fallback seams and re-export the sources
+  error from the application layer.
 - Clean up temp directories in tests and pin registry counts
   plus the new migration contract.
 - Document every env alias and platform-owned variable, ship
   dist in Docker, and run tests fully hermetic.
-- Verify API keys by indexed hash lookup, redact key material
-  and emails from logs, harden the keys UI, and constrain hashes
-  unique.
 - Strengthen the boundary checker with dynamic imports and
   re-export rules, and harden CI with timeouts and caching.
 - Adopt shared structural skeletons across every loading state.
-- Route logs by host truthfully, survive deleted working
-  directories, and ignore local credentials.
 - Drop the unused severity tone and tighten loading semantics,
   grids, and ranking imports.
 
