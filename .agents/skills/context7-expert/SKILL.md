@@ -8,7 +8,7 @@ description: >
   documentation and explicitly supplied versions when they are more authoritative. Do not
   invoke for library-independent programming concepts, ordinary refactors, or code whose
   correctness does not depend on external API behavior.
-license: MIT
+license: SSPL-1.0
 metadata:
   version: 1.9.0
   author: D1ZZY4

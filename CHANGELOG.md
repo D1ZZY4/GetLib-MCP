@@ -67,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a blueprint index.
 - Harden agent rules with production fallback fail-closed policy,
   canonical env spelling contract, and commit changelog discipline.
+- Adopt SSPL-1.0: add the official license text and declare it
+  across agent rules and skills.
 
 </details>
 

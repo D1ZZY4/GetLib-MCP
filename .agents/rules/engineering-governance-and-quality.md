@@ -6,7 +6,7 @@ metadata:
   category: agent-rules
   language: id-ID
 version: 6.0.0
-license: MIT
+license: SSPL-1.0
 ---
 
 # Governance Engineering dan Quality
