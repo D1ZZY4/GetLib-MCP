@@ -150,7 +150,7 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials }: AuthFormP
       <Card.Footer>
         <p className="w-full text-center text-sm text-muted">
           {copy.switchPrompt}{" "}
-          <Link href={copy.switchHref} className="font-medium text-foreground underline-offset-4 hover:underline">
+          <Link href={copy.switchHref} className="rounded font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             {copy.switchLabel}
           </Link>
         </p>

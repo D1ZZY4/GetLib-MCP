@@ -35,11 +35,40 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const visibleItems = MENU_ITEMS.filter((item) => !item.developmentOnly || isDevelopment);
 
   useEffect(() => {
     if (!open) return;
+    itemRefs.current = itemRefs.current.slice(0, visibleItems.length + 1);
+    // Move focus into the menu on open for keyboard users.
+    itemRefs.current[0]?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+        return;
+      }
+      if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+      ) {
+        return;
+      }
+      const items = itemRefs.current.filter((el): el is HTMLButtonElement => el !== null);
+      if (items.length === 0) return;
+      event.preventDefault();
+      const active = document.activeElement;
+      let index = items.findIndex((el) => el === active);
+      if (event.key === "Home") index = 0;
+      else if (event.key === "End") index = items.length - 1;
+      else if (index === -1) index = event.key === "ArrowUp" ? items.length - 1 : 0;
+      else index = (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items[index]?.focus();
     };
     const onPointer = (event: PointerEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -52,7 +81,7 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointer);
     };
-  }, [open ]);
+  }, [open, visibleItems.length ]);
 
   if (session === null) {
     // Auth mode still resolving: keep layout space with a placeholder
@@ -69,9 +98,14 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
   }
   const hasSession = authEnabled !== false || session.email !== "guest@localhost";
 
+  const showSignOut = hasSession && authEnabled !== false;
+  // Index for keyboard navigation refs: visible items first, sign out last.
+  let itemIndex = -1;
+
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
@@ -96,32 +130,44 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
             </p>
           </div>
           <div aria-hidden="true" className="my-1 h-px bg-border" />
-          {MENU_ITEMS.filter((item) => !item.developmentOnly || isDevelopment).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                router.push(item.href);
-              }}
-              className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-surface-secondary"
-            >
-              {item.label}
-            </button>
-          ))}
-          {hasSession && authEnabled !== false ? (
+          {visibleItems.map((item) => {
+            itemIndex += 1;
+            const refIndex = itemIndex;
+            return (
+              <button
+                key={item.id}
+                ref={(el) => {
+                  itemRefs.current[refIndex] = el;
+                }}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  triggerRef.current?.focus();
+                  router.push(item.href);
+                }}
+                className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+              >
+                {item.label}
+              </button>
+            );
+          })}
+          {showSignOut ? (
             <>
               <div aria-hidden="true" className="my-1 h-px bg-border" />
               <button
                 type="button"
                 role="menuitem"
+                ref={(el) => {
+                  itemRefs.current[visibleItems.length] = el;
+                }}
                 onClick={() => {
                   setOpen(false);
+                  triggerRef.current?.focus();
                   signOut();
                   router.replace("/signin");
                 }}
-                className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-danger/10"
+                className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
               >
                 Sign out
               </button>
