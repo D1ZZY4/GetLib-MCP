@@ -49,6 +49,10 @@ export class MockDatabaseRepository implements DatabaseRepository {
     }));
   }
 
+  async countLogs(): Promise<number> {
+    return this.logs.length;
+  }
+
   reset(): void {
     this.bootstrap = null;
     this.logs = [];

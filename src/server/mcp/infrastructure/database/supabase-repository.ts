@@ -115,13 +115,18 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
         .eq("id", 1)
         .maybeSingle();
       if (error || !data) return null;
-      const row = data as Pick<BootstrapRow, "account" | "credentials_changed" | "updated_at">;
+      const row = data as Partial<Pick<BootstrapRow, "account" | "credentials_changed" | "updated_at">>;
+      if (typeof row.account !== "string" || typeof row.credentials_changed !== "boolean") {
+        return null;
+      }
+      if (typeof row.updated_at !== "string") return null;
       return {
         account: row.account,
         credentialsChanged: row.credentials_changed,
         updatedAt: row.updated_at,
       };
-    } catch {
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.bootstrap.read-failed", error: String(error) });
       return null;
     }
   }
@@ -144,6 +149,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       );
     } catch (error) {
       log({ level: "warn", msg: "supabase.bootstrap.save-failed", error: String(error) });
+      throw error;
     }
   }
 
@@ -167,8 +173,27 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
-  async listLogs(limit: number): Promise<StoredLogEntry[]> {
+  async countLogs(): Promise<number> {
     const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.logs.unconfigured", this.mode);
+      return 0;
+    }
+    try {
+      const { count, error } = await withTimeout(
+        client.from("mcp_logs").select("id", { count: "exact", head: true }),
+        5000,
+        "Supabase log count timed out.",
+      );
+      if (error || typeof count !== "number") return 0;
+      return count;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.logs.count-failed", error: String(error) });
+      return 0;
+    }
+  }
+
+  async listLogs(limit: number): Promise<StoredLogEntry[]> {    const client = privilegedClient();
     if (!client) {
       reportUnconfigured("supabase.logs.unconfigured", this.mode);
       return [];

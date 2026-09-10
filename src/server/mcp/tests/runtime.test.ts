@@ -130,6 +130,18 @@ describe("runtime environment policy", () => {
     expect(getDatabaseModePolicy("development").override).toBeNull();
   });
 
+  test("rejects unknown database modes fail-fast instead of silent mock", () => {
+    const key = "GETLIB_DATABASE_MODE";
+    const prev = process.env[key];
+    try {
+      process.env[key] = "supabse";
+      expect(() => resolveDatabaseMode("development")).toThrow("GETLIB_DATABASE_MODE");
+    } finally {
+      if (prev === undefined) delete process.env[key];
+      else process.env[key] = prev;
+    }
+  });
+
   test("production ignores the realtime override", () => {
     try {
       setDatabaseModeOverride("mock");
@@ -147,10 +159,61 @@ describe("runtime environment policy", () => {
         databaseMode: "supabase-production",
         isMock: false,
         supabaseConfigured: false,
+        supabasePrivilegedConfigured: false,
+        authEnabled: false,
+        sessionSecretConfigured: false,
         vercelEnv: "production",
         nodeEnv: "production",
       }),
     ).toThrow();
+  });
+
+  test("production policy throws without the service key", () => {
+    expect(() =>
+      validateProductionPolicy({
+        environment: "production",
+        databaseMode: "supabase-production",
+        isMock: false,
+        supabaseConfigured: true,
+        supabasePrivilegedConfigured: false,
+        authEnabled: false,
+        sessionSecretConfigured: false,
+        vercelEnv: "production",
+        nodeEnv: "production",
+      }),
+    ).toThrow("service key");
+  });
+
+  test("production policy throws without a session secret while auth is enabled", () => {
+    expect(() =>
+      validateProductionPolicy({
+        environment: "production",
+        databaseMode: "supabase-production",
+        isMock: false,
+        supabaseConfigured: true,
+        supabasePrivilegedConfigured: true,
+        authEnabled: true,
+        sessionSecretConfigured: false,
+        vercelEnv: "production",
+        nodeEnv: "production",
+      }),
+    ).toThrow("GETLIB_SESSION_SECRET");
+  });
+
+  test("production policy passes with full configuration", () => {
+    expect(() =>
+      validateProductionPolicy({
+        environment: "production",
+        databaseMode: "supabase-production",
+        isMock: false,
+        supabaseConfigured: true,
+        supabasePrivilegedConfigured: true,
+        authEnabled: true,
+        sessionSecretConfigured: true,
+        vercelEnv: "production",
+        nodeEnv: "production",
+      }),
+    ).not.toThrow();
   });
 });
 

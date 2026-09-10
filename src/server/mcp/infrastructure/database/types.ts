@@ -54,6 +54,12 @@ export interface DatabaseRepository {
    */
   saveLog(entry: PersistedLogEntry): Promise<void>;
   /**
+   * Exact total of persisted log rows, for counters that must not be
+   * windowed by listLogs. Never rejects: returns 0 when unreadable so
+   * statistics fall back to in-memory telemetry instead of breaking.
+   */
+  countLogs(): Promise<number>;
+  /**
    * Durable observability read, newest first, capped at limit. This is
    * the authoritative read path for production: the dashboard must show
    * persisted logs, not whatever survives in this process's memory.

@@ -28,8 +28,10 @@ export type DatabaseMode = "mock" | "supabase-development" | "supabase-productio
 
 function readEnv(name: string): string | undefined {
   const raw = process.env[name];
-  if (raw === undefined || raw.length === 0) return undefined;
-  return raw;
+  if (raw === undefined) return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return undefined;
+  return trimmed;
 }
 
 export interface EnvironmentSignals {
@@ -78,6 +80,29 @@ function hasSupabaseConfig(): boolean {
   return url !== undefined && anon !== undefined;
 }
 
+function hasSupabasePrivilegedConfig(): boolean {
+  // Same presence-check pattern as hasSupabaseConfig: the privileged
+  // repository path requires a service key, anon alone degrades every
+  // write to a no-op. Shared key lists keep policy and parsing in sync.
+  return firstPresent(SUPABASE_SERVICE_KEYS) !== undefined;
+}
+
+/**
+ * Auth-enabled presence for startup policy only. Mirrors
+ * boolEnv("GETLIB_AUTHENTICATICATION_ENABLE", false) exactly ("true"/"1"
+ * enable, anything else is disabled here); an invalid value still throws
+ * at config load before this policy ever runs.
+ */
+function authEnabledForPolicy(): boolean {
+  const raw = readEnv("GETLIB_AUTHENTICATICATION_ENABLE");
+  if (raw === undefined) return false;
+  return raw === "true" || raw === "1";
+}
+
+function sessionSecretConfigured(): boolean {
+  return firstPresent(["GETLIB_SESSION_SECRET"]) !== undefined;
+}
+
 function firstPresent(names: string[]): string | undefined {
   for (const name of names) {
     const value = readEnv(name);
@@ -121,10 +146,13 @@ export function setDatabaseModeOverride(mode: DatabaseModeSelection | null): voi
 
 function envDefaultMode(): DatabaseMode {
   const requested = (readEnv("GETLIB_DATABASE_MODE") ?? "mock").trim().toLowerCase();
+  if (requested === "mock") return "mock";
   if (requested === "supabase" || requested === "supabase-development" || requested === "real") {
     return "supabase-development";
   }
-  return "mock";
+  throw new Error(
+    `Invalid GETLIB_DATABASE_MODE: "${requested}" - must be "mock" or "supabase" ("supabase-development" and "real" are accepted aliases).`,
+  );
 }
 
 export interface DatabaseModePolicy {
@@ -174,6 +202,18 @@ export function validateProductionPolicy(snapshot: RuntimeSnapshot = getRuntimeS
       "Missing Supabase configuration in production. Set GETLIB_SUPABASE_URL and GETLIB_SUPABASE_ANON_KEY.",
     );
   }
+  // The privileged repository path requires the service key; anon alone
+  // degrades every write to a no-op. Fail fast instead of serving
+  // silently degraded production traffic.
+  if (!snapshot.supabasePrivilegedConfigured) {
+    throw new Error("Missing Supabase service key in production. Set GETLIB_SUPABASE_SERVICE_KEY.");
+  }
+  // Session tokens are stateless HMAC; without a shared secret every
+  // serverless instance rejects the others' sessions. Fail fast instead
+  // of booting green and 500ing the first sign-in.
+  if (snapshot.authEnabled && !snapshot.sessionSecretConfigured) {
+    throw new Error("Missing GETLIB_SESSION_SECRET in production with authentication enabled.");
+  }
 }
 
 export interface RuntimeSnapshot {
@@ -181,6 +221,9 @@ export interface RuntimeSnapshot {
   databaseMode: DatabaseMode;
   isMock: boolean;
   supabaseConfigured: boolean;
+  supabasePrivilegedConfigured: boolean;
+  authEnabled: boolean;
+  sessionSecretConfigured: boolean;
   vercelEnv: string | undefined;
   nodeEnv: string | undefined;
 }
@@ -197,6 +240,9 @@ export function getRuntimeSnapshot(): RuntimeSnapshot {
     databaseMode,
     isMock: databaseMode === "mock",
     supabaseConfigured: hasSupabaseConfig(),
+    supabasePrivilegedConfigured: hasSupabasePrivilegedConfig(),
+    authEnabled: authEnabledForPolicy(),
+    sessionSecretConfigured: sessionSecretConfigured(),
     vercelEnv: readEnv("VERCEL_ENV"),
     nodeEnv: readEnv("NODE_ENV"),
   };

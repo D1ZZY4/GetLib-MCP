@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { config } from "../../config";
 
@@ -21,14 +22,30 @@ export function isSupabaseConfigured(): boolean {
   return config.supabaseUrl !== undefined && config.supabaseAnonKey !== undefined;
 }
 
+let cachedClient: { key: string; client: SupabaseClient } | null = null;
+
 /** Service-role client for privileged server-side operations. Null when unavailable. */
 export function getSupabaseServiceClient(): SupabaseClient | null {
   if (config.supabaseUrl === undefined || config.supabaseServiceKey === undefined) return null;
+  // Never keep the raw service key as an in-memory map key. A sha256 digest
+  // is enough for cache identity without retaining secret material.
+  const cacheKey = createHash("sha256")
+    .update(`${config.supabaseUrl}::${config.supabaseServiceKey}`)
+    .digest("hex");
+  const cached = cachedClient;
+  if (cached && cached.key === cacheKey) return cached.client;
   try {
-    return createClient(config.supabaseUrl, config.supabaseServiceKey, {
+    const client = createClient(config.supabaseUrl, config.supabaseServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    cachedClient = { key: cacheKey, client };
+    return client;
   } catch {
     return null;
   }
+}
+
+/** Test isolation only. Production code never calls this. */
+export function resetSupabaseClientCache(): void {
+  cachedClient = null;
 }

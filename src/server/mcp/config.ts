@@ -75,8 +75,10 @@ function enumEnv<T extends string>(name: string, fallback: T, allowed: readonly 
 
 function stringEnv(name: string): string | undefined {
   const raw = process.env[name];
-  if (raw === undefined || raw.length === 0) return undefined;
-  return raw;
+  if (raw === undefined) return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return undefined;
+  return trimmed;
 }
 
 function boolEnv(name: string, fallback: boolean): boolean {
