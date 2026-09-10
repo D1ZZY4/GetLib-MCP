@@ -9,6 +9,7 @@ import { createServer } from "./server";
 import { shutdownApplication } from "./shutdown";
 import { connectStdio } from "./transport/stdio";
 import { ensureRegistryLoaded } from "./registry/registry-loader";
+import { log } from "./utils/logger";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -46,13 +47,19 @@ async function main(): Promise<void> {
   };
   process.once("SIGTERM", () => shutdown("SIGTERM"));
   process.once("SIGINT", () => shutdown("SIGINT"));
-  console.error(
-    `getlib-mcp server running on stdio with ${listTools().length} tools, ` +
-      `${listResources().length} resources, ${listPrompts().length} prompts`,
-  );
+  // Diagnostics go through the centralized redacting logger to stderr.
+  // stdout stays reserved for the MCP protocol stream.
+  log({
+    level: "info",
+    msg: `getlib-mcp server running on stdio with ${listTools().length} tools, ${listResources().length} resources, ${listPrompts().length} prompts`,
+  });
 }
 
 main().catch((error: unknown) => {
-  console.error("Failed to start getlib-mcp server:", error);
+  log({
+    level: "error",
+    msg: "Failed to start getlib-mcp server",
+    error: error instanceof Error ? error.message : String(error),
+  });
   process.exit(1);
 });

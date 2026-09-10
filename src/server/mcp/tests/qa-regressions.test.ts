@@ -6,7 +6,8 @@ import { ensureRegistryLoaded } from "../registry/registry-loader";
 import { runTool } from "../registry/tool-registry";
 import { nonBlankString } from "../utils/schemas";
 import { hasNoResultSignal, passesFeatureGate } from "../services/compat-sources";
-import { passesIdentityGate } from "../tools/best-practices";
+import { passesIdentityGate } from "@/application/library/best-practices.service";
+import { liveBestPracticesDeps } from "../infrastructure/deps/best-practices-deps";
 
 ensureRegistryLoaded();
 
@@ -35,20 +36,20 @@ describe("F1 - fuzzy-identity gate for best practices", () => {
   ].join("\n");
 
   test("unrelated guides fail the gate for a bare garbage identifier", () => {
-    expect(passesIdentityGate(guidesGarbage, "garbage-xyz", "some-junk-repo")).toBe(false);
+    expect(passesIdentityGate(guidesGarbage, "garbage-xyz", "some-junk-repo", liveBestPracticesDeps)).toBe(false);
   });
 
   test("registry identifiers always pass the gate", () => {
-    expect(passesIdentityGate(guidesGarbage, "facebook/react", "React")).toBe(true);
+    expect(passesIdentityGate(guidesGarbage, "facebook/react", "React", liveBestPracticesDeps)).toBe(true);
   });
 
   test("explicit npm targets always pass the gate", () => {
-    expect(passesIdentityGate(guidesGarbage, "npm:express", "express")).toBe(true);
+    expect(passesIdentityGate(guidesGarbage, "npm:express", "express", liveBestPracticesDeps)).toBe(true);
   });
 
   test("content mentioning the library passes the gate", () => {
     const text = "# React Best Practices\n\nReact hooks patterns.\n\nReact performance tips for React apps.";
-    expect(passesIdentityGate(text, "unknown-react-wrapper", "React")).toBe(true);
+    expect(passesIdentityGate(text, "unknown-react-wrapper", "React", liveBestPracticesDeps)).toBe(true);
   });
 });
 

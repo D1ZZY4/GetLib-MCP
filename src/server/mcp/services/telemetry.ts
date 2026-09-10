@@ -40,7 +40,7 @@ export interface TelemetryResult {
 import { pushOutcome, type InvocationOutcome } from "./telemetry-outcomes";
 
 export type { InvocationOutcome } from "./telemetry-outcomes";
-export { getRecentOutcomes, getInvocationSummary, resetTelemetry } from "./telemetry-outcomes";
+export { getRecentOutcomes, getInvocationSummary, resetTelemetry, OUTCOME_WINDOW } from "./telemetry-outcomes";
 
 export { generateRequestId };
 
