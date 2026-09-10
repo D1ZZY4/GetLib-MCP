@@ -18,7 +18,7 @@ bun install
 cp .env.example .env   # set GET_LIB_MODE=development for local work
 bun run dev      # dashboard with Turbopack
 bun run mcp      # MCP server over stdio (14 tools, 2 resources, 6 prompts)
-bun run build:mcp # bundle the npx/CLI entry to dist/mcp.js (runs on prepublishOnly)
+bun run build:mcp # emit the modular npx/CLI entry to dist/index.js (runs on prepublishOnly)
 bun run build
 bun run start    # also serves Streamable HTTP at /api/mcp and /api/mcp/http plus SSE at /api/mcp/sse
 bun run typecheck
@@ -93,3 +93,12 @@ policy in `src/server/mcp/runtime.ts`. Engineering rules live in
 - Vercel: Next.js framework, install and build via Bun
 - Docker: multi-stage Bun build, Node runtime with `next start`
 - VPS: build, then serve `.next` behind any Node host
+
+## License
+
+GetLib MCP, Copyright (c) 2026 D1ZZY4, is licensed under the Server Side
+Public License, Version 1 (SSPL v1). See `LICENSE` for the full text.
+In short: free to use, modify, and self-host; forks and modified versions
+must stay open under the same license with source included; offering it as
+a service to third parties requires releasing the full service source;
+attribution to the original source must be kept.
