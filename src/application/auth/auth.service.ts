@@ -140,10 +140,23 @@ export async function ensureBootstrapAccount(deps: AuthDeps): Promise<BootstrapS
     password: config.defaultPass,
   });
   const now = new Date().toISOString();
+  const passwordHash = createHash("sha256").update(bootstrap.password, "utf-8").digest("hex");
   try {
     const db = deps.getDatabase();
     const stored = await db.getBootstrap();
     if (stored && stored.account === bootstrap.account) {
+      if (stored.passwordHash !== null && stored.passwordHash !== passwordHash) {
+        // Same-account password rotation: previously invisible because
+        // identity keyed on the account name alone. Persist the new hash
+        // and record the event so rotation is auditable.
+        await db.saveBootstrap({
+          account: stored.account,
+          credentialsChanged: !bootstrap.isFallback,
+          updatedAt: now,
+          passwordHash,
+        });
+        log({ level: "info", msg: "auth.bootstrap.rotated", accountLength: stored.account.length });
+      }
       bootstrapCache = {
         account: stored.account,
         isFallback: bootstrap.isFallback,
@@ -156,6 +169,7 @@ export async function ensureBootstrapAccount(deps: AuthDeps): Promise<BootstrapS
       account: bootstrap.account,
       credentialsChanged: !bootstrap.isFallback,
       updatedAt: now,
+      passwordHash,
     });
   } catch (error) {
     if (detectEnvironment() === "production") {
@@ -179,10 +193,12 @@ export function getBootstrapStatusSync(): BootstrapStatus {
     account: config.defaultAccount,
     password: config.defaultPass,
   });
+  // Best-effort pre-init view derived from env alone: custom credentials
+  // report changed (not fallback) so the status is never self-contradictory.
   return {
     account: bootstrap.account,
     isFallback: bootstrap.isFallback,
-    credentialsChanged: false,
+    credentialsChanged: !bootstrap.isFallback,
     initializedAt: null,
   };
 }

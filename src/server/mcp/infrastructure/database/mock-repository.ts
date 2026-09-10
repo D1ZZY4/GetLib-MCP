@@ -31,7 +31,7 @@ export class MockDatabaseRepository implements DatabaseRepository {
   }
 
   async getBootstrap(): Promise<BootstrapRecord | null> {
-    return this.bootstrap;
+    return this.bootstrap ? { ...this.bootstrap } : null;
   }
 
   async saveBootstrap(record: BootstrapRecord): Promise<void> {

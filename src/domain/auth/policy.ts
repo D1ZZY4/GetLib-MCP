@@ -44,22 +44,36 @@ export function resolveBootstrapCredentials(candidate: CredentialCandidate): Res
   return { account: FALLBACK_ACCOUNT, password: FALLBACK_PASSWORD, isFallback: true };
 }
 
+/**
+ * Email equality for identity decisions: trim plus lowercase only.
+ * No empty/Unicode contract beyond that - callers use it for equality,
+ * never for deliverability.
+ */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
 export function isDevDemoCredentials(email: string, password: string): boolean {
+  // Email is normalized but the password is exact: surrounding spaces in
+  // secrets are user error, not intent (bootstrap trimming documents why).
   return normalizeEmail(email) === DEV_DEMO_ACCOUNT && password === DEV_DEMO_PASSWORD;
 }
 
 /**
  * Whether the dev demo identity may authenticate in this runtime context.
- * Production must never accept it.
+ * Production must never accept it. The explicit production guard makes
+ * the impossible ("production", true) state fail closed even if a
+ * caller ever passes inconsistent flags.
  */
 export function isDevDemoAllowed(environment: "development" | "production", isMock: boolean): boolean {
+  if (environment === "production") return false;
   return environment === "development" && isMock;
 }
 
+/**
+ * Display identity derived from an address. Trims first so callers
+ * cannot leak whitespace into UI; "@" yields "user", "a@b@c" yields "a".
+ */
 export function displayNameFor(email: string): string {
-  return email.split("@")[0] || "user";
+  return email.trim().split("@")[0] || "user";
 }

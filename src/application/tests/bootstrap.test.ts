@@ -53,6 +53,7 @@ describe("bootstrap lifecycle", () => {
         account: "old@example.com",
         credentialsChanged: true,
         updatedAt: "2020-01-01T00:00:00.000Z",
+        passwordHash: null,
       });
       resetBootstrapCache();
       // Config still resolves the fallback identity, so the stale custom row
@@ -61,6 +62,24 @@ describe("bootstrap lifecycle", () => {
       expect(status.account).toBe(FALLBACK_ACCOUNT);
       const stored = await getDatabase("mock").getBootstrap();
       expect(stored?.account).toBe(FALLBACK_ACCOUNT);
+    });
+  });
+
+  test("same-account password rotation updates the stored hash", async () => {
+    await withMockMode(async () => {
+      const db = getDatabase("mock");
+      await db.saveBootstrap({
+        account: FALLBACK_ACCOUNT,
+        credentialsChanged: false,
+        updatedAt: "2020-01-01T00:00:00.000Z",
+        passwordHash: "stale-hash",
+      });
+      resetBootstrapCache();
+      const status = await ensureBootstrapAccount(liveAuthDeps);
+      expect(status.account).toBe(FALLBACK_ACCOUNT);
+      const stored = await getDatabase("mock").getBootstrap();
+      expect(stored?.passwordHash).not.toBe("stale-hash");
+      expect(typeof stored?.passwordHash).toBe("string");
     });
   });
 });

@@ -24,6 +24,7 @@ interface BootstrapRow {
   account: string;
   credentials_changed: boolean;
   updated_at: string;
+  password_hash?: string | null;
 }
 
 /** Service-role only. The anon client can never satisfy RLS on these
@@ -124,15 +125,23 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       const { data, error } = (await withTimeout(
         client
           .from("app_bootstrap")
-          .select("account,credentials_changed,updated_at")
+          .select("account,credentials_changed,updated_at,password_hash")
           .eq("id", 1)
           .abortSignal(AbortSignal.timeout(BOOTSTRAP_TIMEOUT_MS))
           .maybeSingle(),
         BOOTSTRAP_TIMEOUT_MS,
         "Supabase bootstrap read timed out.",
       )) as { data: unknown; error: { message: string } | null };
-      if (error || !data) return null;
-      const row = data as Partial<Pick<BootstrapRow, "account" | "credentials_changed" | "updated_at">>;
+      // A provider error (RLS denial, missing table, timeout) is
+      // degradation, not absence: log it so a null return is never
+      // mistaken for "no bootstrap row". Only a clean empty read stays
+      // silent.
+      if (error) {
+        log({ level: "warn", msg: "supabase.bootstrap.degraded", error: error.message });
+        return null;
+      }
+      if (!data) return null;
+      const row = data as Partial<Pick<BootstrapRow, "account" | "credentials_changed" | "updated_at" | "password_hash">>;
       if (typeof row.account !== "string" || typeof row.credentials_changed !== "boolean") {
         return null;
       }
@@ -141,6 +150,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
         account: row.account,
         credentialsChanged: row.credentials_changed,
         updatedAt: row.updated_at,
+        passwordHash: typeof row.password_hash === "string" ? row.password_hash : null,
       };
     } catch (error) {
       log({ level: "warn", msg: "supabase.bootstrap.read-failed", error: String(error) });
@@ -164,6 +174,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
             account: record.account,
             credentials_changed: record.credentialsChanged,
             updated_at: record.updatedAt,
+            password_hash: record.passwordHash,
           },
           { onConflict: "id" },
         ),

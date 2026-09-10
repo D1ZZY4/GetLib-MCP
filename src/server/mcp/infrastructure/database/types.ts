@@ -23,6 +23,8 @@ export interface BootstrapRecord {
   account: string;
   credentialsChanged: boolean;
   updatedAt: string;
+  /** sha256 of the configured password, or null when never recorded. */
+  passwordHash: string | null;
 }
 
 /**
