@@ -51,6 +51,16 @@ describe("F1 - fuzzy-identity gate for best practices", () => {
     const text = "# React Best Practices\n\nReact hooks patterns.\n\nReact performance tips for React apps.";
     expect(passesIdentityGate(text, "unknown-react-wrapper", "React", liveBestPracticesDeps)).toBe(true);
   });
+
+  test("version-like and dotted garbage identifiers stay behind the gate", () => {
+    const text = "# React Best Practices\n\nReact hooks patterns.\n\nReact performance tips for React apps.";
+    expect(passesIdentityGate(text, "1.2.3", "1.2.3", liveBestPracticesDeps)).toBe(false);
+    expect(passesIdentityGate(text, "v15.0", "v15.0", liveBestPracticesDeps)).toBe(false);
+    expect(passesIdentityGate(guidesGarbage, "junk-repo", "junk", liveBestPracticesDeps)).toBe(false);
+    // Bare hostnames stay explicit by design: the user addressed a host,
+    // so the gate trusts the address and the fetch layer validates it.
+    expect(passesIdentityGate(guidesGarbage, "junk-repo.io", "junk", liveBestPracticesDeps)).toBe(true);
+  });
 });
 
 describe("F3 - distinctive-token gate for compat", () => {

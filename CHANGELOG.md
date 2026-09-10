@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Flag every timeout payload so clients can tell hangs apart
   from results.
+- Point install snippets at the requesting deployment and note
+  unexpected hosts on SSE routes.
 - Harden API key issuance to the strict tier and drop the last
   barrel re-exports.
 - Verify API keys by indexed hash lookup, redact key material

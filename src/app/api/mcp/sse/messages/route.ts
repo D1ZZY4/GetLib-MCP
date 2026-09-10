@@ -9,10 +9,12 @@ import {
   readJsonBody,
   requestId,
 } from "@/app/api/_lib/route-helpers";
+import { noteUnexpectedHost } from "@/server/mcp/transport/request-guard";
 
 export async function POST(req: Request) {
   const id = requestId();
   try {
+    noteUnexpectedHost(req);
     const originRejection = assertOriginOr403(req, id);
     if (originRejection) return originRejection;
     checkRateLimit(req, "mcp/sse/messages", EXECUTION_TIER);

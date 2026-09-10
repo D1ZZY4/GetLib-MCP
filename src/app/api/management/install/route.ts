@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   try {
     checkRateLimit(req, "management/install", READ_TIER);
     await requireManagementAuth(req, liveApiKeyAuthDeps);
-    return jsonOk(getInstallCatalog(), id);
+    return jsonOk(getInstallCatalog(new URL(req.url).origin), id);
   } catch (error) {
     return mapRouteError(error, id);
   }

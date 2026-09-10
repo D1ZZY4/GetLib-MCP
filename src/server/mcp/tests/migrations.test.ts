@@ -70,6 +70,14 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/drop table/i);
   });
 
+  test("bootstrap password hash is additive-only and nullable", () => {
+    const sql = readMigration("2026090906_bootstrap_password_hash.sql");
+    expect(sql).toContain("password_hash");
+    expect(sql).not.toMatch(/create table/i);
+    expect(sql).not.toMatch(/drop table/i);
+    expect(sql).not.toMatch(/not null/i);
+  });
+
   test("no migration stores real secrets or drops tables", () => {
     for (const file of migrationFiles()) {
       const sql = readMigration(file);

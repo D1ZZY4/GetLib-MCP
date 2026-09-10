@@ -73,6 +73,19 @@ describe("logger redaction", () => {
     expect(out).not.toContain("ops@example.com");
     expect(out).not.toContain("deadbeef");
   });
+
+  test("redacts nested objects and camelCase keys without touching class instances", () => {
+    const nested = { details: { accessToken: "nested-secret", ok: true } };
+    log({ level: "error", msg: "upstream", context: nested });
+    const out = capturedError.join("\n");
+    expect(out).not.toContain("nested-secret");
+    expect(out).toContain("[redacted]");
+    // Class instances keep their existing rendering (callers stringify
+    // errors explicitly); traversal must not crash on them.
+    expect(() =>
+      log({ level: "error", msg: "failed", cause: new Error("boom-info") }),
+    ).not.toThrow();
+  });
 });
 
 describe("logger stream routing", () => {

@@ -1,6 +1,7 @@
 import type { MigrationDeps } from "@/application/library/migration.service";
 import { lookupByAlias, lookupById } from "@/server/mcp/sources/registry";
 import { resolveDynamic } from "@/server/mcp/services/resolve";
+import { checkLibraryAccess } from "@/server/mcp/services/source-settings";
 import {
   fetchConventionalUpgradeDocs,
   fetchGitHubMigrationDocs,
@@ -18,6 +19,7 @@ export const liveMigrationDeps: MigrationDeps = {
   lookupById,
   lookupByAlias,
   resolveDynamic,
+  checkLibraryAccess,
   fetchVersionGuide,
   fetchGitHubMigrationDocs,
   fetchConventionalUpgradeDocs,
