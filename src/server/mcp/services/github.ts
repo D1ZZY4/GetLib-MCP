@@ -3,7 +3,8 @@ import { config } from "../config";
 import type { FetchResult } from "../types";
 import { docCache, diskDocCache } from "./cache";
 import { log } from "../utils/logger";
-import { fetchWithTimeout, cacheDoc, githubAuthHeaders } from "./http/request";
+import { fetchWithTimeout, cacheDoc, githubAuthHeaders, readBodyCapped } from "./http/request";
+import { externalSchemas, parseExternal } from "../utils/validate-external";
 import { tryFetch } from "./http/try-fetch";
 
 /** Fetch GitHub README or a specific file from a repo */
@@ -84,16 +85,17 @@ export async function fetchGitHubReleases(githubUrl: string): Promise<string | n
     const res = await fetchWithTimeout(apiUrl, 10_000, githubAuthHeaders());
     // 403 = rate limit (unauthenticated: 60 req/hr), 429 = explicit rate limit
     if (res.status === 403 || res.status === 429 || !res.ok) return null;
-    const releases = (await res.json()) as Array<{
-      tag_name?: string;
-      name?: string;
-      body?: string;
-      published_at?: string;
-      prerelease?: boolean;
-      draft?: boolean;
-    }>;
+    const text = await readBodyCapped(res, 512 * 1024);
+    if (text === null) return null;
+    let raw: unknown = null;
+    try {
+      raw = JSON.parse(text) as unknown;
+    } catch {
+      return null;
+    }
+    const releases = parseExternal(externalSchemas.githubReleases, raw);
 
-    if (!Array.isArray(releases) || releases.length === 0) return null;
+    if (!releases || releases.length === 0) return null;
 
     // Filter out prereleases (canary, beta, rc) + drafts, keep top 3 stable.
     // Fall back to including prereleases if NO stable exists (some libs

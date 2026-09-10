@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Validate every fetch response through shared schemas with
+  capped bodies instead of unchecked casts.
+
 ### Added
 
 - Validate every external payload through centralized schemas so

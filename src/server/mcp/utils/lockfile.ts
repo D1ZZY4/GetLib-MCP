@@ -1,7 +1,14 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { z } from "zod";
 import { safeguardPath } from "./guard";
+import { parseExternal, safeJsonParse } from "./validate-external";
 import type { LibraryEntry } from "../types";
+
+const packageLockSchema = z.object({
+  packages: z.record(z.string(), z.object({ version: z.string().max(100).optional() })).optional(),
+  dependencies: z.record(z.string(), z.object({ version: z.string().max(100).optional() })).optional(),
+});
 
 export interface LockfileVersion {
   packageName: string;
@@ -28,12 +35,9 @@ export async function detectVersionFromLockfile(
   }
   try {
     const raw = await readFile(join(safePath, "package-lock.json"), "utf-8");
-    const lock = JSON.parse(raw) as {
-      packages?: Record<string, { version?: string }>;
-      dependencies?: Record<string, { version?: string }>;
-    };
+    const lock = parseExternal(packageLockSchema, safeJsonParse(raw));
     const pkgKey = `node_modules/${packageName}`;
-    const v = lock.packages?.[pkgKey]?.version ?? lock.dependencies?.[packageName]?.version;
+    const v = lock?.packages?.[pkgKey]?.version ?? lock?.dependencies?.[packageName]?.version;
     if (v) return v;
   } catch { /* not found */ }
 

@@ -4,6 +4,7 @@ import { cacheDoc } from "./http/request";
 import { tryFetch } from "./http/try-fetch";
 import { fetchViaJina } from "./http/jina";
 import { isErrorPage } from "./content-guards";
+import { safeJsonParse } from "../utils/validate-external";
 
 /** Query npm registry for package metadata */
 export async function fetchNpmPackage(packageName: string): Promise<unknown> {
@@ -12,31 +13,29 @@ export async function fetchNpmPackage(packageName: string): Promise<unknown> {
 
   const memCached = docCache.get(cacheKey);
   if (memCached) {
-    try {
-      return JSON.parse(memCached) as unknown;
-    } catch { /* corrupt cache entry - fall through to disk/network */ }
+    const parsed = safeJsonParse(memCached);
+    if (parsed !== null) return parsed;
+    // Corrupt cache entry - fall through to disk/network.
   }
 
   const diskCached = await diskDocCache.get(cacheKey);
   if (diskCached) {
-    try {
-      const parsed = JSON.parse(diskCached) as unknown;
+    const parsed = safeJsonParse(diskCached);
+    if (parsed !== null) {
       docCache.set(cacheKey, diskCached);
       return parsed;
-    } catch { /* corrupt cache entry - fall through to network */ }
+    }
+    // Corrupt cache entry - fall through to network.
   }
 
   const content = await tryFetch(url);
   if (!content) return null;
 
-  try {
-    const data = JSON.parse(content);
-    docCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
-    void diskDocCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
-    return data as unknown;
-  } catch {
-    return null;
-  }
+  const data = safeJsonParse(content);
+  if (data === null) return null;
+  docCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
+  void diskDocCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
+  return data;
 }
 
 const DEVDOCS_SLUGS: Record<string, string> = {
@@ -91,29 +90,27 @@ export async function fetchPypiPackage(packageName: string): Promise<unknown> {
 
   const memCached = docCache.get(cacheKey);
   if (memCached) {
-    try {
-      return JSON.parse(memCached) as unknown;
-    } catch { /* corrupt cache entry - fall through to disk/network */ }
+    const parsed = safeJsonParse(memCached);
+    if (parsed !== null) return parsed;
+    // Corrupt cache entry - fall through to disk/network.
   }
 
   const diskCached = await diskDocCache.get(cacheKey);
   if (diskCached) {
-    try {
-      const parsed = JSON.parse(diskCached) as unknown;
+    const parsed = safeJsonParse(diskCached);
+    if (parsed !== null) {
       docCache.set(cacheKey, diskCached);
       return parsed;
-    } catch { /* corrupt cache entry - fall through to network */ }
+    }
+    // Corrupt cache entry - fall through to network.
   }
 
   const content = await tryFetch(url);
   if (!content) return null;
 
-  try {
-    const data = JSON.parse(content);
-    docCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
-    void diskDocCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
-    return data as unknown;
-  } catch {
-    return null;
-  }
+  const data = safeJsonParse(content);
+  if (data === null) return null;
+  docCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
+  void diskDocCache.set(cacheKey, content, CACHE_TTLS.PACKAGE_METADATA);
+  return data;
 }

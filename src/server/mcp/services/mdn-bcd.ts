@@ -1,4 +1,6 @@
 import { fetchWithTimeout } from "./fetcher";
+import { readBodyCapped } from "./http/request";
+import { externalSchemas, parseExternal } from "../utils/validate-external";
 import { log } from "../utils/logger";
 
 /**
@@ -59,7 +61,13 @@ function docIndexJsonUrl(docUrl: string): string | null {
 async function fetchJson(url: string): Promise<unknown> {
   const res = await fetchWithTimeout(url, FETCH_TIMEOUT_MS, { Accept: "application/json" });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
+  const text = await readBodyCapped(res, 256 * 1024);
+  if (text === null) throw new Error(`Response body exceeds cap for ${url}`);
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    throw new Error(`Malformed JSON for ${url}`);
+  }
 }
 
 export async function fetchMdnDocMeta(docUrl: string): Promise<MdnDocMeta | null> {
@@ -67,7 +75,8 @@ export async function fetchMdnDocMeta(docUrl: string): Promise<MdnDocMeta | null
   if (!jsonUrl) return null;
   try {
     const raw = await fetchJson(jsonUrl);
-    const doc = (raw as { doc?: Record<string, unknown> }).doc;
+    const parsed = parseExternal(externalSchemas.mdnDoc, raw);
+    const doc = parsed?.doc;
     if (!doc || typeof doc !== "object") return null;
 
     const browserCompat = Array.isArray(doc["browserCompat"])
@@ -112,12 +121,16 @@ function findCompatNode(node: unknown): Record<string, unknown> | null {
   return null;
 }
 
+function isSupportStatement(value: unknown): value is BcdSupportStatement {
+  return typeof value === "object" && value !== null;
+}
+
 function formatSupport(raw: unknown): string {
   // A browser's support can be one statement or an array (newest first).
   // Prefer the first statement that is not flag-gated.
   const statements: BcdSupportStatement[] = Array.isArray(raw)
-    ? (raw as BcdSupportStatement[])
-    : raw && typeof raw === "object"
+    ? raw.filter(isSupportStatement)
+    : isSupportStatement(raw)
       ? [raw]
       : [];
   const usable = statements.find((s) => !s.flags) ?? statements[0];

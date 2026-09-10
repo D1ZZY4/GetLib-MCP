@@ -1,8 +1,10 @@
 import { fetchWithTimeout, githubAuthHeaders } from "../fetcher";
 import { CACHE_TTLS } from "../../constants";
 import { resolveCache } from "../cache";
+import { readBodyCapped } from "../http/request";
 import type { LibraryMatch } from "../../types";
 import { log } from "../../utils/logger";
+import { externalSchemas, parseExternal } from "../../utils/validate-external";
 import { probeLlmsTxt } from "./llms-probe";
 
 export async function searchNpm(query: string): Promise<LibraryMatch | null> {
@@ -15,9 +17,17 @@ export async function searchNpm(query: string): Promise<LibraryMatch | null> {
     const res = await fetchWithTimeout(searchUrl, 8000);
     if (!res.ok) return null;
 
-    const data = await res.json() as { objects?: Array<{ package: { name: string; description?: string; links?: { homepage?: string; repository?: string; npm?: string } } }> };
+    const text = await readBodyCapped(res, 128 * 1024);
+    if (text === null) return null;
+    let raw: unknown = null;
+    try {
+      raw = JSON.parse(text) as unknown;
+    } catch {
+      return null;
+    }
+    const data = parseExternal(externalSchemas.npmSearch, raw);
     const objects = data?.objects;
-    if (!Array.isArray(objects) || objects.length === 0) return null;
+    if (!objects || objects.length === 0) return null;
 
     const pkg = objects[0]!.package;
     const homepage = (pkg.links?.homepage ?? "").replace(/\/+$/, "");
@@ -59,9 +69,17 @@ export async function searchGitHub(query: string): Promise<LibraryMatch | null> 
     });
     if (!res.ok) return null;
 
-    const data = await res.json() as { items?: Array<{ full_name: string; description?: string; homepage?: string; html_url: string; stargazers_count?: number }> };
+    const text = await readBodyCapped(res, 128 * 1024);
+    if (text === null) return null;
+    let raw: unknown = null;
+    try {
+      raw = JSON.parse(text) as unknown;
+    } catch {
+      return null;
+    }
+    const data = parseExternal(externalSchemas.githubSearch, raw);
     const items = data?.items;
-    if (!Array.isArray(items) || items.length === 0) return null;
+    if (!items || items.length === 0) return null;
 
     const repo = items[0]!;
     const homepage = (repo.homepage ?? "").replace(/\/+$/, "");

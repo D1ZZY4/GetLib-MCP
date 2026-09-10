@@ -1,6 +1,28 @@
+import { z } from "zod";
 import type { Snippet, SnippetIndex } from "../types";
 import { DiskCache } from "./cache";
 import { rankSnippets } from "../utils/snippet-extract";
+import { parseExternal, safeJsonParse } from "../utils/validate-external";
+
+const snippetSchema = z.object({
+  id: z.string().max(500),
+  library: z.string().max(214),
+  version: z.string().max(100).optional(),
+  title: z.string().max(500),
+  description: z.string().max(5000),
+  code: z.string().max(200000),
+  language: z.string().max(100),
+  source: z.string().max(2000),
+  score: z.number(),
+});
+
+const snippetIndexSchema = z.object({
+  library: z.string().max(214),
+  version: z.string().max(100).nullable(),
+  sourceUrl: z.string().max(2000),
+  builtAt: z.string().max(100),
+  snippets: z.array(snippetSchema).max(1000),
+});
 
 /**
  * Snippet indexes are expensive to rebuild (multi-page docs traversal) and
@@ -56,27 +78,13 @@ export class SnippetStore {
     if (mem) return mem;
     const raw = await this.disk.get(key);
     if (!raw) return null;
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      // An old-schema or truncated cache file can parse to a non-conforming
-      // object; reject it as a cache-miss so query()/rankSnippets never receive
-      // a missing snippets array (mirrors the TS-004 guard in cache.ts).
-      if (
-        typeof parsed !== "object" ||
-        parsed === null ||
-        typeof (parsed as Record<string, unknown>)["library"] !== "string" ||
-        typeof (parsed as Record<string, unknown>)["sourceUrl"] !== "string" ||
-        typeof (parsed as Record<string, unknown>)["builtAt"] !== "string" ||
-        !Array.isArray((parsed as Record<string, unknown>)["snippets"])
-      ) {
-        return null;
-      }
-      const index = parsed as SnippetIndex;
-      this.remember(key, index);
-      return index;
-    } catch {
-      return null;
-    }
+    // An old-schema or truncated cache file parses but fails the schema;
+    // reject it as a cache-miss so query()/rankSnippets never receive a
+    // malformed index (same fail-closed policy as the prior manual guard).
+    const index = parseExternal(snippetIndexSchema, safeJsonParse(raw));
+    if (!index) return null;
+    this.remember(key, index);
+    return index;
   }
 
   async has(library: string, version: string | null): Promise<boolean> {

@@ -1,20 +1,12 @@
 import { fetchNpmPackage, fetchPypiPackage, fetchWithTimeout, fetchAsMarkdownRace } from "../fetcher";
 import { CACHE_TTLS } from "../../constants";
 import { resolveCache } from "../cache";
-import type { LibraryMatch, NpmPackageInfo, PypiPackageInfo } from "../../types";
+import type { LibraryMatch } from "../../types";
 import { log } from "../../utils/logger";
+import { externalSchemas, parseExternal } from "../../utils/validate-external";
 import { probeLlmsTxt } from "./llms-probe";
 
-interface CratesApiResponse {
-  crate: {
-    name: string;
-    description?: string;
-    homepage?: string;
-    repository?: string;
-    documentation?: string;
-    max_stable_version?: string;
-  };
-}
+import { readBodyCapped } from "../http/request";
 
 export function extractGithubUrl(repoField: unknown): string | undefined {
   if (typeof repoField === "string") {
@@ -35,13 +27,8 @@ export async function resolveFromNpm(packageName: string): Promise<LibraryMatch 
   if (cached) return cached;
 
   const data = await fetchNpmPackage(packageName);
-  if (!data || typeof data !== "object") return null;
-  // Verify the response actually carries a string name before trusting the cast
-  // (fetchNpmPackage returns unknown; a malformed API body must not slip through).
-  if (!("name" in data) || typeof (data as Record<string, unknown>).name !== "string") return null;
-
-  const pkg = data as NpmPackageInfo;
-  if (!pkg.name) return null;
+  const pkg = parseExternal(externalSchemas.npmPackage, data);
+  if (!pkg) return null;
 
   const homepage = pkg.homepage?.replace(/\/+$/, "") ?? "";
   const githubUrl = extractGithubUrl(pkg.repository);
@@ -70,13 +57,9 @@ export async function resolveFromPypi(packageName: string): Promise<LibraryMatch
   if (cached) return cached;
 
   const data = await fetchPypiPackage(packageName);
-  if (!data || typeof data !== "object") return null;
-  // Verify the response carries an info object before trusting the cast.
-  if (!("info" in data) || typeof (data as Record<string, unknown>).info !== "object" || (data as Record<string, unknown>).info === null) return null;
-
-  const pkg = data as PypiPackageInfo;
+  const pkg = parseExternal(externalSchemas.pypiPackage, data);
+  if (!pkg) return null;
   const info = pkg.info;
-  if (!info?.name) return null;
 
   const homepageRaw =
     info.home_page ??
@@ -117,10 +100,18 @@ export async function resolveFromCrates(packageName: string): Promise<LibraryMat
       8000,
     );
     if (!res.ok) return null;
-    const data = (await res.json()) as CratesApiResponse;
-    if (!data?.crate?.name) return null;
+    const text = await readBodyCapped(res, 64 * 1024);
+    if (text === null) return null;
+    const parsed = parseExternal(externalSchemas.cratesPackage, (() => {
+      try {
+        return JSON.parse(text) as unknown;
+      } catch {
+        return null;
+      }
+    })());
+    if (!parsed) return null;
 
-    const { crate } = data;
+    const { crate } = parsed;
     const homepage = (crate.documentation ?? crate.homepage ?? crate.repository ?? "").replace(/\/+$/, "");
     const docsUrl = homepage || `https://crates.io/crates/${crate.name}`;
 
@@ -165,7 +156,7 @@ export async function resolveFromGo(moduleName: string): Promise<LibraryMatch | 
   const cached = resolveCache.get(cacheKey);
   if (cached) return cached;
 
-  const pageUrl = `https://pkg.go.dev/${moduleName}`;
+  const pageUrl = `https://pkg.go.dev/${moduleName.split("/").map(encodeURIComponent).join("/")}`;
   const content = await fetchAsMarkdownRace(pageUrl);
   if (!content) return null;
 

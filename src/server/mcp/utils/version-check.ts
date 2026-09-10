@@ -1,5 +1,6 @@
 import { SERVER_VERSION, NPM_REGISTRY_URL } from "../constants";
 import { fetchWithTimeout, readBodyCapped } from "../services/http/request";
+import { externalSchemas, parseJsonExternal } from "./validate-external";
 import { log } from "./logger";
 
 let cachedLatest: { version: string; checkedAt: number } | null = null;
@@ -20,8 +21,8 @@ export async function getLatestVersion(): Promise<string | null> {
     // compromised mirror exhaust memory with a huge payload.
     const text = await readBodyCapped(res, 64 * 1024);
     if (text === null) return null;
-    const data = JSON.parse(text) as { version?: string };
-    if (typeof data.version === "string" && /^\d+\.\d+\.\d+/.test(data.version)) {
+    const data = parseJsonExternal(externalSchemas.versionCheck, text);
+    if (typeof data?.version === "string" && /^\d+\.\d+\.\d+/.test(data.version)) {
       cachedLatest = { version: data.version, checkedAt: Date.now() };
       return data.version;
     }

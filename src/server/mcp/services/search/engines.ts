@@ -1,6 +1,8 @@
 import { fetchWithTimeout } from "../fetcher";
 import { extractDomain, isCircuitOpen, recordSuccess, recordFailure } from "../circuit-breaker";
 import { isSourceEnabled } from "../source-settings";
+import { readBodyCapped } from "../http/request";
+import { externalSchemas, parseExternal } from "../../utils/validate-external";
 import { extractDDGUrls, extractUrlsFromHtml, scoreDocUrl } from "./url-rank";
 
 /**
@@ -16,8 +18,16 @@ export async function searchMDN(query: string): Promise<Array<{ url: string; tit
       8000,
     );
     if (!res.ok) return [];
-    const data = await res.json() as { documents?: Array<{ mdn_url?: string; title?: string; summary?: string }> };
-    if (!Array.isArray(data?.documents)) return [];
+    const text = await readBodyCapped(res, 128 * 1024);
+    if (text === null) return [];
+    let raw: unknown = null;
+    try {
+      raw = JSON.parse(text) as unknown;
+    } catch {
+      return [];
+    }
+    const data = parseExternal(externalSchemas.mdnSearch, raw);
+    if (!data?.documents) return [];
     return data.documents
       .filter((d) => d.mdn_url && d.title)
       .map((d) => ({
@@ -41,11 +51,16 @@ export async function searchDDGInstant(query: string): Promise<string[]> {
       8000,
     );
     if (!res.ok) return [];
-    const data = await res.json() as {
-      AbstractURL?: string;
-      RelatedTopics?: Array<{ FirstURL?: string; Text?: string }>;
-      Results?: Array<{ FirstURL?: string }>;
-    };
+    const text = await readBodyCapped(res, 128 * 1024);
+    if (text === null) return [];
+    let raw: unknown = null;
+    try {
+      raw = JSON.parse(text) as unknown;
+    } catch {
+      return [];
+    }
+    const data = parseExternal(externalSchemas.ddgInstant, raw);
+    if (!data) return [];
     const urls: string[] = [];
     if (data.AbstractURL) urls.push(data.AbstractURL);
     if (Array.isArray(data.Results)) {
@@ -90,8 +105,20 @@ async function searchSearXNG(query: string): Promise<string[]> {
         recordFailure(domain);
         continue;
       }
-      const data = await res.json() as { results?: Array<{ url?: string; title?: string }> };
-      if (!Array.isArray(data?.results) || data.results.length === 0) {
+      const text = await readBodyCapped(res, 128 * 1024);
+      if (text === null) {
+        recordFailure(domain);
+        continue;
+      }
+      let raw: unknown = null;
+      try {
+        raw = JSON.parse(text) as unknown;
+      } catch {
+        recordFailure(domain);
+        continue;
+      }
+      const data = parseExternal(externalSchemas.searxng, raw);
+      if (!data?.results || data.results.length === 0) {
         recordFailure(domain);
         continue;
       }
