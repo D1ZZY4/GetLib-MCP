@@ -52,3 +52,11 @@ export interface ClientSessionSnapshot {
   lastSeenAt: string;
   userAgent?: string;
 }
+
+/**
+ * Port for connected-client snapshots. Transport implementations provide
+ * listers; the application layer aggregates them without importing
+ * transport modules, keeping the dependency direction
+ * Transport -> Application -> Domain intact.
+ */
+export type ClientLister = () => ClientSessionSnapshot[];

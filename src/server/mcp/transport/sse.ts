@@ -3,6 +3,7 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONRPCMessage, MessageExtraInfo } from "@modelcontextprotocol/sdk/types.js";
 import { JSONRPCMessageSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
+import { registerClientLister } from "@/application/clients/clients.service";
 import { createServer } from "../server";
 import { getRuntimeSnapshot } from "../runtime";
 import { log } from "../utils/logger";
@@ -187,3 +188,7 @@ export function listSseSessions(): SseClientSession[] {
     lastSeenAt: new Date(entry.lastSeenAt).toISOString(),
   }));
 }
+
+// Application-layer aggregation port: the clients service aggregates
+// registered listers without importing transport modules.
+registerClientLister(listSseSessions);

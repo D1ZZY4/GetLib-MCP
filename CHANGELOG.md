@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Abort cancellable work on tool timeout and share one timeout
   envelope factory across tools.
 
+### Changed
+
+- Aggregate connected clients through registered transport
+  listers instead of direct transport imports.
+
 ### Fixed
 
 - Validate every fetch response through shared schemas with

@@ -1,5 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
+import { registerClientLister } from "@/application/clients/clients.service";
 import {
   SessionSecretMissingError,
   requireManagementAuth,
@@ -58,6 +59,10 @@ export function listSessions(): ClientSession[] {
     ...(entry.userAgent !== "unknown" ? { userAgent: entry.userAgent } : {}),
   }));
 }
+
+// Application-layer aggregation port: the clients service aggregates
+// registered listers without importing transport modules.
+registerClientLister(listSessions);
 
 /** Clears the recent-clients ring. Shutdown path only. */
 export async function closeAllHttpSessions(): Promise<void> {
