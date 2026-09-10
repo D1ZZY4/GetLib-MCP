@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   barrel re-exports.
 - Clean up temp directories in tests and pin registry counts
   plus the new migration contract.
+- Document every env alias and platform-owned variable, ship
+  dist in Docker, and run tests fully hermetic.
 - Verify API keys by indexed hash lookup, redact key material
   and emails from logs, harden the keys UI, and constrain hashes
   unique.
