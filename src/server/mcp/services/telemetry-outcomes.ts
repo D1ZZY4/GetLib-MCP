@@ -11,6 +11,8 @@ export interface InvocationOutcome {
   cacheHit: boolean;
   resolved: boolean;
   error?: string;
+  /** Canonical library id the call was about, when a handler recorded one. */
+  subject?: string;
 }
 
 /**

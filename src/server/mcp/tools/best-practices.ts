@@ -4,7 +4,7 @@ import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { bestPracticesUseCase } from "@/application/library/best-practices.service";
 import { liveBestPracticesDeps } from "../infrastructure/deps/best-practices-deps";
 
@@ -61,6 +61,7 @@ Do not call this tool more than 3 times per question.`,
     run: async (rawArgs: unknown) => {
       const { libraryId, topic = "", version, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_best_practices", async (ctx) => {
+        noteToolSubject(ctx, libraryId);
         return withToolTimeout(async () => {
           const { response, resolved } = await bestPracticesUseCase(
             {

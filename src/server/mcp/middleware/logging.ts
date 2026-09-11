@@ -10,6 +10,8 @@ export interface McpLogEntry {
   durationMs: number;
   ok: boolean;
   requestId?: string;
+  /** Canonical library id the call was about, when the tool recorded one. */
+  subject?: string;
 }
 
 const MAX_ENTRIES = 100;
@@ -36,6 +38,7 @@ export function appendLog(entry: Omit<McpLogEntry, "id" | "timestamp">): McpLogE
     tool: full.name,
     durationMs: full.durationMs,
     ...(full.requestId !== undefined ? { requestId: full.requestId } : {}),
+    ...(full.subject !== undefined ? { subject: full.subject } : {}),
   });
   // Durable sink for production only: development and tests stay on the
   // in-memory ring (plus the mock repository when addressed directly), so
@@ -50,6 +53,7 @@ export function appendLog(entry: Omit<McpLogEntry, "id" | "timestamp">): McpLogE
       name: full.name,
       durationMs: full.durationMs,
       ok: full.ok,
+      ...(full.subject !== undefined ? { subject: full.subject } : {}),
     });
   }
   return full;

@@ -16,6 +16,7 @@
 import { log, type LogEntry } from "../utils/logger";
 import { generateRequestId } from "../utils/guard";
 import { recordToolCall } from "./metrics";
+import { lookupByAlias } from "../sources/registry";
 
 export interface TelemetryContext {
   tool: string;
@@ -25,6 +26,8 @@ export interface TelemetryContext {
   cacheHit: boolean;
   /** Set by handler when content was successfully delivered to the user */
   resolved: boolean;
+  /** Library the call is about, via noteToolSubject. Powers most-used stats. */
+  subject?: string;
   /** Optional input fingerprint for grouping retries */
   inputHash?: string;
 }
@@ -42,12 +45,51 @@ import { pushOutcome, type InvocationOutcome } from "./telemetry-outcomes";
 export type { InvocationOutcome } from "./telemetry-outcomes";
 export { getRecentOutcomes, getInvocationSummary, resetTelemetry, OUTCOME_WINDOW } from "./telemetry-outcomes";
 
+const SUBJECT_MAX_LENGTH = 120;
+
+/**
+ * Normalize a raw library reference to the canonical registry id when it
+ * matches a known name or alias ("react" becomes "facebook/react"),
+ * otherwise a trimmed lowercase label. Accepts the shapes tool inputs
+ * actually carry: a single id string or a list (compare), where the
+ * first entry is the primary subject. Null when nothing usable is given.
+ */
+export function normalizeToolSubject(value: unknown): string | null {
+  const first = Array.isArray(value) ? value[0] : value;
+  if (typeof first !== "string") return null;
+  const trimmed = first.trim().toLowerCase();
+  if (trimmed.length === 0) return null;
+  const sliced = trimmed.slice(0, SUBJECT_MAX_LENGTH);
+  return lookupByAlias(sliced)?.id ?? sliced;
+}
+
+/**
+ * Record which library a tool call is about for most-used statistics.
+ * Handlers call this once with their library input (resolve passes the
+ * name, single-library tools their libraryId, compare its first entry).
+ * Display-only observability label, never a security boundary.
+ */
+export function noteToolSubject(ctx: TelemetryContext, value: unknown): void {
+  const subject = normalizeToolSubject(value);
+  if (subject !== null) ctx.subject = subject;
+}
+
+/**
+ * Extract the subject from raw tool args for paths that never see a
+ * telemetry context (the registry run log). Same normalization as the
+ * context path so both agree on every call.
+ */
+export function subjectFromToolArgs(args: unknown): string | null {
+  if (typeof args !== "object" || args === null) return null;
+  const record = args as Record<string, unknown>;
+  return normalizeToolSubject(record["libraryId"] ?? record["library"] ?? record["libraryName"] ?? record["libraries"] ?? null);
+}
+
 /**
  * Open a telemetry context for a tool invocation. Pair with `endCall*`
  * exactly once. Prefer `withTelemetry` for typical handler wrapping.
  */
-export function startCall(tool: string, inputHash?: string): TelemetryContext {
-  const ctx: TelemetryContext = {
+export function startCall(tool: string, inputHash?: string): TelemetryContext {  const ctx: TelemetryContext = {
     tool,
     requestId: generateRequestId(),
     startTime: Date.now(),
@@ -74,6 +116,7 @@ function finish(
     success,
     cacheHit: ctx.cacheHit,
     resolved: ctx.resolved,
+    ...(ctx.subject !== undefined ? { subject: ctx.subject } : {}),
   };
   if (errorMessage !== undefined) outcome.error = errorMessage;
   pushOutcome(outcome);
@@ -86,6 +129,7 @@ function finish(
     durationMs,
     cacheHit: ctx.cacheHit,
     resolved: ctx.resolved,
+    ...(ctx.subject !== undefined ? { subject: ctx.subject } : {}),
   };
   if (errorMessage !== undefined) baseEntry["error"] = errorMessage;
   log(baseEntry);

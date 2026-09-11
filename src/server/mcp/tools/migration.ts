@@ -4,7 +4,7 @@ import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { migrationUseCase } from "@/application/library/migration.service";
 import { liveMigrationDeps } from "../infrastructure/deps/migration-deps";
 
@@ -56,6 +56,7 @@ Use this when the user asks HOW to upgrade their code from one version to anothe
     run: async (rawArgs: unknown) => {
       const { libraryId, fromVersion, toVersion, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_migration", async (ctx) => {
+        noteToolSubject(ctx, libraryId);
         ctx.resolved = true;
         return withToolTimeout(async () => {
           const { response } = await migrationUseCase(

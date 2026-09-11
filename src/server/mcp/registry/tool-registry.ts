@@ -1,5 +1,6 @@
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import { appendLog } from "../middleware/logging";
+import { subjectFromToolArgs } from "../services/telemetry";
 import { generateRequestId, withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "../tools/timeout";
 
@@ -51,6 +52,11 @@ export function getTool(name: string): GlToolDef | undefined {
 export async function runTool(name: string, args?: unknown, requestId?: string): Promise<unknown> {
   const started = Date.now();
   const id = requestId ?? generateRequestId();
+  // Same subject normalization as the telemetry-context path (adapters
+  // note the same args), so the durable run log and the in-memory
+  // outcome ring agree on every call without sharing request ids.
+  const subject = subjectFromToolArgs(args);
+  const subjectField = subject !== null ? { subject } : {};
   try {
     const tool = tools.get(name);
     if (!tool) {
@@ -66,10 +72,24 @@ export async function runTool(name: string, args?: unknown, requestId?: string):
       (signal) => Promise.resolve(tool.run(args, signal)),
       timeoutResponse(`Tool "${name}" timed out. Retry, or narrow the request.`, { timedOut: true }),
     );
-    appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: true, requestId: id });
+    appendLog({
+      kind: "tool",
+      name,
+      durationMs: Date.now() - started,
+      ok: true,
+      requestId: id,
+      ...subjectField,
+    });
     return result;
   } catch (error) {
-    appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: false, requestId: id });
+    appendLog({
+      kind: "tool",
+      name,
+      durationMs: Date.now() - started,
+      ok: false,
+      requestId: id,
+      ...subjectField,
+    });
     throw error;
   }
 }

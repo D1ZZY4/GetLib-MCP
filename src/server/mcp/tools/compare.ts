@@ -1,6 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
@@ -51,6 +51,7 @@ Pass library NAMES (e.g. ['prisma', 'drizzle-orm']) - not registry IDs. The tool
     run: async (rawArgs: unknown) => {
       const { libraries, criteria, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_compare", async (ctx) => {
+        noteToolSubject(ctx, libraries);
         ctx.resolved = true;
         return withToolTimeout(async () => {
           const { response } = await compareUseCase(

@@ -1,6 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
@@ -77,6 +77,7 @@ IMPORTANT - PROPRIETARY DATA NOTICE: This tool accesses a proprietary library re
     run: async (rawArgs: unknown) => {
       const { libraryId, topic = "", version, language, maxSnippets, refresh, projectPath } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_snippets", async (ctx) => {
+        noteToolSubject(ctx, libraryId);
         ctx.resolved = true;
         return withToolTimeout(async () => {
           const { response } = await snippetsUseCase(

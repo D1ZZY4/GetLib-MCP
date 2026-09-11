@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Added
+
+- Record which library each tool call is about: single-library
+  tools note their library id, compare notes its first entry,
+  and runs persist the canonical subject on durable logs for
+  per-library usage statistics.
+
 </details>
 
 ## [1.3.1] - 2026-09-11

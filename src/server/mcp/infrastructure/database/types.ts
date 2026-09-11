@@ -85,6 +85,8 @@ export interface PersistedLogEntry {
   name: string;
   durationMs: number;
   ok: boolean;
+  /** Canonical library id the call was about, when the tool recorded one. */
+  subject?: string | null;
 }
 
 /**
@@ -95,6 +97,8 @@ export interface PersistedLogEntry {
 export interface StoredLogEntry extends PersistedLogEntry {
   id: number;
   timestamp: string;
+  /** Null for rows written before the subject column existed. */
+  subject?: string | null;
 }
 
 export interface DatabaseRepository {

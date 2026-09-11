@@ -94,6 +94,14 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/drop table/i);
   });
 
+  test("mcp logs subject column is additive with an index", () => {
+    const sql = readMigration("2026090909_mcp_logs_subject.sql");
+    expect(sql).toContain("add column if not exists subject");
+    expect(sql).toContain("mcp_logs_subject_idx");
+    expect(sql).not.toMatch(/drop column/i);
+    expect(sql).not.toMatch(/drop table/i);
+  });
+
   test("no migration stores real secrets or drops tables", () => {
     for (const file of migrationFiles()) {
       const sql = readMigration(file);

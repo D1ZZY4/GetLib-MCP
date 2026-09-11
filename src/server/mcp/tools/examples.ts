@@ -1,6 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { nonBlankString } from "../utils/schemas";
 import { timeoutResponse } from "./timeout";
@@ -44,6 +44,7 @@ Source: open-source GitHub repositories (not the library's own docs). Use this w
     run: async (rawArgs: unknown) => {
       const { library, pattern, language, maxResults } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_examples", async (ctx) => {
+        noteToolSubject(ctx, library);
         ctx.resolved = true;
         return withToolTimeout(async () => {
           const { response } = await examplesUseCase(

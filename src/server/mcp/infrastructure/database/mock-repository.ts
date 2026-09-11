@@ -51,6 +51,7 @@ export class MockDatabaseRepository implements DatabaseRepository {
   async listLogs(limit: number): Promise<StoredLogEntry[]> {
     return this.logs.slice(0, Math.max(0, limit)).map((entry, index) => ({
       ...entry,
+      subject: entry.subject ?? null,
       id: index + 1,
       timestamp: new Date().toISOString(),
     }));

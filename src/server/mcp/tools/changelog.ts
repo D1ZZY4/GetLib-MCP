@@ -1,6 +1,6 @@
 import { defineTool } from "../registry/tool-registry";
 import { z } from "zod";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
@@ -49,6 +49,7 @@ Use this for "what changed in version X" questions. For "how do I upgrade my cod
     run: async (rawArgs: unknown) => {
       const { libraryId, version, tokens } = InputSchema.parse(rawArgs);
       return withTelemetry("gl_changelog", async (ctx) => {
+        noteToolSubject(ctx, libraryId);
         ctx.resolved = true;
         return withToolTimeout(async () => {
           const { response } = await changelogUseCase(

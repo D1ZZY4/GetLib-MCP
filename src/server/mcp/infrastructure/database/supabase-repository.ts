@@ -202,6 +202,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
         name: entry.name,
         duration_ms: entry.durationMs,
         ok: entry.ok,
+        ...(entry.subject !== undefined && entry.subject !== null ? { subject: entry.subject } : {}),
       });
       await withTimeout(insert, 3000, "Supabase log insert timed out.");
     } catch (error) {
@@ -238,7 +239,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     try {
       const query = client
         .from("mcp_logs")
-        .select("id,request_id,kind,name,duration_ms,ok,created_at")
+        .select("id,request_id,kind,name,duration_ms,ok,created_at,subject")
         .order("created_at", { ascending: false })
         .limit(Math.max(1, Math.min(200, Math.floor(limit))));
       const { data, error } = await withTimeout(query, 5000, "Supabase log read timed out.");
@@ -529,7 +530,7 @@ function parseClientRow(row: unknown): ClientRecord | null {
 
 function parseLogRow(row: unknown): StoredLogEntry | null {  if (typeof row !== "object" || row === null) return null;
   const record = row as Record<string, unknown>;
-  const { id, request_id, kind, name, duration_ms, ok, created_at } = record;
+  const { id, request_id, kind, name, duration_ms, ok, created_at, subject } = record;
   if (typeof id !== "number" || !Number.isFinite(id)) return null;
   if (typeof name !== "string" || typeof created_at !== "string") return null;
   if (typeof duration_ms !== "number" || typeof ok !== "boolean") return null;
@@ -541,5 +542,6 @@ function parseLogRow(row: unknown): StoredLogEntry | null {  if (typeof row !== 
     name,
     durationMs: duration_ms,
     ok,
+    subject: typeof subject === "string" ? subject : null,
   };
 }

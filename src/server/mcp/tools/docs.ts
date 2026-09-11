@@ -4,7 +4,7 @@ import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
 import { DEFAULT_TOKEN_LIMIT, MAX_TOKEN_LIMIT } from "../constants";
-import { withTelemetry } from "../services/telemetry";
+import { noteToolSubject, withTelemetry } from "../services/telemetry";
 import { liveDocsDeps } from "../infrastructure/deps/docs-deps";
 import {
   DOCS_LIBRARY_ID_MAX,
@@ -73,6 +73,7 @@ Do not call this tool more than 3 times per question.`,
     run: async (rawArgs: unknown) => {
       const input = InputSchema.parse(rawArgs);
       return withTelemetry("gl_get_docs", async (ctx) => {
+        noteToolSubject(ctx, input.libraryId);
         return withToolTimeout(async () => {
           const { response, resolved } = await fetchLibraryDocsUseCase(input, liveDocsDeps);
           ctx.resolved = resolved;
