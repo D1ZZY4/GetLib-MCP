@@ -44,6 +44,9 @@ export const TOPIC_SYNONYMS: Record<string, readonly string[]> = {
   worklets: ["worklet"],
   worklet: ["worklets"],
   testing: ["test", "tests"],
+  install: ["installation", "installing", "installed"],
+  installation: ["install", "installing"],
+  installing: ["install", "installation"],
   errors: ["error"],
   error: ["errors"],
   // Acronyms: docs spell these out, callers almost never do.

@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Count install, installation, and installing as the same topic
+  vocabulary so setup guides pass the evidence gate.
+
 </details>
 
 ## [1.2.5] - 2026-09-11

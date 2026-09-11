@@ -6,6 +6,7 @@ import { ensureRegistryLoaded } from "../registry/registry-loader";
 import { runTool } from "../registry/tool-registry";
 import { nonBlankString } from "../utils/schemas";
 import { hasNoResultSignal, passesFeatureGate } from "../services/compat-sources";
+import { checkEvidence } from "../utils/evidence";
 import { isGarbageContent } from "../services/content-guards";
 import { passesIdentityGate } from "@/application/library/best-practices.service";
 import { liveBestPracticesDeps } from "../infrastructure/deps/best-practices-deps";
@@ -108,8 +109,7 @@ describe("F4 - audit reconciles with auto_scan on manifest-only dirs", () => {
   });
 });
 
-describe("F5 - doc-viewer chrome shells are garbage, never documentation", () => {
-  // Verbatim shape of a served DevDocs shell: viewer chrome, no substance.
+describe("F5 - doc-viewer chrome shells are garbage, never documentation", () => {  // Verbatim shape of a served DevDocs shell: viewer chrome, no substance.
   const devdocsShell = [
     "Title: DevDocs",
     "",
@@ -147,5 +147,23 @@ describe("F5 - doc-viewer chrome shells are garbage, never documentation", () =>
   test("long guides quoting chrome phrases stay clean", () => {
     const body = `Press esc to close the dialog. Clear search to reset filters. ${"lorem ipsum dolor sit amet ".repeat(200)}`;
     expect(isGarbageContent(body)).toEqual({ garbage: false, reason: "" });
+  });
+});
+
+describe("F6 - morphological word families count as topic evidence", () => {
+  test("installation query is evidenced by installing/install prose", () => {
+    const text = [
+      "## Installing Tailwind CSS as a Vite plugin",
+      "",
+      "Install tailwindcss and the Vite plugin via npm. Then configure Vite.",
+    ].join("\n");
+    const check = checkEvidence(text, "tailwindcss installation vite");
+    expect(check.matchedTokens).toContain("installation");
+    expect(check.ok).toBe(true);
+  });
+
+  test("unrelated install mentions do not pass a different topic", () => {
+    const text = "## Installing Tailwind CSS as a Vite plugin\n\nInstall via npm.";
+    expect(checkEvidence(text, "postgres row level security").ok).toBe(false);
   });
 });
