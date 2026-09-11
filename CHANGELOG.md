@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+</details>
+
+## [1.4.1] - 2026-09-11
+
+<details>
+<summary>1.4.1 changes (click to expand)</summary>
+
 ### Added
 
 - Rank most-used libraries from real tool calls with per-library
@@ -20,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tools note their library id, compare notes its first entry,
   and runs persist the canonical subject on durable logs for
   per-library usage statistics.
+
+### Changed
+
+- Make bare `bun run db:push` target production by default since
+  DATABASE_URL is the production database; explicit non-default
+  targets still work as before.
 
 ### Fixed
 

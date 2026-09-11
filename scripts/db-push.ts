@@ -59,7 +59,9 @@ function usage(): string {
   "  --database-url <url>   Postgres connection string (or set DATABASE_URL).",
   "                           Prefer DATABASE_URL: a --database-url value stays",
   "                           visible in this process argv to local observers.",
-    "  --target <label>       Required audit label, e.g. development, staging.",
+  "  --target <label>       Audit label, e.g. development, staging, production.",
+  "                           Defaults to \"production\": this project treats",
+  "                           DATABASE_URL as production unless told otherwise.",
     "  --allow-production     Required when the target starts with \"prod\".",
     "  --dry-run              List the plan without touching any database.",
     "  --migrations-dir <dir> Override the migrations directory.",
@@ -111,10 +113,10 @@ function fail(message: string): never {
 }
 
 function requireTarget(options: PushOptions): string {
-  if (!options.target) {
-    fail("missing --target (e.g. development, staging, production).");
-  }
-  return options.target;
+  // Bare `bun run db:push` targets production: this project treats
+  // DATABASE_URL as the production database unless told otherwise.
+  // Pass an explicit --target for any other environment.
+  return options.target ?? "production";
 }
 
 function requireDatabaseUrl(options: PushOptions): string {
@@ -201,8 +203,11 @@ function main(): void {
     return;
   }
   const databaseUrl = requireDatabaseUrl(options);
-  if (isProductionTarget(target) && !options.allowProduction) {
-    fail("refusing production target without --allow-production.");
+  // Only an EXPLICIT production target needs the flag: the bare default
+  // already means production by project convention, so requiring the
+  // flag there would just make `bun run db:push` unusable.
+  if (options.target !== null && isProductionTarget(target) && !options.allowProduction) {
+    fail("refusing explicit production target without --allow-production.");
   }
   const psql = findPsql();
   console.log(`${LOG_PREFIX}: target=${target} database=${redactUrl(databaseUrl)} files=${files.length}`);
