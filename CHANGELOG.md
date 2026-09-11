@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- End explicitly prefixed lookups in a clean miss instead of
+  fuzzy-matching the prefixed string into unrelated packages.
+
 </details>
 
 ## [1.2.7] - 2026-09-11

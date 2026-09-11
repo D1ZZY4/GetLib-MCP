@@ -121,10 +121,19 @@ export async function resolveLibraryUseCase(input: ResolveInput, deps: ResolveDe
   // 2. Explicit ecosystem prefix (npm:express, pypi:requests): route
   // to exactly one provider. Without this the prefixed string falls
   // into fuzzy/bare matching and resolves to unrelated packages.
-  // A miss falls through to the normal pipeline below.
-  if (matches.length === 0 && hasExplicitPrefix(name) && deps.resolvePrefixedCandidate) {
-    const prefixed = await deps.resolvePrefixedCandidate(name);
-    if (prefixed && !matches.some((m) => m.id === prefixed.id)) matches.push(prefixed);
+  // A miss here is final: the caller scoped the lookup explicitly,
+  // so fuzzy-matching the prefixed string can only produce junk.
+  if (matches.length === 0 && hasExplicitPrefix(name)) {
+    if (deps.resolvePrefixedCandidate) {
+      const prefixed = await deps.resolvePrefixedCandidate(name);
+      if (prefixed && !matches.some((m) => m.id === prefixed.id)) matches.push(prefixed);
+    }
+    if (matches.length === 0) {
+      return {
+        response: { content: [{ type: "text", text: withNotice(formatResults([])) }] },
+        resolved: false,
+      };
+    }
   }
 
   // 3. Fuzzy search registry

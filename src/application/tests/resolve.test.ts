@@ -51,15 +51,20 @@ describe("resolve use case with stubbed infrastructure", () => {
     expect(result.response.structuredContent?.matches[0]?.id).toBe("npm:express");
   });
 
-  test("prefixed miss falls through to the bare pipeline", async () => {
+  test("prefixed miss ends in a clean miss without fuzzy fallback", async () => {
+    let bareCalls = 0;
     const result = await resolveLibraryUseCase(
       { libraryName: "npm:no-such-package-xyz" },
       {
         ...baseStubs(),
         resolvePrefixedCandidate: async () => null,
-        resolveBareNameCandidates: async () => [],
+        resolveBareNameCandidates: async () => {
+          bareCalls += 1;
+          return [];
+        },
       },
     );
+    expect(bareCalls).toBe(0);
     expect(result.resolved).toBe(false);
     expect(result.response.content[0]?.text ?? "").toContain("No libraries found");
   });
