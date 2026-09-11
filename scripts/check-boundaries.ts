@@ -25,15 +25,41 @@ interface Violation {
   text: string;
 }
 
+interface ImportRef {
+  line: number;
+  path: string;
+}
+
 const ROOT = join(import.meta.dir, "..");
 const SRC = join(ROOT, "src");
 
-function collect(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
+const SOURCE_EXTENSIONS = [".ts", ".tsx"] as const;
+const TEST_SUFFIX = ".test.ts";
+
+function isSourceFile(entry: string): boolean {
+  if (entry.endsWith(TEST_SUFFIX)) return false;
+  return SOURCE_EXTENSIONS.some((ext) => entry.endsWith(ext));
+}
+
+function collect(dir: string): string[] {
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  const out: string[] = [];
+  for (const entry of entries) {
     const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      collect(full, out);
-    } else if (/\.(ts|tsx)$/.test(entry) && !entry.endsWith(".test.ts")) {
+    let isDirectory = false;
+    try {
+      isDirectory = statSync(full).isDirectory();
+    } catch {
+      continue;
+    }
+    if (isDirectory) {
+      out.push(...collect(full));
+    } else if (isSourceFile(entry)) {
       out.push(full);
     }
   }
@@ -44,8 +70,8 @@ function lineOf(source: string, index: number): number {
   return source.slice(0, index).split("\n").length;
 }
 
-function importsOf(source: string): Array<{ line: number; path: string }> {
-  const found: Array<{ line: number; path: string }> = [];
+function importsOf(source: string): ImportRef[] {
+  const found: ImportRef[] = [];
   const staticPattern = /(?:import|export)\s+[\s\S]*?from\s*['"]([^'"]+)['"]/g;
   let match: RegExpExecArray | null;
   while ((match = staticPattern.exec(source)) !== null) {
@@ -67,31 +93,33 @@ function under(file: string, ...segments: string[]): boolean {
   );
 }
 
-const violations: Violation[] = [];
+function isAlias(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
 
-for (const file of collect(SRC)) {
+function isRelativeTo(path: string, name: string): boolean {
+  return path.startsWith(".") && path.split("/").includes(name);
+}
+
+function checkFile(file: string, violations: Violation[]): void {
   const rel = relative(ROOT, file).replace(/\\/g, "/");
   let source: string;
   try {
     source = readFileSync(file, "utf-8");
   } catch {
-    continue;
+    return;
   }
   for (const { line, path } of importsOf(source)) {
     const report = (rule: number): void => {
       violations.push({ file: rel, rule, line, text: path });
     };
-    const isAlias = (prefix: string): boolean =>
-      path === prefix || path.startsWith(`${prefix}/`);
-    const isRelativeTo = (name: string): boolean =>
-      path.startsWith(".") && path.split("/").includes(name);
 
     if (under(file, "server", "application", "domain")) {
       if (
-        isAlias("@/web") ||
-        isAlias("@/app") ||
-        isRelativeTo("web") ||
-        isRelativeTo("app")
+        isAlias(path, "@/web") ||
+        isAlias(path, "@/app") ||
+        isRelativeTo(path, "web") ||
+        isRelativeTo(path, "app")
       ) {
         report(1);
         continue;
@@ -99,8 +127,8 @@ for (const file of collect(SRC)) {
     }
     if (under(file, "domain")) {
       if (
-        isAlias("@/server") ||
-        isAlias("@/application") ||
+        isAlias(path, "@/server") ||
+        isAlias(path, "@/application") ||
         path === "react" ||
         path.startsWith("react/") ||
         path === "next" ||
@@ -113,9 +141,9 @@ for (const file of collect(SRC)) {
     }
     if (under(file, "web")) {
       if (
-        isAlias("@/server") ||
-        isAlias("@/application") ||
-        isAlias("@/domain") ||
+        isAlias(path, "@/server") ||
+        isAlias(path, "@/application") ||
+        isAlias(path, "@/domain") ||
         path.includes("supabase")
       ) {
         report(3);
@@ -123,17 +151,17 @@ for (const file of collect(SRC)) {
       }
     }
     if (under(file, "application")) {
-      if (isAlias("@/server/mcp/tools")) {
+      if (isAlias(path, "@/server/mcp/tools")) {
         report(4);
         continue;
       }
     }
     if (under(file, "app")) {
       if (
-        isAlias("@/domain") ||
+        isAlias(path, "@/domain") ||
         path.includes("supabase") ||
-        isAlias("@/server/mcp/services") ||
-        isAlias("@/server/mcp/sources")
+        isAlias(path, "@/server/mcp/services") ||
+        isAlias(path, "@/server/mcp/sources")
       ) {
         report(5);
       }
@@ -141,13 +169,23 @@ for (const file of collect(SRC)) {
   }
 }
 
-if (violations.length > 0) {
-  for (const violation of violations) {
-    console.error(
-      `${violation.file}:${violation.line} [rule ${violation.rule}] forbids import '${violation.text}'`,
-    );
+function main(): void {
+  const files = collect(SRC);
+  const violations: Violation[] = [];
+  for (const file of files) {
+    checkFile(file, violations);
   }
-  console.error(`\nboundary check: ${violations.length} violation(s)`);
-  process.exit(1);
+
+  if (violations.length > 0) {
+    for (const violation of violations) {
+      console.error(
+        `${violation.file}:${violation.line} [rule ${violation.rule}] forbids import '${violation.text}'`,
+      );
+    }
+    console.error(`\nboundary check: ${violations.length} violation(s)`);
+    process.exit(1);
+  }
+  console.log(`boundary check: clean (${files.length} files)`);
 }
-console.log(`boundary check: clean (${collect(SRC).length} files)`);
+
+main();

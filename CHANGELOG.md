@@ -76,6 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   casts in the discover and install services.
 - Cover scripts with the typecheck gate instead of leaving them
   outside strict validation.
+- Restructure the boundary checker and build tooling into named
+  helpers with a dry-run test-file cleanup script.
 - Cancel deep-fetch fan-out cooperatively once the deadline or an
   external signal fires instead of letting it run past timeout.
 - Harden db:push with named helpers, postgres URL validation, and

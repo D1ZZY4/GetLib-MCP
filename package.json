@@ -46,6 +46,7 @@
     "mcp": "bun src/server/mcp/stdio-entry.ts",
     "build:mcp": "bun scripts/mcp-build.ts",
     "db:push": "bun scripts/db-push.ts",
+    "clean:test": "bun scripts/clean-test.ts",
     "prepublishOnly": "bun run build:mcp",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
