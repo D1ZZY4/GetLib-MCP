@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Button, Card, Tabs } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
@@ -8,33 +7,16 @@ import { availabilityTone } from "@/web/components/ui/status-tone";
 import { EmptyState } from "@/web/components/ui/empty-state";
 import { Pill } from "@/web/components/ui/pill";
 import { DetailHeaderSkeleton, PanelCardSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
+import { notifyCopied, notifyCopyFailed } from "@/web/lib/notify";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
 import { copyText, transportLabel } from "../services/install-api.service";
 import { PageContainer } from "@/web/components/layout/page-container";
 
 export function InstallAssistant() {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [copyError, setCopyError] = useState<string | null>(null);
-  const timerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const handleCopy = async (id: string, snippet: string) => {
+  const handleCopy = async (snippet: string) => {
     const ok = await copyText(snippet);
-    if (ok) {
-      setCopyError(null);
-      setCopiedId(id);
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-      timerRef.current = window.setTimeout(() => {
-        setCopiedId((current) => (current === id ? null : current));
-      }, 2000);
-    } else {
-      setCopyError("Copy failed. Select the snippet manually to copy it.");
-    }
+    if (ok) notifyCopied("Configuration snippet");
+    else notifyCopyFailed();
   };
 
   const { catalog, loading, error, retry } = useInstallCatalog();
@@ -85,16 +67,6 @@ export function InstallAssistant() {
         title="Install to your AI agents"
         description="Pick your AI agent, copy the MCP snippet, and follow the setup steps."
       />
-
-      <p role="status" aria-live="polite" className="sr-only">
-        {copiedId !== null ? "Configuration snippet copied to clipboard." : ""}
-        {copyError ?? ""}
-      </p>
-      {copyError !== null ? (
-        <p role="alert" className="text-sm text-danger">
-          {copyError}
-        </p>
-      ) : null}
 
       <section aria-label="Transport modes">
         <h2 className="text-base font-semibold tracking-tight">Transport modes</h2>
@@ -161,10 +133,10 @@ export function InstallAssistant() {
                       variant="secondary"
                       size="sm"
                       className="shrink-0"
-                      onPress={() => void handleCopy(assistant.id, assistant.snippet)}
+                      onPress={() => void handleCopy(assistant.snippet)}
                       aria-label={`Copy ${assistant.name} config snippet`}
                     >
-                      {copiedId === assistant.id ? "Copied" : "Copy"}
+                      Copy
                     </Button>
                   </div>
                   <pre className="max-h-[480px] overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed break-words tabular-nums">
@@ -185,11 +157,11 @@ export function InstallAssistant() {
                         size="sm"
                         className="shrink-0"
                         onPress={() =>
-                          void handleCopy(`${assistant.id}-remote`, assistant.remoteSnippet ?? "")
+                          void handleCopy(assistant.remoteSnippet ?? "")
                         }
                         aria-label={`Copy ${assistant.name} remote config snippet`}
                       >
-                        {copiedId === `${assistant.id}-remote` ? "Copied" : "Copy"}
+                        Copy
                       </Button>
                     </div>
                     <pre className="max-h-[480px] overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed break-words tabular-nums">

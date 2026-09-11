@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Skeleton } from "@heroui/react";
+import { Button, Card, Skeleton, toast } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -55,45 +55,44 @@ export function DevelopmentsPage() {
     "We couldn't load development settings. Try again in a moment.",
   );
   const [saving, setSaving] = useState<DatabaseModeOption | "env-reset" | "seed" | "data-reset" | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [lifecycleDone, setLifecycleDone] = useState<string | null>(null);
 
   const loading = runtimeLoading || settingsLoading;
   const error = runtimeError ?? settingsError;
   const failed = runtime === null || settings === null;
 
+  /** Toast-first action feedback via toast.promise: loading, success,
+   * and error states swap in place inside one toast, which announces
+   * through the toast alertdialog. No parallel inline status region, so
+   * screen readers hear the outcome exactly once. */
   async function applyMode(mode: DatabaseModeOption | null) {
+    if (saving !== null) return;
     setSaving(mode === null ? "env-reset" : mode);
-    setSaveError(null);
     try {
-      await updateDatabaseMode(mode);
-      retrySettings();
-      retryRuntime();
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Couldn't switch database mode. Try again.");
+      await toast.promise(updateDatabaseMode(mode), {
+        loading: "Switching database mode...",
+        success: "Database mode switched.",
+        error: (err) => err.message,
+      });
     } finally {
       setSaving(null);
+      retrySettings();
+      retryRuntime();
     }
   }
 
   async function applyLifecycle(action: "seed" | "reset") {
+    if (saving !== null) return;
     setSaving(action === "seed" ? "seed" : "data-reset");
-    setSaveError(null);
-    setLifecycleDone(null);
     try {
-      if (action === "seed") {
-        await seedDevelopmentData();
-        setLifecycleDone("Seeded development data.");
-      } else {
-        await resetDevelopmentData();
-        setLifecycleDone("Reset development data and reseeded.");
-      }
-      retrySettings();
-      retryRuntime();
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Couldn't update development data. Try again.");
+      await toast.promise(action === "seed" ? seedDevelopmentData() : resetDevelopmentData(), {
+        loading: action === "seed" ? "Seeding development data..." : "Resetting development data...",
+        success: action === "seed" ? "Seeded development data." : "Reset development data and reseeded.",
+        error: (err) => err.message,
+      });
     } finally {
       setSaving(null);
+      retrySettings();
+      retryRuntime();
     }
   }
 
@@ -211,16 +210,6 @@ export function DevelopmentsPage() {
                   );
                 })}
               </div>
-              {saving !== null ? (
-                <p role="status" className="mt-3 text-sm text-muted">
-                  Switching database mode...
-                </p>
-              ) : null}
-              {saveError !== null ? (
-                <p role="alert" className="mt-3 text-sm text-danger">
-                  {saveError}
-                </p>
-              ) : null}
               {settings.override !== null ? (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-secondary px-3 py-2">
                   <p className="text-xs text-muted">
@@ -278,11 +267,6 @@ export function DevelopmentsPage() {
                   {saving === "data-reset" ? "Resetting..." : "Reset data"}
                 </Button>
               </div>
-              {lifecycleDone !== null ? (
-                <p role="status" className="mt-3 text-sm text-muted">
-                  {lifecycleDone}
-                </p>
-              ) : null}
             </Card.Content>
           </Card>
           <Card>

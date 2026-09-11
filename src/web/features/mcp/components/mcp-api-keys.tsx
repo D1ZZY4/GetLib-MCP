@@ -9,6 +9,7 @@ import { PageContainer } from "@/web/components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { FormRowSkeleton, ListRowSkeleton } from "@/web/components/ui/skeletons";
 import { formatLogTime } from "@/web/lib/format";
+import { notifyCopied, notifyCopyFailed } from "@/web/lib/notify";
 import type { CreatedApiKey } from "@/web/types/mcp";
 import { createApiKey, deleteApiKey, fetchApiKeys } from "../services/api-keys.service";
 
@@ -20,19 +21,14 @@ export function McpApiKeys() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [freshKey, setFreshKey] = useState<CreatedApiKey | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const handleCreate = async () => {
     if (name.trim().length === 0 || creating) return;
     setCreating(true);
     setCreateError(null);
-    setCopied(false);
-    setCopyFailed(false);
     try {
       const created = await createApiKey(name.trim());
       setFreshKey(created);
@@ -49,23 +45,21 @@ export function McpApiKeys() {
     if (!freshKey) return;
     try {
       await navigator.clipboard.writeText(freshKey.key);
-      setCopied(true);
-      setCopyFailed(false);
+      notifyCopied("API key");
     } catch {
-      setCopied(false);
-      setCopyFailed(true);
+      notifyCopyFailed();
     }
   };
 
-  const handleCopyRow = async (id: number, prefix: string) => {
+  const handleCopyRow = async (prefix: string) => {
     // Only the stored prefix can be copied here: full keys exist
     // solely in the one-time creation card because the database
     // keeps hashes alone.
     try {
       await navigator.clipboard.writeText(prefix);
-      setCopiedId(id);
+      notifyCopied("Key prefix");
     } catch {
-      setCopiedId(null);
+      notifyCopyFailed();
     }
   };
 
@@ -119,16 +113,14 @@ export function McpApiKeys() {
                 {freshKey.key}
               </code>
               <Button variant="secondary" size="sm" onPress={handleCopy}>
-                {copied ? "Copied" : "Copy key"}
+                Copy key
               </Button>
               <Button variant="secondary" size="sm" onPress={() => setFreshKey(null)}>
                 Dismiss
               </Button>
             </div>
-            <p role="status" aria-live="polite" className="mt-2 text-xs text-muted">
-              {copyFailed
-                ? "Copy failed - select the key text manually and press Ctrl+C."
-                : "Tip: click the key text to select it manually."}
+            <p className="mt-2 text-xs text-muted">
+              Tip: click the key text to select it manually.
             </p>
           </Card.Content>
         </Card>
@@ -219,10 +211,10 @@ export function McpApiKeys() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onPress={() => void handleCopyRow(key.id, key.prefix)}
+                      onPress={() => void handleCopyRow(key.prefix)}
                       aria-label={`Copy prefix for ${key.name}`}
                     >
-                      {copiedId === key.id ? "Copied" : "Copy"}
+                      Copy
                     </Button>
                     <Button
                       variant="secondary"

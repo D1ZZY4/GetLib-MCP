@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Confirm dashboard actions through shared toasts: development
+  seed, reset, and mode switches use loading/success/error toasts,
+  and copy buttons announce through one notify helper instead of
+  per-component timers and inline status text.
 - Persist stable MCP client identities (`slug=uuid`) in a new
   `mcp_clients` table with mock and Supabase repositories behind
   the database seam.
