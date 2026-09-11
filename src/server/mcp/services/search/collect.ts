@@ -160,7 +160,10 @@ export async function collectSearchSources(
       if (devDocsContent && devDocsContent.length > 200) {
         const safe = sanitizeContent(devDocsContent);
         const { text } = extractRelevantContent(safe, query, tokens);
-        if (text.length > 200) {
+        // Last-resort bar: content with zero topical connection is not an
+        // answer even here - fall through to the remaining fallbacks
+        // instead of serving chrome that merely looks like a result.
+        if (text.length > 200 && checkEvidence(text, query).matchRatio > 0) {
           results.push({
             source: `DevDocs (${techSlug})`,
             url: `https://devdocs.io/${techSlug}/`,

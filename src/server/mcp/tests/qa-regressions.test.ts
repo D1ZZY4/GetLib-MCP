@@ -6,6 +6,7 @@ import { ensureRegistryLoaded } from "../registry/registry-loader";
 import { runTool } from "../registry/tool-registry";
 import { nonBlankString } from "../utils/schemas";
 import { hasNoResultSignal, passesFeatureGate } from "../services/compat-sources";
+import { isGarbageContent } from "../services/content-guards";
 import { passesIdentityGate } from "@/application/library/best-practices.service";
 import { liveBestPracticesDeps } from "../infrastructure/deps/best-practices-deps";
 
@@ -90,7 +91,6 @@ describe("F3 - distinctive-token gate for compat", () => {
     expect(passesFeatureGate(text, "CSS container queries")).toBe(true);
   });
 });
-
 describe("F4 - audit reconciles with auto_scan on manifest-only dirs", () => {
   test("manifest-only directory names auto_scan instead of disagreeing", async () => {
     const dir = mkdtempSync(join(tmpdir(), "gl-audit-"));
@@ -105,5 +105,47 @@ describe("F4 - audit reconciles with auto_scan on manifest-only dirs", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("F5 - doc-viewer chrome shells are garbage, never documentation", () => {
+  // Verbatim shape of a served DevDocs shell: viewer chrome, no substance.
+  const devdocsShell = [
+    "Title: DevDocs",
+    "",
+    "URL Source: https://devdocs.io/tailwindcss/tailwindcss",
+    "",
+    "Warning: This is a cached snapshot of the original page, consider retry with caching opt-out.",
+    "",
+    "Markdown Content:",
+    "You're browsing the Tailwind CSS documentation. To browse all docs, go to [devdocs.io](https://devdocs.io/) (or press `esc`).",
+    "",
+    "Clear search",
+    "# [DevDocs](https://devdocs.io/)",
+    "",
+    "[Preferences](https://devdocs.io/settings)",
+  ].join("\n");
+
+  test("viewer shell is garbage", () => {
+    expect(isGarbageContent(devdocsShell)).toEqual({ garbage: true, reason: "app chrome shell" });
+  });
+
+  test("real docs with code and headings stay clean", () => {
+    const text = [
+      "# CSS Container Queries",
+      "",
+      "CSS container queries let components respond to container size.",
+      "Press esc to exit fullscreen videos in any browser.",
+      "",
+      "```css",
+      ".card { container-type: inline-size; }",
+      "```",
+    ].join("\n");
+    expect(isGarbageContent(text)).toEqual({ garbage: false, reason: "" });
+  });
+
+  test("long guides quoting chrome phrases stay clean", () => {
+    const body = `Press esc to close the dialog. Clear search to reset filters. ${"lorem ipsum dolor sit amet ".repeat(200)}`;
+    expect(isGarbageContent(body)).toEqual({ garbage: false, reason: "" });
   });
 });

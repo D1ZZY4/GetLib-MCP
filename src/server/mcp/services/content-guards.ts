@@ -134,12 +134,42 @@ export function isEmptySPAShell(content: string): boolean {
 }
 
 /**
+ * Detect a rendered doc-viewer shell served instead of documentation
+ * (DevDocs-style: navigation chrome, no substance). Unlike isEmptySPAShell,
+ * this fires on EXTRACTED text: the shell renders hundreds of chrome
+ * characters ("You're browsing...", "press esc", "Clear search") with no
+ * code and no real prose, so length and tag checks cannot catch it.
+ *
+ * Both halves must match: a viewer-identity phrase AND viewer chrome,
+ * on short codeless text. Real documentation essentially never pairs
+ * those, and the short-text cap keeps long guides out of reach.
+ */
+export function isAppChromeShell(content: string): boolean {
+  // Real code means real content - shells never carry fenced blocks.
+  if (content.includes("```")) return false;
+  const text = content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (text.length === 0 || text.length > 3000) return false;
+  const viewerIdentity =
+    /you're browsing .{0,80} documentation/i.test(text) ||
+    /browse all docs/i.test(text) ||
+    /requires javascript to run/i.test(text) ||
+    /javascript is (required|needed) to/i.test(text);
+  if (!viewerIdentity) return false;
+  return (
+    /press .{0,12}\besc\b/i.test(text) ||
+    /clear search/i.test(text) ||
+    /offline data/i.test(text)
+  );
+}
+
+/**
  * Unified content quality gate.
  * Runs all garbage-detection checks in priority order and returns the first hit.
  * Returns `{ garbage: false, reason: "" }` when content is clean.
  */
 export function isGarbageContent(content: string): { garbage: boolean; reason: string } {
   if (isEmptySPAShell(content)) return { garbage: true, reason: "empty SPA shell" };
+  if (isAppChromeShell(content)) return { garbage: true, reason: "app chrome shell" };
   if (isCloudflareChallenge(content)) return { garbage: true, reason: "Cloudflare challenge" };
   if (isRateLimitPage(content)) return { garbage: true, reason: "rate limit page" };
   if (isLoginWall(content)) return { garbage: true, reason: "login wall" };

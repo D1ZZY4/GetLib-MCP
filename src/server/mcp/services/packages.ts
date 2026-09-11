@@ -57,10 +57,12 @@ export async function fetchDevDocs(slug: string, topic?: string): Promise<string
   const cacheKey = `devdocs:${slugEncoded}:${topic ?? ""}`;
 
   const memCached = docCache.get(cacheKey);
-  if (memCached) return memCached;
+  // Garbage is re-checked on hits so entries poisoned before a gate
+  // existed stop serving immediately instead of lingering until TTL.
+  if (memCached && !isGarbageContent(memCached).garbage) return memCached;
 
   const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
+  if (diskCached && !isGarbageContent(diskCached).garbage) {
     docCache.set(cacheKey, diskCached);
     return diskCached;
   }

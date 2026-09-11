@@ -19,4 +19,19 @@ describe("extract token budgets", () => {
     expect(result.truncated).toBe(true);
     expect(result.text.length).toBeLessThanOrEqual(Math.floor(8000 * CHARS_PER_TOKEN));
   });
+
+  test("verbatim-duplicate long paragraphs collapse to first occurrence", () => {
+    const para = `This paragraph repeats across mirrored nav and footer blocks with enough substance to pass the length floor. ${"x".repeat(60)}`;
+    const content = `# Guide\n\n${para}\n\n## Middle\n\nSome unique middle content here.\n\n${para}`;
+    const result = extractRelevantContent(content, "guide", 8000);
+    const occurrences = result.text.split(para).length - 1;
+    expect(occurrences).toBe(1);
+    expect(result.text).toContain("Some unique middle content here.");
+  });
+
+  test("short fragments never collapse", () => {
+    const content = `# Guide\n\nYes.\n\n## More\n\nNo.\n\nYes.`;
+    const result = extractRelevantContent(content, "guide", 8000);
+    expect(result.text).toContain("Yes.");
+  });
 });

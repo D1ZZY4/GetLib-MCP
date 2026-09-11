@@ -1,4 +1,4 @@
-import { fetchAsMarkdownRace, isErrorPage, hashContent } from "../fetcher";
+import { fetchAsMarkdownRace, isErrorPage, isGarbageContent, hashContent } from "../fetcher";
 import { extractRelevantContent, substantiveTokens } from "../../utils/extract";
 import { checkEvidence } from "../../utils/evidence";
 import { sanitizeContent } from "../../utils/sanitize";
@@ -17,11 +17,17 @@ export async function fetchTopicContent(url: string, query: string, tokens: numb
   // share cached BM25-extracted content.
   const cacheKey = `search:${url}:${hashContent(query)}`;
   const cached = docCache.get(cacheKey);
-  if (typeof cached === "string") return cached;
+  // Same poisoned-cache healing as the DevDocs path: entries cached
+  // before a gate existed must not keep serving.
+  if (typeof cached === "string" && !isGarbageContent(cached).garbage) return cached;
 
   // Use fetchAsMarkdownRace: tries direct HTML extraction first, Jina as fallback
   const raw = await fetchAsMarkdownRace(url);
   if (!raw || raw.length < 200 || isErrorPage(raw)) return "";
+  // Structural garbage gate BEFORE topical evidence: a viewer shell can
+  // repeat the topic terms ("docs", "guide") without containing any
+  // documentation, which would pass the evidence check below.
+  if (isGarbageContent(raw).garbage) return "";
   const safe = sanitizeContent(raw);
   const { text } = extractRelevantContent(safe, query, tokens);
   // Evidence gate: pages whose extracted text never mentions a single query

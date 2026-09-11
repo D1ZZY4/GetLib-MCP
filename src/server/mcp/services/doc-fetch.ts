@@ -69,12 +69,14 @@ async function fetchDocsUncached(
   }
 
   const memCached = docCache.get(cacheKey);
-  if (memCached) {
+  // Heal entries poisoned before a gate covered this shape: garbage
+  // never serves from cache, it falls through to a live refetch.
+  if (memCached && !isGarbageContent(memCached).garbage) {
     return stamp({ content: memCached, url: docsUrl, sourceType: asSourceType(docCache.get(sourceTypeKey)) });
   }
 
   const diskCached = await diskDocCache.get(cacheKey);
-  if (diskCached) {
+  if (diskCached && !isGarbageContent(diskCached).garbage) {
     docCache.set(cacheKey, diskCached);
     const st = asSourceType(await diskDocCache.get(sourceTypeKey));
     docCache.set(sourceTypeKey, st);

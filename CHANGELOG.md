@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Reject doc-viewer chrome shells as garbage on every fetch path
+  and heal poisoned cache entries instead of serving them.
+- Require topical evidence on the DevDocs fallback and collapse
+  verbatim-duplicate paragraphs before budgeting tokens.
+
 </details>
 
 ## [1.2.4] - 2026-09-11

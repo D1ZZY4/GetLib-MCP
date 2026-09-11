@@ -26,6 +26,23 @@ export function extractRelevantContent(
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[\s*\]\([^)]*\)/g, "");
 
+  // Collapse verbatim-duplicate paragraphs (mirrored nav/footers that
+  // extraction repeats): keep the first occurrence so scoring and the
+  // token budget see unique content. Same rule as deep-fetch page
+  // assembly - short fragments are always kept, only substantial
+  // repeats collapse. Runs before the fit check so a dump that is
+  // mostly repetition is judged on its unique substance.
+  const seenParas = new Set<string>();
+  content = content
+    .split(/\n{2,}/)
+    .filter((para) => {
+      if (para.length < 50) return true;
+      if (seenParas.has(para)) return false;
+      seenParas.add(para);
+      return true;
+    })
+    .join("\n\n");
+
   // If content fits within limit, return it all
   if (content.length <= charLimit) {
     return { text: content, truncated: false };
