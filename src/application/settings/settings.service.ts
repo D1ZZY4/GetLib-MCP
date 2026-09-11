@@ -28,10 +28,9 @@ export interface SettingsSnapshot {
 }
 
 /**
- * Capability seams of the settings snapshot. The database probe is
- * infrastructure injected here; auth, catalog, constants, and runtime
- * policy stay directly owned (application-internal or centralized
- * configuration).
+ * Settings capability seams. Database status and catalog metadata are
+ * infrastructure injected; auth, runtime policy, and server identity stay
+ * application-owned (`database-auth-and-deployment.md` section 1, 15).
  */
 export interface SettingsDeps {
   getDatabaseStatus: () => Promise<DatabaseStatus>;

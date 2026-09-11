@@ -1,6 +1,7 @@
 import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 import { extractRelevantContent, sliceVersionBand } from "@/server/mcp/utils/extract";
 import { checkEvidence, buildEvidenceBlock } from "@/server/mcp/utils/evidence";
+import { verdictForTopic } from "@/domain/evidence/verdict";
 import { sanitizeContent } from "@/server/mcp/utils/sanitize";
 import { computeQualityScore } from "@/server/mcp/utils/quality";
 import type { LibraryEntry } from "@/server/mcp/types";
@@ -178,7 +179,7 @@ export async function migrationUseCase(input: MigrationInput, deps: MigrationDep
           ok: evidence.ok,
           matchRatio: evidence.matchRatio,
           occurrences: evidence.occurrences,
-          verdict: evidence.ok ? "strong" : evidence.matchRatio > 0 ? "weak" : "miss",
+          verdict: verdictForTopic(evidence, topic),
         },
         content: text,
       },

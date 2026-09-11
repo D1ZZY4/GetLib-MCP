@@ -8,6 +8,7 @@ import {
 } from "@/server/mcp/runtime";
 import { ensureBootstrapAccount, resetBootstrapCache, type AuthDeps } from "@/application/auth/auth.service";
 import { resetHealthProbeCache } from "@/application/health/health.service";
+import { clearDocCaches } from "@/server/mcp/services/cache";
 
 /**
  * Capability seams of the development mutations. Bootstrap persistence
@@ -39,9 +40,13 @@ export interface DevelopmentSettingsSnapshot {
 }
 
 /**
- * Development settings capability shared by Web and API. GET works in any
- * environment (production renders an unavailable notice); mutations are
- * development-only and fail closed in production.
+ * Development settings capability - shared by Web and API interfaces.
+ * Read operations allowed in any environment; mutations (database mode
+ * override, seed, reset) are development-only and fail-closed in
+ * production (`database-auth-and-deployment.md` section 17).
+ *
+ * Ownership: Application service (use case). Database cache invalidation
+ * is infrastructure injected through `DevelopmentDeps`.
  */
 export function getDevelopmentSettings(): DevelopmentSettingsSnapshot {
   const environment = detectEnvironment();
@@ -98,6 +103,9 @@ export async function resetDevelopmentData(deps: DevelopmentDeps): Promise<Devel
   requireDevelopment();
   deps.resetDatabaseCache();
   resetBootstrapCache();
+  // Content caches are keyed independently of mock state: without this,
+  // rotated sources or poisoned documents survive the reset until TTL.
+  clearDocCaches();
   await ensureBootstrapAccount(deps.auth);
   return getDevelopmentSettings();
 }

@@ -4,7 +4,7 @@ import { withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
-import { batchResolveUseCase } from "@/application/library/batch-resolve.service";
+import { batchResolveUseCase, type BatchResolveItem } from "@/application/library/batch-resolve.service";
 import { liveBatchResolveDeps } from "../infrastructure/deps/batch-resolve-deps";
 
 const InputSchema = z.object({
@@ -23,7 +23,7 @@ const TIMEOUT_RESPONSE = timeoutResponse(
     total: 0,
     found: 0,
     timedOut: true,
-    results: [] as never[],
+    results: [] as BatchResolveItem[],
   },
 );
 

@@ -4,16 +4,8 @@ import { withTelemetry } from "../services/telemetry";
 import { withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "./timeout";
 import { nonBlankString } from "../utils/schemas";
-import {
-  buildIndexShared,
-  clearSnippetBuildInFlight,
-  snippetBuildBudgetMs,
-  snippetsUseCase,
-} from "@/application/library/snippets.service";
+import { snippetsUseCase } from "@/application/library/snippets.service";
 import { liveSnippetsDeps } from "../infrastructure/deps/snippets-deps";
-
-// Re-exported so the existing tests keep one stable import path.
-export { buildIndexShared, clearSnippetBuildInFlight, snippetBuildBudgetMs };
 
 const InputSchema = z.object({
   libraryId: nonBlankString(300)

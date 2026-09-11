@@ -9,12 +9,6 @@ const packageLockSchema = z.object({
   dependencies: z.record(z.string(), z.object({ version: z.string().max(100).optional() })).optional(),
 });
 
-export interface LockfileVersion {
-  packageName: string;
-  version: string;
-  source: "package-lock" | "pnpm-lock" | "yarn-lock" | "cargo-lock" | "poetry-lock" | "uv-lock" | "go-mod";
-}
-
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

@@ -1,4 +1,5 @@
 import { checkEvidence, buildEvidenceBlock, type EvidenceCheck } from "@/server/mcp/utils/evidence";
+import { verdictForTopic } from "@/domain/evidence/verdict";
 import { withNotice } from "@/server/mcp/utils/guard";
 import { parseCacheEnvelopeRaw, safeJsonParse } from "@/server/mcp/utils/validate-external";
 import type { CompatSection } from "@/server/mcp/services/compat-sources";
@@ -72,13 +73,10 @@ export async function compatUseCase(input: CompatInput, deps: CompatDeps): Promi
         resolved: true,
       };
     }
-    // Pre-envelope cache entry - plain rendered text.
-    try {
-      const legacy = JSON.parse(cached) as unknown;
-      if (typeof legacy === "string") return { response: { content: [{ type: "text", text: legacy }] }, resolved: true };
-    } catch {
-      // Not JSON at all - fall through to plain text below.
-    }
+    // Pre-envelope cache entry - plain rendered text. safeJsonParse never
+    // throws, so non-JSON content falls through to plain text below.
+    const legacy = safeJsonParse(cached);
+    if (typeof legacy === "string") return { response: { content: [{ type: "text", text: legacy }] }, resolved: true };
     return { response: { content: [{ type: "text", text: cached }] }, resolved: true };
   }
 
@@ -149,6 +147,7 @@ export async function compatUseCase(input: CompatInput, deps: CompatDeps): Promi
     check: evidenceCheck,
   });
   const response = withNotice(`${header}\n\n${sections.map((s) => s.text).join("\n\n---\n\n")}${evidenceBlock}`);
+  const domainVerdict = verdictForTopic(evidenceCheck, feature);
   const structuredContent = {
     feature,
     environments: environments ?? [],
@@ -156,11 +155,13 @@ export async function compatUseCase(input: CompatInput, deps: CompatDeps): Promi
     evidence: {
       // BCD data comes from the resolved MDN doc for this exact feature
       // (relevance-gated above) - authoritative regardless of how many
-      // times the feature name recurs in the table text.
+      // times the feature name recurs in the table text. Otherwise the
+      // shared domain verdict applies. Sections exist here, so a domain
+      // miss still means weak evidence, never a full miss.
       ok: !!bcd || (evidenceCheck.ok && !weakEvidence),
       matchRatio: evidenceCheck.matchRatio,
       occurrences: evidenceCheck.occurrences,
-      verdict: bcd ? "strong" : weakEvidence ? "weak" : evidenceCheck.ok ? "strong" : "weak",
+      verdict: bcd ? "strong" : weakEvidence ? "weak" : domainVerdict === "miss" ? "weak" : domainVerdict,
     },
   };
   // Envelope keeps evidence.ok available on cache hits - a bare string

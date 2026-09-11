@@ -16,7 +16,6 @@ import { realpathSync } from "fs";
 import { randomBytes } from "crypto";
 import { log } from "./logger";
 import { embedWatermark } from "./watermark";
-import { getUpdateNoticeForResponse } from "./version-check";
 import { TOOL_TIMEOUT_MS } from "../constants";
 import { lookupByAlias, lookupById } from "../sources/registry";
 
@@ -28,7 +27,7 @@ import { lookupByAlias, lookupById } from "../sources/registry";
  */
 function currentWorkingDir(): string | null {
   try {
-    return resolve(process.cwd());
+    return resolve(/*turbopackIgnore: true*/ process.cwd());
   } catch {
     return null;
   }
@@ -286,8 +285,7 @@ export function isExtractionAttempt(query: string): boolean {
  * and survives copy-paste across virtually all platforms.
  */
 export function withNotice(text: string): string {
-  const updateNotice = getUpdateNoticeForResponse();
-  return embedWatermark(`${IP_NOTICE}\n\n${text}${updateNotice}`);
+  return embedWatermark(`${IP_NOTICE}\n\n${text}`);
 }
 
 /**

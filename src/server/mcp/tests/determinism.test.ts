@@ -10,7 +10,7 @@ import {
   buildIndexShared,
   clearSnippetBuildInFlight,
   snippetBuildBudgetMs,
-} from "@/server/mcp/tools/snippets";
+} from "@/application/library/snippets.service";
 import type { SnippetIndex } from "@/server/mcp/types";
 
 function fakeIndex(library: string): SnippetIndex {

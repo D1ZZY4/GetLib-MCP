@@ -1,4 +1,4 @@
-import { CACHE_TTLS } from "../constants";
+import { CACHE_TTLS, NPM_REGISTRY_URL, PYPI_URL } from "../constants";
 import { docCache, diskDocCache } from "./cache";
 import { cacheDoc } from "./http/request";
 import { tryFetch } from "./http/try-fetch";
@@ -8,7 +8,7 @@ import { safeJsonParse } from "../utils/validate-external";
 
 /** Query npm registry for package metadata */
 export async function fetchNpmPackage(packageName: string): Promise<unknown> {
-  const url = `https://registry.npmjs.org/${encodeURIComponent(packageName)}`;
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(packageName)}`;
   const cacheKey = `npm:${packageName}`;
 
   const memCached = docCache.get(cacheKey);
@@ -85,7 +85,7 @@ export async function fetchDevDocs(slug: string, topic?: string): Promise<string
 }
 /** Query PyPI for package metadata */
 export async function fetchPypiPackage(packageName: string): Promise<unknown> {
-  const url = `https://pypi.org/pypi/${encodeURIComponent(packageName)}/json`;
+  const url = `${PYPI_URL}/${encodeURIComponent(packageName)}/json`;
   const cacheKey = `pypi:${packageName}`;
 
   const memCached = docCache.get(cacheKey);

@@ -50,45 +50,6 @@ export interface FetchResult {
   fetchedAt?: string;
 }
 
-export interface NpmPackageInfo {
-  name: string;
-  description?: string;
-  homepage?: string;
-  repository?: { url?: string };
-  keywords?: string[];
-  "dist-tags"?: { latest?: string };
-}
-
-export interface PypiPackageInfo {
-  info: {
-    name: string;
-    summary?: string;
-    home_page?: string;
-    project_urls?: Record<string, string>;
-    keywords?: string;
-  };
-}
-
-export interface ChangelogResult {
-  libraryId: string;
-  libraryName: string;
-  version: string | null;
-  releases: Array<{ tag: string; date: string; body: string }>;
-  sourceUrl: string;
-  truncated: boolean;
-}
-
-export interface CompatResult {
-  feature: string;
-  environments: Array<{
-    name: string;
-    supported: boolean | "partial";
-    since?: string;
-    notes?: string;
-  }>;
-  sourceUrl: string;
-}
-
 export interface Snippet {
   id: string;
   library: string;
@@ -107,15 +68,4 @@ export interface SnippetIndex {
   sourceUrl: string;
   snippets: Snippet[];
   builtAt: string;
-}
-
-export interface CompareResult {
-  libraries: Array<{
-    id: string;
-    name: string;
-    description: string;
-    docsUrl: string;
-    content: string;
-  }>;
-  criteria: string;
 }

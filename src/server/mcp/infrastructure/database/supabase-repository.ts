@@ -227,7 +227,9 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
-  async listLogs(limit: number): Promise<StoredLogEntry[]> {    const client = privilegedClient();    if (!client) {
+  async listLogs(limit: number): Promise<StoredLogEntry[]> {
+    const client = privilegedClient();
+    if (!client) {
       reportUnconfigured("supabase.logs.unconfigured", this.mode);
       return [];
     }
@@ -277,7 +279,8 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
-  async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {    const client = privilegedClient();
+  async saveApiKey(record: NewApiKey): Promise<ApiKeyRecord> {
+    const client = privilegedClient();
     if (!client) {
       reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
       throw new Error("Supabase is not configured.");

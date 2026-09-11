@@ -14,64 +14,13 @@ import { isGarbageContent } from "../content-guards";
  */
 export function docsifyToRaw(url: string): string | null {
   const m = /^(https?:\/\/[^#]*?)\/?#\/(.+)$/.exec(url);
-  if (!m) return null;
-  const base = m[1]!;
-  let frag = m[2]!.replace(/[?].*$/, "").replace(/\/+$/, "");
+  const base = m?.[1];
+  const rawFrag = m?.[2];
+  if (!m || base === undefined || rawFrag === undefined) return null;
+  let frag = rawFrag.replace(/[?].*$/, "").replace(/\/+$/, "");
   if (!frag) return null;
   if (!/\.(md|markdown)$/i.test(frag)) frag += ".md";
   return `${base}/${frag}`;
-}
-
-/**
- * Fetch a URL as markdown, trying direct HTML extraction first (fast, no Jina dependency),
- * then falling back to Jina Reader for JS-rendered pages.
- * This is the core reliability improvement - provides two independent paths to content.
- */
-export async function fetchAsMarkdown(url: string): Promise<string | null> {
-  const cacheKey = `md:${url}`;
-
-  return withFetchCache(cacheKey, CACHE_TTLS.DOCS_PAGE, async () => {
-    // Path 0: Docsify hash-route URLs - the fragment never reaches the server,
-    // so a direct fetch would return the homepage shell for EVERY page. Try the
-    // conventional raw-markdown location first; skip the direct path entirely.
-    const docsifyRaw = docsifyToRaw(url);
-    if (docsifyRaw) {
-      const rawMd = await tryFetch(docsifyRaw, 1);
-      if (rawMd && rawMd.length >= 200 && !isGarbageContent(rawMd).garbage) {
-        return rawMd;
-      }
-      // Hash-routed page without raw .md - only Jina can render it correctly.
-      const jinaHash = await fetchViaJina(url);
-      if (jinaHash && jinaHash.length >= 100) {
-        return jinaHash;
-      }
-      return null;
-    }
-
-    // Path 1: Direct fetch + HTML-to-Markdown extraction (fast, no Jina)
-    const directHtml = await tryFetch(url, 1);
-    if (directHtml) {
-      // Check if it's already markdown/plain text (llms.txt, README)
-      const tagDensity = (directHtml.match(/<[a-z]/gi) ?? []).length / Math.max(directHtml.length, 1);
-      if (tagDensity < 0.005 && directHtml.length > 100 && !isGarbageContent(directHtml).garbage) {
-        return directHtml;
-      }
-
-      // Extract markdown from HTML
-      const markdown = convertHtmlToMarkdown(directHtml);
-      if (markdown.length >= 200 && !isGarbageContent(markdown).garbage) {
-        return markdown;
-      }
-    }
-
-    // Path 2: Jina Reader (handles JS-rendered pages, but rate-limited)
-    const jinaResult = await fetchViaJina(url);
-    if (jinaResult && jinaResult.length >= 100) {
-      return jinaResult;
-    }
-
-    return null;
-  });
 }
 
 /**

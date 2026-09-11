@@ -25,7 +25,7 @@
  *   - NIST AI 100-4: covert watermarks for synthetic content provenance
  */
 
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import { readFileSync } from "fs";
 import { writeFile } from "fs/promises";
 import { join } from "path";
@@ -138,14 +138,4 @@ export function detectWatermark(text: string): {
     installId: idHi + idLo,
     nonce: nHi + nLo,
   };
-}
-
-/**
- * Returns a compact SHA-256-based integrity token for the response text
- * (excluding the embedded invisible chars). Not embedded in responses -
- * used for internal audit logging if desired.
- */
-export function responseIntegrityToken(text: string): string {
-  const clean = [...text].filter(c => c !== BIT0 && c !== BIT1).join("");
-  return createHash("sha256").update(clean).digest("hex").slice(0, 16);
 }

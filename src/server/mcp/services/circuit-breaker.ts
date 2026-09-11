@@ -95,10 +95,7 @@ export function recordFailure(domain: string): void {
   }
 }
 
-export function getCircuitState(domain: string): CircuitState {
-  return getEntry(domain).state;
-}
-
+/** Test and ops seam - drops one domain so the next call probes fresh. */
 export function resetCircuit(domain: string): void {
   breakers.delete(domain);
 }

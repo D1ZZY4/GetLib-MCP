@@ -18,10 +18,6 @@ import { config } from "../../config";
  * on the Supabase side for direct-database workloads.
  */
 
-export function isSupabaseConfigured(): boolean {
-  return config.supabaseUrl !== undefined && config.supabaseAnonKey !== undefined;
-}
-
 let cachedClient: { key: string; client: SupabaseClient } | null = null;
 
 /** Service-role client for privileged server-side operations. Null when unavailable. */

@@ -1,5 +1,6 @@
 import { normalizeQueryYear } from "@/server/mcp/utils/extract";
 import { buildEvidenceBlock, checkEvidence } from "@/server/mcp/utils/evidence";
+import { verdictForTopic } from "@/domain/evidence/verdict";
 import {
   CACHE_TTLS,
   DEFAULT_TOKEN_LIMIT,
@@ -181,7 +182,7 @@ async function runSearchPipeline(
           ok: combinedCheck.ok,
           matchRatio: combinedCheck.matchRatio,
           occurrences: combinedCheck.occurrences,
-          verdict: combinedCheck.ok ? "strong" : combinedCheck.matchRatio > 0 ? "weak" : "miss",
+          verdict: verdictForTopic(combinedCheck, query),
         },
       },
     },

@@ -1,4 +1,4 @@
-import { CACHE_TTLS } from "../constants";
+import { CACHE_TTLS, GITHUB_API_URL, GITHUB_RAW_URL } from "../constants";
 import { config } from "../config";
 import type { FetchResult } from "../types";
 import { fetchWithTimeout, githubAuthHeaders, readBodyCapped, withFetchCache } from "./http/request";
@@ -21,7 +21,7 @@ export async function fetchGitHubContent(
   let wonUrl: string | null = null;
   const content = await withFetchCache(cacheKey, CACHE_TTLS.GITHUB_README, async () => {
     for (const branch of ["main", "master"]) {
-      const rawUrl = `https://raw.githubusercontent.com/${repoPath}/${branch}/${path}`;
+      const rawUrl = `${GITHUB_RAW_URL}/${repoPath}/${branch}/${path}`;
       const branchContent = await tryFetch(rawUrl, 1, githubAuthHeaders());
       if (branchContent) {
         wonUrl = rawUrl;
@@ -36,7 +36,7 @@ export async function fetchGitHubContent(
     const apiHeaders: Record<string, string> = { Accept: "application/vnd.github.raw+json" };
     if (token) apiHeaders.Authorization = `Bearer ${token}`;
     for (const branch of ["main", "master"]) {
-      const apiUrl = `https://api.github.com/repos/${repoPath}/contents/${path}?ref=${branch}`;
+      const apiUrl = `${GITHUB_API_URL}/repos/${repoPath}/contents/${path}?ref=${branch}`;
       const apiContent = await tryFetch(apiUrl, 0, apiHeaders);
       if (apiContent) {
         wonUrl = apiUrl;
@@ -66,7 +66,7 @@ export async function fetchGitHubReleases(githubUrl: string): Promise<string | n
     // can have the top 3 entries all be prereleases, so fetch 30 (the API default)
     // to ensure we see real stable releases.
     // ref: https://docs.github.com/en/rest/releases/releases#list-releases
-    const apiUrl = `https://api.github.com/repos/${repoPath}/releases?per_page=30`;
+    const apiUrl = `${GITHUB_API_URL}/repos/${repoPath}/releases?per_page=30`;
     // GETLIB_GITHUB_TOKEN raises rate limit from 60/hr to 5000/hr
     const res = await fetchWithTimeout(apiUrl, 10_000, githubAuthHeaders());
     // 403 = rate limit (unauthenticated: 60 req/hr), 429 = explicit rate limit
@@ -139,7 +139,7 @@ export async function fetchGitHubExamples(githubUrl: string): Promise<string | n
       const batch = candidates.slice(i, i + CONCURRENCY);
       const results = await Promise.allSettled(
         batch.map(async ({ path, branch }) => {
-          const url = `https://raw.githubusercontent.com/${repoPath}/${branch}/${path}`;
+          const url = `${GITHUB_RAW_URL}/${repoPath}/${branch}/${path}`;
           const content = await tryFetch(url, 0, githubAuthHeaders());
           if (content && content.length > 300) {
             return `## ${path} (GitHub)\n\n${content.slice(0, 4000)}`;
