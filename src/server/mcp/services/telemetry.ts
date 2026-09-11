@@ -42,8 +42,6 @@ import { pushOutcome, type InvocationOutcome } from "./telemetry-outcomes";
 export type { InvocationOutcome } from "./telemetry-outcomes";
 export { getRecentOutcomes, getInvocationSummary, resetTelemetry, OUTCOME_WINDOW } from "./telemetry-outcomes";
 
-export { generateRequestId };
-
 /**
  * Open a telemetry context for a tool invocation. Pair with `endCall*`
  * exactly once. Prefer `withTelemetry` for typical handler wrapping.

@@ -1,5 +1,5 @@
 import type { FetchResult } from "../types";
-import { fetchAsMarkdownRace, isIndexContent, rankIndexLinks, fetchSitemapUrls } from "./fetcher";
+import { fetchAsMarkdownRace, isIndexContent, rankIndexLinks, fetchSitemapUrls, hashContent } from "./fetcher";
 import { log } from "../utils/logger";
 import {
   DEEP_FETCH_MAX_PAGES,
@@ -81,24 +81,18 @@ export async function fetchMultiplePages(
   return pages;
 }
 
-function simpleHash(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-  }
-  return hash;
-}
-
 function assemblePages(
   pages: Array<{ content: string; url: string }>,
 ): string {
-  const seenHashes = new Set<number>();
+  // Content-addressed dedup: a 32-bit hash can collide and silently drop
+  // a valid paragraph, so reuse the shared SHA-256 content hash instead.
+  const seenHashes = new Set<string>();
   return pages
     .map((p) => {
       const paras = p.content.split(/\n{2,}/);
       const unique = paras.filter((para) => {
         if (para.length < 50) return true;
-        const hash = simpleHash(para.trim());
+        const hash = hashContent(para.trim());
         if (seenHashes.has(hash)) return false;
         seenHashes.add(hash);
         return true;
