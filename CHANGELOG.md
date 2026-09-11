@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stay comfortably under the tool timeout.
 - Refuse changelog targets whose fuzzy-resolved name does not
   denote the requested library instead of inventing repo URLs.
+- Keep validated code fragments through the examples pipeline and
+  fall back honestly when file matches carry no usable code.
 
 </details>
 

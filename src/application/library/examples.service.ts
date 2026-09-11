@@ -3,7 +3,7 @@ import { isExtractionAttempt, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guar
 import { parseExternal, externalSchemas, safeJsonParse } from "@/server/mcp/utils/validate-external";
 import { log } from "@/server/mcp/utils/logger";
 import { docsFallbackResponse, type ExamplesFallbackDeps } from "./examples-fallback";
-import { renderCodeSearch, type CodeSearchItem } from "./examples-render";
+import { renderCodeSearch, hasCodeFragment, type CodeSearchItem } from "./examples-render";
 
 const codeSearchItemSchema = z.object({
   name: z.string().max(500),
@@ -15,6 +15,25 @@ const codeSearchItemSchema = z.object({
     stargazers_count: z.number().optional(),
     html_url: z.string().max(2000),
   }),
+  // Code fragments are the actual evidence - without them a result is a
+  // filename match, not an example. Validated (not stripped) so the
+  // renderer below can rely on their presence and shape.
+  text_matches: z
+    .array(
+      z.object({
+        fragment: z.string().max(5000),
+        matches: z
+          .array(
+            z.object({
+              text: z.string().max(500),
+              indices: z.array(z.number().int().min(0).max(100000)).max(20),
+            }),
+          )
+          .max(20),
+      }),
+    )
+    .max(10)
+    .optional(),
 });
 
 /**
@@ -154,9 +173,19 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
     if (dropped > 0) {
       log({ level: "debug", msg: "examples.items.dropped", dropped, library });
     }
+    // Filename-only matches carry no code to show - serving them as
+    // "examples" produced codeless file lists. Drop them; when nothing
+    // verifiable remains, fall back to docs-derived examples instead.
     if (items.length === 0) {
       return fallbackAsync(
         "GitHub code search returned no results.",
+        `No code examples found for "${library}"${pattern ? ` with pattern "${pattern}"` : ""}. Try a different search term.`,
+      );
+    }
+    const withCode = items.filter(hasCodeFragment);
+    if (withCode.length === 0) {
+      return fallbackAsync(
+        "GitHub code search returned file matches without usable code.",
         `No code examples found for "${library}"${pattern ? ` with pattern "${pattern}"` : ""}. Try a different search term.`,
       );
     }
@@ -166,7 +195,7 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
       pattern,
       language,
       totalCount: envelope.total_count,
-      items,
+      items: withCode,
     });
     const ttl = 60 * 60 * 1000;
     deps.cacheSet(cacheKey, rendered, ttl);

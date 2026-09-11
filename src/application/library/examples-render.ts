@@ -18,6 +18,11 @@ export interface CodeSearchItem {
   }>;
 }
 
+/** True when a result carries at least one non-blank code fragment. */
+export function hasCodeFragment(item: CodeSearchItem): boolean {
+  return (item.text_matches ?? []).some((m) => m.fragment.trim().length > 0);
+}
+
 export function renderCodeSearch(params: {
   library: string;
   pattern: string | undefined;
@@ -29,7 +34,7 @@ export function renderCodeSearch(params: {
 
   const lines: string[] = [
     `# Code Examples: ${library}${pattern ? ` - ${pattern}` : ""}`,
-    `> Found ${totalCount} results, showing top ${items.length}`,
+    `> Found ${totalCount} file matches, showing top ${items.length} with code`,
     "",
     "---",
     "",
