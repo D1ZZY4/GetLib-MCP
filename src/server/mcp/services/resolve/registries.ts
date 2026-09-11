@@ -3,7 +3,7 @@ import { CACHE_TTLS } from "../../constants";
 import { resolveCache } from "../cache";
 import type { LibraryMatch } from "../../types";
 import { log } from "../../utils/logger";
-import { externalSchemas, parseExternal } from "../../utils/validate-external";
+import { externalSchemas, parseExternal, safeJsonParse } from "../../utils/validate-external";
 import { probeLlmsTxt } from "./llms-probe";
 
 import { readBodyCapped } from "../http/request";
@@ -26,29 +26,34 @@ export async function resolveFromNpm(packageName: string): Promise<LibraryMatch 
   const cached = resolveCache.get(cacheKey);
   if (cached) return cached;
 
-  const data = await fetchNpmPackage(packageName);
-  const pkg = parseExternal(externalSchemas.npmPackage, data);
-  if (!pkg) return null;
+  try {
+    const data = await fetchNpmPackage(packageName);
+    const pkg = parseExternal(externalSchemas.npmPackage, data);
+    if (!pkg) return null;
 
-  const homepage = pkg.homepage?.replace(/\/+$/, "") ?? "";
-  const githubUrl = extractGithubUrl(pkg.repository);
+    const homepage = pkg.homepage?.replace(/\/+$/, "") ?? "";
+    const githubUrl = extractGithubUrl(pkg.repository);
 
-  const llmsProbe = homepage ? await probeLlmsTxt(homepage) : {};
+    const llmsProbe = homepage ? await probeLlmsTxt(homepage) : {};
 
-  const result: LibraryMatch = {
-    id: `npm:${pkg.name}`,
-    name: pkg.name,
-    description: pkg.description ?? "",
-    docsUrl: homepage || `https://www.npmjs.com/package/${pkg.name}`,
-    llmsTxtUrl: llmsProbe.llmsTxtUrl,
-    ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
-    githubUrl,
-    score: 70,
-    source: "npm",
-  };
+    const result: LibraryMatch = {
+      id: `npm:${pkg.name}`,
+      name: pkg.name,
+      description: pkg.description ?? "",
+      docsUrl: homepage || `https://www.npmjs.com/package/${pkg.name}`,
+      llmsTxtUrl: llmsProbe.llmsTxtUrl,
+      ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
+      githubUrl,
+      score: 70,
+      source: "npm",
+    };
 
-  resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
-  return result;
+    resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
+    return result;
+  } catch (err) {
+    log({ level: "debug", msg: "resolve.external_lookup_failed", cacheKey, error: err instanceof Error ? err.message : String(err) });
+    return null;
+  }
 }
 
 export async function resolveFromPypi(packageName: string): Promise<LibraryMatch | null> {
@@ -56,37 +61,42 @@ export async function resolveFromPypi(packageName: string): Promise<LibraryMatch
   const cached = resolveCache.get(cacheKey);
   if (cached) return cached;
 
-  const data = await fetchPypiPackage(packageName);
-  const pkg = parseExternal(externalSchemas.pypiPackage, data);
-  if (!pkg) return null;
-  const info = pkg.info;
+  try {
+    const data = await fetchPypiPackage(packageName);
+    const pkg = parseExternal(externalSchemas.pypiPackage, data);
+    if (!pkg) return null;
+    const info = pkg.info;
 
-  const homepageRaw =
-    info.home_page ??
-    info.project_urls?.["Documentation"] ??
-    info.project_urls?.["Homepage"] ??
-    `https://pypi.org/project/${info.name}`;
-  const homepage = homepageRaw.replace(/\/+$/, "");
+    const homepageRaw =
+      info.home_page ??
+      info.project_urls?.["Documentation"] ??
+      info.project_urls?.["Homepage"] ??
+      `https://pypi.org/project/${info.name}`;
+    const homepage = homepageRaw.replace(/\/+$/, "");
 
-  const llmsProbe = await probeLlmsTxt(homepage);
+    const llmsProbe = await probeLlmsTxt(homepage);
 
-  const result: LibraryMatch = {
-    id: `pypi:${info.name}`,
-    name: info.name,
-    description: info.summary ?? "",
-    docsUrl: homepage,
-    llmsTxtUrl: llmsProbe.llmsTxtUrl,
-    ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
-    githubUrl:
-      info.project_urls?.["Source"] ??
-      info.project_urls?.["Repository"] ??
-      info.project_urls?.["GitHub"],
-    score: 65,
-    source: "pypi",
-  };
+    const result: LibraryMatch = {
+      id: `pypi:${info.name}`,
+      name: info.name,
+      description: info.summary ?? "",
+      docsUrl: homepage,
+      llmsTxtUrl: llmsProbe.llmsTxtUrl,
+      ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
+      githubUrl:
+        info.project_urls?.["Source"] ??
+        info.project_urls?.["Repository"] ??
+        info.project_urls?.["GitHub"],
+      score: 65,
+      source: "pypi",
+    };
 
-  resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
-  return result;
+    resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
+    return result;
+  } catch (err) {
+    log({ level: "debug", msg: "resolve.external_lookup_failed", cacheKey, error: err instanceof Error ? err.message : String(err) });
+    return null;
+  }
 }
 
 export async function resolveFromCrates(packageName: string): Promise<LibraryMatch | null> {
@@ -102,13 +112,7 @@ export async function resolveFromCrates(packageName: string): Promise<LibraryMat
     if (!res.ok) return null;
     const text = await readBodyCapped(res, 64 * 1024);
     if (text === null) return null;
-    const parsed = parseExternal(externalSchemas.cratesPackage, (() => {
-      try {
-        return JSON.parse(text) as unknown;
-      } catch {
-        return null;
-      }
-    })());
+    const parsed = parseExternal(externalSchemas.cratesPackage, safeJsonParse(text));
     if (!parsed) return null;
 
     const { crate } = parsed;
@@ -156,28 +160,33 @@ export async function resolveFromGo(moduleName: string): Promise<LibraryMatch | 
   const cached = resolveCache.get(cacheKey);
   if (cached) return cached;
 
-  const pageUrl = `https://pkg.go.dev/${moduleName.split("/").map(encodeURIComponent).join("/")}`;
-  const content = await fetchAsMarkdownRace(pageUrl);
-  if (!content) return null;
+  try {
+    const pageUrl = `https://pkg.go.dev/${moduleName.split("/").map(encodeURIComponent).join("/")}`;
+    const content = await fetchAsMarkdownRace(pageUrl);
+    if (!content) return null;
 
-  // pkg.go.dev serves a 200-OK 404 page for unknown modules - reject it so we
-  // do not surface "Title: 404 Not Found - Go Packages" as a real result.
-  if (isGoPkgNotFound(content)) return null;
+    // pkg.go.dev serves a 200-OK 404 page for unknown modules - reject it so we
+    // do not surface "Title: 404 Not Found - Go Packages" as a real result.
+    if (isGoPkgNotFound(content)) return null;
 
-  const descMatch = content.match(/^(.{20,300})/m);
-  const description = descMatch?.[1]?.trim() ?? "";
+    const descMatch = content.match(/^(.{20,300})/m);
+    const description = descMatch?.[1]?.trim() ?? "";
 
-  const result: LibraryMatch = {
-    id: `go:${moduleName}`,
-    name: moduleName,
-    description,
-    docsUrl: pageUrl,
-    llmsTxtUrl: undefined,
-    githubUrl: moduleName.startsWith("github.com/") ? `https://${moduleName}` : undefined,
-    score: 55,
-    source: "go",
-  };
+    const result: LibraryMatch = {
+      id: `go:${moduleName}`,
+      name: moduleName,
+      description,
+      docsUrl: pageUrl,
+      llmsTxtUrl: undefined,
+      githubUrl: moduleName.startsWith("github.com/") ? `https://${moduleName}` : undefined,
+      score: 55,
+      source: "go",
+    };
 
-  resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
-  return result;
+    resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
+    return result;
+  } catch (err) {
+    log({ level: "debug", msg: "resolve.external_lookup_failed", cacheKey, error: err instanceof Error ? err.message : String(err) });
+    return null;
+  }
 }

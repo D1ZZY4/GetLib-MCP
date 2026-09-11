@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import { fetchWithTimeout, githubAuthHeaders } from "../fetcher";
 import { CACHE_TTLS } from "../../constants";
 import { resolveCache } from "../cache";
@@ -7,14 +8,34 @@ import { log } from "../../utils/logger";
 import { externalSchemas, parseExternal } from "../../utils/validate-external";
 import { probeLlmsTxt } from "./llms-probe";
 
-export async function searchNpm(query: string): Promise<LibraryMatch | null> {
-  const cacheKey = `npm-search:${query}`;
-  const cached = resolveCache.get(cacheKey);
+interface LlmsProbe {
+  llmsTxtUrl?: string;
+  llmsFullTxtUrl?: string;
+}
+
+/**
+ * Shared registry-search pipeline: cache check, bounded fetch, capped
+ * body, schema validation, first-item mapping, llms.txt probe, cache
+ * store. npm and GitHub differ only in endpoint, schema, and mapping -
+ * the failure policy (null with a debug log on every miss) is one
+ * implementation so the two providers cannot drift apart.
+ */
+interface RegistrySearchSpec<TData, TItem> {
+  cacheKey: string;
+  url: string;
+  headers?: Record<string, string>;
+  schema: z.ZodType<TData>;
+  itemsOf: (data: TData) => readonly TItem[] | undefined;
+  homepageOf: (item: TItem) => string;
+  toMatch: (item: TItem, homepage: string, probe: LlmsProbe) => LibraryMatch;
+}
+
+async function searchRegistry<TData, TItem>(spec: RegistrySearchSpec<TData, TItem>): Promise<LibraryMatch | null> {
+  const cached = resolveCache.get(spec.cacheKey);
   if (cached) return cached;
 
   try {
-    const searchUrl = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=3`;
-    const res = await fetchWithTimeout(searchUrl, 8000);
+    const res = await fetchWithTimeout(spec.url, 8000, spec.headers);
     if (!res.ok) return null;
 
     const text = await readBodyCapped(res, 128 * 1024);
@@ -25,87 +46,70 @@ export async function searchNpm(query: string): Promise<LibraryMatch | null> {
     } catch {
       return null;
     }
-    const data = parseExternal(externalSchemas.npmSearch, raw);
-    const objects = data?.objects;
-    if (!objects || objects.length === 0) return null;
+    const data = parseExternal(spec.schema, raw);
+    const first = data ? spec.itemsOf(data)?.[0] : undefined;
+    if (!first) return null;
 
-    const firstObject = objects[0];
-    if (!firstObject) return null;
-    const pkg = firstObject.package;
-    const homepage = (pkg.links?.homepage ?? "").replace(/\/+$/, "");
-    const repoUrl = pkg.links?.repository;
-    const githubUrl = repoUrl?.includes("github.com") ? repoUrl : undefined;
+    const homepage = spec.homepageOf(first);
+    const probe = homepage ? await probeLlmsTxt(homepage) : {};
+    const result = spec.toMatch(first, homepage, probe);
 
-    const llmsProbe = homepage ? await probeLlmsTxt(homepage) : {};
-
-    const result: LibraryMatch = {
-      id: `npm:${pkg.name}`,
-      name: pkg.name,
-      description: pkg.description ?? "",
-      docsUrl: homepage || `https://www.npmjs.com/package/${pkg.name}`,
-      llmsTxtUrl: llmsProbe.llmsTxtUrl,
-      ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
-      githubUrl,
-      score: 65,
-      source: "npm",
-    };
-
-    resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
+    resolveCache.set(spec.cacheKey, result, CACHE_TTLS.RESOLVE);
     return result;
   } catch (err) {
-    log({ level: "debug", msg: "resolve.external_lookup_failed", cacheKey, error: err instanceof Error ? err.message : String(err) });
+    log({ level: "debug", msg: "resolve.external_lookup_failed", cacheKey: spec.cacheKey, error: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }
 
-export async function searchGitHub(query: string): Promise<LibraryMatch | null> {
-  const cacheKey = `github-search:${query}`;
-  const cached = resolveCache.get(cacheKey);
-  if (cached) return cached;
+export async function searchNpm(query: string): Promise<LibraryMatch | null> {
+  return searchRegistry({
+    cacheKey: `npm-search:${query}`,
+    url: `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=3`,
+    schema: externalSchemas.npmSearch,
+    itemsOf: (data) => data.objects,
+    homepageOf: (pkg) => (pkg.package.links?.homepage ?? "").replace(/\/+$/, ""),
+    toMatch: (wrapper, homepage, llmsProbe) => {
+      const pkg = wrapper.package;
+      const repoUrl = pkg.links?.repository;
+      return {
+        id: `npm:${pkg.name}`,
+        name: pkg.name,
+        description: pkg.description ?? "",
+        docsUrl: homepage || `https://www.npmjs.com/package/${pkg.name}`,
+        llmsTxtUrl: llmsProbe.llmsTxtUrl,
+        ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
+        githubUrl: repoUrl?.includes("github.com") ? repoUrl : undefined,
+        score: 65,
+        source: "npm",
+      };
+    },
+  });
+}
 
-  try {
-    const searchUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=3`;
-    const res = await fetchWithTimeout(searchUrl, 8000, {
+export async function searchGitHub(query: string): Promise<LibraryMatch | null> {
+  return searchRegistry({
+    cacheKey: `github-search:${query}`,
+    url: `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=3`,
+    headers: {
       Accept: "application/vnd.github.v3+json",
       ...githubAuthHeaders(),
-    });
-    if (!res.ok) return null;
-
-    const text = await readBodyCapped(res, 128 * 1024);
-    if (text === null) return null;
-    let raw: unknown = null;
-    try {
-      raw = JSON.parse(text) as unknown;
-    } catch {
-      return null;
-    }
-    const data = parseExternal(externalSchemas.githubSearch, raw);
-    const items = data?.items;
-    if (!items || items.length === 0) return null;
-
-    const repo = items[0];
-    if (!repo) return null;
-    const homepage = (repo.homepage ?? "").replace(/\/+$/, "");
-    const docsUrl = homepage || repo.html_url;
-
-    const llmsProbe = homepage ? await probeLlmsTxt(homepage) : {};
-
-    const result: LibraryMatch = {
-      id: `github:${repo.full_name}`,
-      name: repo.full_name.split("/").pop() ?? repo.full_name,
-      description: repo.description ?? "",
-      docsUrl,
-      llmsTxtUrl: llmsProbe.llmsTxtUrl,
-      ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
-      githubUrl: repo.html_url,
-      score: 55,
-      source: "github",
-    };
-
-    resolveCache.set(cacheKey, result, CACHE_TTLS.RESOLVE);
-    return result;
-  } catch (err) {
-    log({ level: "debug", msg: "resolve.external_lookup_failed", cacheKey, error: err instanceof Error ? err.message : String(err) });
-    return null;
-  }
+    },
+    schema: externalSchemas.githubSearch,
+    itemsOf: (data) => data.items,
+    homepageOf: (repo) => (repo.homepage ?? "").replace(/\/+$/, ""),
+    toMatch: (repo, homepage, llmsProbe) => {
+      return {
+        id: `github:${repo.full_name}`,
+        name: repo.full_name.split("/").pop() ?? repo.full_name,
+        description: repo.description ?? "",
+        docsUrl: homepage || repo.html_url,
+        llmsTxtUrl: llmsProbe.llmsTxtUrl,
+        ...(llmsProbe.llmsFullTxtUrl !== undefined && { llmsFullTxtUrl: llmsProbe.llmsFullTxtUrl }),
+        githubUrl: repo.html_url,
+        score: 55,
+        source: "github",
+      };
+    },
+  });
 }

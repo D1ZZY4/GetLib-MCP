@@ -63,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   updates) while keeping SSPL-1.0 declarations.
 - Compare passwords, API keys, and session signatures through one
   shared timing-safe hash helper.
+- Resolve npm and GitHub searches through one shared pipeline and
+  give every registry resolver the same fail-soft miss policy.
 
 </details>
 
