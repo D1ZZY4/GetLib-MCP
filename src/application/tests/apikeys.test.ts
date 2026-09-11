@@ -3,7 +3,10 @@ import {
   ApiKeyValidationError,
   createApiKey,
   deleteApiKey,
+  generateKeyName,
   listApiKeys,
+  regenerateApiKey,
+  renameApiKey,
   verifyApiKey,
   type ApiKeyDeps,
 } from "../apikeys/apikeys.service";
@@ -52,12 +55,94 @@ describe("api key service with stubbed infrastructure", () => {
     expect(await listApiKeys(deps)).toHaveLength(0);
   });
 
-  test("rejects blank and oversized names and ids", async () => {
+  test("rejects oversized names and ids", async () => {
     const { deps } = stubDeps();
-    await expect(createApiKey(deps, "   ")).rejects.toThrow(ApiKeyValidationError);
     await expect(createApiKey(deps, "x".repeat(101))).rejects.toThrow(ApiKeyValidationError);
     await expect(deleteApiKey(deps, 0)).rejects.toThrow(ApiKeyValidationError);
     await expect(deleteApiKey(deps, 1.5)).rejects.toThrow(ApiKeyValidationError);
+  });
+
+  test("blank names are platform-generated, never blank", async () => {
+    const { deps } = stubDeps();
+    expect(generateKeyName()).toMatch(/^key-[0-9a-f]{6}$/);
+    const nameless = await createApiKey(deps);
+    expect(nameless.name).toMatch(/^key-[0-9a-f]{6}$/);
+    const blank = await createApiKey(deps, "   ");
+    expect(blank.name).toMatch(/^key-[0-9a-f]{6}$/);
+    expect(nameless.name).not.toBe(blank.name);
+  });
+
+  test("rename updates the name and regenerates on blank", async () => {
+    const { deps } = stubDeps();
+    const created = await createApiKey(deps, "ci");
+    expect(await renameApiKey(deps, created.id, "laptop")).toBe(true);
+    expect(await verifyApiKey(deps, created.key)).toEqual({ id: created.id, name: "laptop" });
+    expect(await renameApiKey(deps, created.id)).toBe(true);
+    const renamed = await verifyApiKey(deps, created.key);
+    expect(renamed?.name).toMatch(/^key-[0-9a-f]{6}$/);
+    expect(await renameApiKey(deps, 999, "ghost")).toBe(false);
+    await expect(renameApiKey(deps, 0, "x")).rejects.toThrow(ApiKeyValidationError);
+    await expect(renameApiKey(deps, created.id, "x".repeat(101))).rejects.toThrow(
+      ApiKeyValidationError,
+    );
+  });
+
+  test("regenerate revokes the old secret and issues a new one", async () => {
+    const { deps } = stubDeps();
+    const created = await createApiKey(deps, "ci");
+    const rotated = await regenerateApiKey(deps, created.id);
+    expect(rotated).not.toBeNull();
+    expect(rotated?.key.startsWith("glk_")).toBe(true);
+    expect(rotated?.key).not.toBe(created.key);
+    expect(rotated?.name).toBe("ci");
+    expect(await verifyApiKey(deps, created.key)).toBeNull();
+    expect(await verifyApiKey(deps, rotated?.key ?? "")).toEqual({
+      id: created.id,
+      name: "ci",
+    });
+    expect(await regenerateApiKey(deps, 999)).toBeNull();
+    await expect(regenerateApiKey(deps, 0)).rejects.toThrow(ApiKeyValidationError);
+  });
+
+  test("expired keys fail verification like unknown ones", async () => {
+    const { deps } = stubDeps();
+    const future = new Date(Date.now() + 60_000).toISOString();
+    const created = await createApiKey(deps, "ci", future);
+    expect(created.expiresAt).not.toBeNull();
+    expect(await verifyApiKey(deps, created.key)).not.toBeNull();
+    await expect(createApiKey(deps, "ci", "not-a-date")).rejects.toThrow(ApiKeyValidationError);
+    await expect(createApiKey(deps, "ci", new Date(Date.now() - 1000).toISOString())).rejects.toThrow(
+      ApiKeyValidationError,
+    );
+  });
+
+  test("rows past expiry stop verifying", async () => {
+    const { createHash } = await import("crypto");
+    const { deps, repo } = stubDeps();
+    const past = new Date(Date.now() - 1000).toISOString();
+    const future = new Date(Date.now() + 3_600_000).toISOString();
+    for (const [suffix, expiresAt, verifies] of [
+      ["past", past, false],
+      ["future", future, true],
+    ] as const) {
+      const key = `glk_test${suffix}${"a".repeat(30)}`;
+      const keyHash = createHash("sha256").update(key).digest("hex");
+      await repo.saveApiKey({ name: suffix, keyHash, keyPrefix: key.slice(0, 12), expiresAt });
+      const verified = await verifyApiKey(deps, key);
+      expect(verifies ? verified !== null : verified === null).toBe(true);
+    }
+  });
+
+  test("expiry persists on the row and lists through", async () => {
+    const { deps, repo } = stubDeps();
+    const future = new Date(Date.now() + 3_600_000).toISOString();
+    await createApiKey(deps, "ci", future);
+    const rows = await repo.listApiKeys();
+    expect(rows[0]?.expiresAt).toBe(new Date(future).toISOString());
+    const listed = await listApiKeys(deps);
+    expect(listed[0]?.expiresAt).toBe(new Date(future).toISOString());
+    const plain = await createApiKey(deps, "plain");
+    expect(plain.expiresAt).toBeNull();
   });
 
   test("stored rows hold hashes, never plaintext", async () => {

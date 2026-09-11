@@ -28,6 +28,12 @@ export interface RuntimeInfo {
     latencyMs: number | null;
     error: string | null;
     checkedAt: string;
+    writeHealth?: {
+      failedWrites: number;
+      lastSink: string | null;
+      lastErrorAt: string | null;
+      lastError: string | null;
+    };
   };
   health: {
     status: HealthStatus;

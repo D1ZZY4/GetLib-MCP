@@ -12,6 +12,7 @@ import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "@/web/lib/runtime";
+import { PersistenceWriteWarning } from "@/web/components/ui/persistence-write-warning";
 import { useSession } from "@/web/providers/auth-provider";
 import { notifySuccess } from "@/web/lib/notify";
 import { fetchSettings } from "../services/settings-api.service";
@@ -70,6 +71,10 @@ export function SettingsPage() {
         title="Settings"
         description={`Application configuration and account controls.${runtime ? ` Environment: ${runtime.environment} - database: ${runtime.databaseMode}.` : ""}`}
       />
+
+      {runtime ? (
+        <PersistenceWriteWarning writeHealth={runtime.database.writeHealth} />
+      ) : null}
 
       <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
         {TABS.map((entry) => (

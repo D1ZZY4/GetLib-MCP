@@ -30,6 +30,7 @@ export class MockDatabaseRepository implements DatabaseRepository {
       latencyMs: 0,
       error: null,
       checkedAt: new Date().toISOString(),
+      writeHealth: { failedWrites: 0, lastSink: null, lastErrorAt: null, lastError: null },
     };
   }
 
@@ -76,6 +77,7 @@ export class MockDatabaseRepository implements DatabaseRepository {
       name: record.name,
       keyHash: record.keyHash,
       keyPrefix: record.keyPrefix,
+      expiresAt: record.expiresAt,
       createdAt: new Date().toISOString(),
       lastUsedAt: null,
     };
@@ -88,6 +90,24 @@ export class MockDatabaseRepository implements DatabaseRepository {
     if (index < 0) return false;
     this.apiKeys.splice(index, 1);
     return true;
+  }
+
+  async renameApiKey(id: number, name: string): Promise<boolean> {
+    const found = this.apiKeys.find((key) => key.id === id);
+    if (!found) return false;
+    found.name = name;
+    return true;
+  }
+
+  async rotateApiKey(
+    id: number,
+    rotated: Pick<NewApiKey, "keyHash" | "keyPrefix">,
+  ): Promise<ApiKeyRecord | null> {
+    const found = this.apiKeys.find((key) => key.id === id);
+    if (!found) return null;
+    found.keyHash = rotated.keyHash;
+    found.keyPrefix = rotated.keyPrefix;
+    return { ...found };
   }
 
   async touchApiKeyLastUsed(id: number): Promise<void> {

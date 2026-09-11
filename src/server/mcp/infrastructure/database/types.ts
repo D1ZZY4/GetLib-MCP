@@ -1,4 +1,5 @@
 import type { DatabaseMode } from "../../runtime";
+import type { PersistenceWriteHealth } from "../../utils/persistence-health";
 
 /**
  * Database ownership boundary.
@@ -17,6 +18,8 @@ export interface DatabaseStatus {
   latencyMs: number | null;
   error: string | null;
   checkedAt: string;
+  /** Best-effort write failures since process start. Absent when untracked. */
+  writeHealth?: PersistenceWriteHealth;
 }
 
 export interface BootstrapRecord {
@@ -37,6 +40,8 @@ export interface ApiKeyRecord {
   name: string;
   keyHash: string;
   keyPrefix: string;
+  /** Null means the key never expires. */
+  expiresAt: string | null;
   createdAt: string;
   lastUsedAt: string | null;
 }
@@ -45,6 +50,7 @@ export interface NewApiKey {
   name: string;
   keyHash: string;
   keyPrefix: string;
+  expiresAt: string | null;
 }
 
 /** Client authentication basis. Display only - never a security boundary. */
@@ -138,6 +144,14 @@ export interface DatabaseRepository {
   saveApiKey(record: NewApiKey): Promise<ApiKeyRecord>;
   /** Delete by id. Returns false when the row is missing or unwritable. */
   deleteApiKey(id: number): Promise<boolean>;
+  /** Rename by id. Never rejects: returns false when missing or unwritable. */
+  renameApiKey(id: number, name: string): Promise<boolean>;
+  /**
+   * Rotate the secret by id: replaces hash and prefix, keeps the row and
+   * its history. The old secret stops working immediately. Returns the
+   * updated row, or null when the id is missing or unwritable.
+   */
+  rotateApiKey(id: number, rotated: Pick<NewApiKey, "keyHash" | "keyPrefix">): Promise<ApiKeyRecord | null>;
   /** Best-effort last-used stamp. Never rejects. */
   touchApiKeyLastUsed(id: number): Promise<void>;
   /**

@@ -8,6 +8,7 @@ import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "@/web/lib/runtime";
+import { PersistenceWriteWarning } from "@/web/components/ui/persistence-write-warning";
 import {
   fetchDevelopmentSettings,
   resetDevelopmentData,
@@ -275,6 +276,7 @@ export function DevelopmentsPage() {
               <Card.Description>Active runtime and database status.</Card.Description>
             </Card.Header>
             <Card.Content>
+              <PersistenceWriteWarning writeHealth={runtime.database.writeHealth} />
               <dl className="flex flex-col gap-2 text-sm">
                 <div className="flex justify-between gap-4">
                   <dt className="text-muted">Environment</dt>

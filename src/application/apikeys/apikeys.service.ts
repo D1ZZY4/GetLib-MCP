@@ -5,6 +5,8 @@ import { log } from "@/server/mcp/utils/logger";
 
 export const API_KEY_PREFIX = "glk_";
 export const API_KEY_NAME_MAX = 100;
+/** Prefix for platform-generated key names when the form leaves it blank. */
+export const GENERATED_KEY_NAME_PREFIX = "key-";
 
 /**
  * Capability seams of the API key use case. Persistence goes through
@@ -14,7 +16,7 @@ export const API_KEY_NAME_MAX = 100;
 export interface ApiKeyDeps {
   getDatabase: () => Pick<
     DatabaseRepository,
-    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "deleteApiKey" | "touchApiKeyLastUsed"
+    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "deleteApiKey" | "renameApiKey" | "rotateApiKey" | "touchApiKeyLastUsed"
   >;
 }
 
@@ -22,6 +24,8 @@ export interface ApiKeyView {
   id: number;
   name: string;
   prefix: string;
+  /** Null means the key never expires. */
+  expiresAt: string | null;
   createdAt: string;
   lastUsedAt: string | null;
 }
@@ -48,6 +52,7 @@ function toView(record: ApiKeyRecord): ApiKeyView {
     id: record.id,
     name: record.name,
     prefix: record.keyPrefix,
+    expiresAt: record.expiresAt,
     createdAt: record.createdAt,
     lastUsedAt: record.lastUsedAt,
   };
@@ -69,22 +74,79 @@ export async function listApiKeys(deps: ApiKeyDeps): Promise<ApiKeyView[]> {
   return records.map(toView);
 }
 
-export async function createApiKey(deps: ApiKeyDeps, name: string): Promise<CreatedApiKey> {
+/** Platform-generated name for blank inputs: key-a1b2c3 style. */
+export function generateKeyName(): string {
+  return `${GENERATED_KEY_NAME_PREFIX}${randomBytes(3).toString("hex")}`;
+}
+
+function normalizeName(name: string | undefined): string {
+  if (name === undefined) return generateKeyName();
   const trimmed = name.trim();
-  if (trimmed.length === 0) {
-    throw new ApiKeyValidationError("API key name must contain at least one non-whitespace character.");
-  }
+  if (trimmed.length === 0) return generateKeyName();
   if (trimmed.length > API_KEY_NAME_MAX) {
     throw new ApiKeyValidationError(`API key name must be at most ${API_KEY_NAME_MAX} characters.`);
   }
+  return trimmed;
+}
+
+function normalizeExpiry(expiresAt: string | undefined): string | null {
+  if (expiresAt === undefined) return null;
+  const trimmed = expiresAt.trim();
+  if (trimmed.length === 0) return null;
+  const parsed = Date.parse(trimmed);
+  if (!Number.isFinite(parsed)) {
+    throw new ApiKeyValidationError("API key expiry must be an ISO-8601 date string.");
+  }
+  if (parsed <= Date.now()) {
+    throw new ApiKeyValidationError("API key expiry must be in the future.");
+  }
+  return new Date(parsed).toISOString();
+}
+
+function mintSecret(): { key: string; keyHash: string; keyPrefix: string } {
   const raw = randomBytes(32).toString("base64url");
   const key = `${API_KEY_PREFIX}${raw}`;
+  return { key, keyHash: hashKey(key).toString("hex"), keyPrefix: key.slice(0, 12) };
+}
+
+export async function createApiKey(
+  deps: ApiKeyDeps,
+  name?: string,
+  expiresAt?: string,
+): Promise<CreatedApiKey> {
+  const secret = mintSecret();
   const stored = await deps.getDatabase().saveApiKey({
-    name: trimmed,
-    keyHash: hashKey(key).toString("hex"),
-    keyPrefix: key.slice(0, 12),
+    name: normalizeName(name),
+    keyHash: secret.keyHash,
+    keyPrefix: secret.keyPrefix,
+    expiresAt: normalizeExpiry(expiresAt),
   } satisfies NewApiKey);
-  return { ...toView(stored), key };
+  return { ...toView(stored), key: secret.key };
+}
+
+export async function renameApiKey(deps: ApiKeyDeps, id: number, name?: string): Promise<boolean> {
+  if (!Number.isInteger(id) || id < 1) {
+    throw new ApiKeyValidationError("API key id must be a positive integer.");
+  }
+  return deps.getDatabase().renameApiKey(id, normalizeName(name));
+}
+
+/**
+ * Revoke-and-reissue in one step: the old secret stops working
+ * immediately and the new plaintext is returned once, like creation.
+ * Row history (name, expiry, timestamps) is preserved. Null when the
+ * id does not exist.
+ */
+export async function regenerateApiKey(deps: ApiKeyDeps, id: number): Promise<CreatedApiKey | null> {
+  if (!Number.isInteger(id) || id < 1) {
+    throw new ApiKeyValidationError("API key id must be a positive integer.");
+  }
+  const secret = mintSecret();
+  const rotated = await deps
+    .getDatabase()
+    .rotateApiKey(id, { keyHash: secret.keyHash, keyPrefix: secret.keyPrefix });
+  if (!rotated) return null;
+  return { ...toView(rotated), key: secret.key };
 }
 
 export async function deleteApiKey(deps: ApiKeyDeps, id: number): Promise<boolean> {
@@ -106,6 +168,9 @@ export async function verifyApiKey(deps: ApiKeyDeps, presented: string): Promise
   const candidate = hashKey(presented);
   const record = await deps.getDatabase().findApiKeyByHash(candidate.toString("hex"));
   if (!record) return null;
+  // Expired keys fail closed like unknown ones: no oracle distinguishing
+  // "expired" from "wrong" ever reaches the caller.
+  if (record.expiresAt !== null && Date.parse(record.expiresAt) <= Date.now()) return null;
   const stored = Buffer.from(record.keyHash, "hex");
   if (!equalBytes(stored, candidate)) return null;
   try {

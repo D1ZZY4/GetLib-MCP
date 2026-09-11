@@ -1,5 +1,6 @@
 import type { DatabaseMode } from "../../runtime";
 import { log } from "../../utils/logger";
+import { getPersistenceWriteHealth, recordPersistenceFailure } from "../../utils/persistence-health";
 import { getSupabaseServiceClient } from "../supabase/client";
 import type {
   ApiKeyRecord,
@@ -95,6 +96,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
         latencyMs: Date.now() - started,
         error: null,
         checkedAt: new Date().toISOString(),
+        writeHealth: getPersistenceWriteHealth(),
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -206,6 +208,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       });
       await withTimeout(insert, 3000, "Supabase log insert timed out.");
     } catch (error) {
+      recordPersistenceFailure("mcp_logs", error);
       log({ level: "warn", msg: "supabase.logs.save-failed", error: String(error) });
     }
   }
@@ -265,7 +268,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     try {
       const query = client
         .from("api_keys")
-        .select("id,name,key_hash,key_prefix,created_at,last_used_at")
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at,expires_at")
         .order("id", { ascending: false })
         .limit(200);
       const { data, error } = await withTimeout(query, 5000, "Supabase api keys read timed out.");
@@ -291,8 +294,13 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     try {
       const insert = client
         .from("api_keys")
-        .insert({ name: record.name, key_hash: record.keyHash, key_prefix: record.keyPrefix })
-        .select("id,name,key_hash,key_prefix,created_at,last_used_at")
+        .insert({
+          name: record.name,
+          key_hash: record.keyHash,
+          key_prefix: record.keyPrefix,
+          expires_at: record.expiresAt,
+        })
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at,expires_at")
         .abortSignal(AbortSignal.timeout(5000))
         .maybeSingle();
       const { data, error } = (await withTimeout(
@@ -307,6 +315,57 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     } catch (error) {
       log({ level: "warn", msg: "supabase.apikeys.save-failed", error: String(error) });
       throw error;
+    }
+  }
+
+  async renameApiKey(id: number, name: string): Promise<boolean> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return false;
+    }
+    try {
+      const update = client.from("api_keys").update({ name }).eq("id", id).select("id");
+      const { data, error } = (await withTimeout(
+        update,
+        5000,
+        "Supabase api key rename timed out.",
+      )) as { data: Array<{ id: number }> | null; error: { message: string } | null };
+      if (error || !data) return false;
+      return data.length > 0;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.rename-failed", error: String(error) });
+      return false;
+    }
+  }
+
+  async rotateApiKey(
+    id: number,
+    rotated: Pick<NewApiKey, "keyHash" | "keyPrefix">,
+  ): Promise<ApiKeyRecord | null> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return null;
+    }
+    try {
+      const update = client
+        .from("api_keys")
+        .update({ key_hash: rotated.keyHash, key_prefix: rotated.keyPrefix })
+        .eq("id", id)
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at,expires_at")
+        .abortSignal(AbortSignal.timeout(5000))
+        .maybeSingle();
+      const { data, error } = (await withTimeout(
+        update,
+        5000,
+        "Supabase api key rotate timed out.",
+      )) as { data: unknown; error: { message: string } | null };
+      if (error || !data) return null;
+      return parseApiKeyRow(data);
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.rotate-failed", error: String(error) });
+      return null;
     }
   }
 
@@ -347,7 +406,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     try {
       const query = client
         .from("api_keys")
-        .select("id,name,key_hash,key_prefix,created_at,last_used_at")
+        .select("id,name,key_hash,key_prefix,created_at,last_used_at,expires_at")
         .eq("key_hash", keyHash)
         .abortSignal(AbortSignal.timeout(5000))
         .maybeSingle();
@@ -415,6 +474,7 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
         "Supabase client write timed out.",
       );
     } catch (error) {
+      recordPersistenceFailure("mcp_clients", error);
       log({ level: "warn", msg: "supabase.clients.touch-failed", error: String(error) });
     }
   }
@@ -475,13 +535,17 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
 function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
   if (typeof row !== "object" || row === null) return null;
   const record = row as Record<string, unknown>;
-  const { id, name, key_hash, key_prefix, created_at, last_used_at } = record;
+  const { id, name, key_hash, key_prefix, created_at, last_used_at, expires_at } = record;
   if (typeof id !== "number" || !Number.isFinite(id)) return null;
-  if (typeof name !== "string" || typeof key_hash !== "string" || typeof key_prefix !== "string") {
+  if (typeof name !== "string") return null;
+  if (typeof key_hash !== "string" || typeof key_prefix !== "string") {
     return null;
   }
   if (typeof created_at !== "string") return null;
   if (last_used_at !== null && last_used_at !== undefined && typeof last_used_at !== "string") {
+    return null;
+  }
+  if (expires_at !== null && expires_at !== undefined && typeof expires_at !== "string") {
     return null;
   }
   return {
@@ -489,6 +553,7 @@ function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
     name,
     keyHash: key_hash,
     keyPrefix: key_prefix,
+    expiresAt: typeof expires_at === "string" ? expires_at : null,
     createdAt: created_at,
     lastUsedAt: typeof last_used_at === "string" ? last_used_at : null,
   };

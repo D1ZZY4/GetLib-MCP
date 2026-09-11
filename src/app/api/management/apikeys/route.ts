@@ -5,19 +5,28 @@ import {
   createApiKey,
   deleteApiKey,
   listApiKeys,
+  renameApiKey,
 } from "@/application/apikeys/apikeys.service";
 import { liveApiKeyAuthDeps, liveApiKeyDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { checkRateLimit, READ_TIER, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
 import { log } from "@/server/mcp/utils/logger";
-import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { assertOriginOr403, jsonCreated, jsonError, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const CreateBody = z.object({
-  name: nonBlankString(API_KEY_NAME_MAX),
+  // Optional: blank or absent names are platform-generated (key-a1b2c3).
+  name: z.string().max(API_KEY_NAME_MAX).optional(),
+  // Optional ISO-8601 expiry; absent means the key never expires.
+  expiresAt: z.string().optional(),
 });
 
 const DeleteBody = z.object({
   id: z.number().int().min(1),
+});
+
+const RenameBody = z.object({
+  id: z.number().int().min(1),
+  // Optional: blank or absent names are platform-generated.
+  name: z.string().max(API_KEY_NAME_MAX).optional(),
 });
 
 export async function GET(req: Request) {
@@ -41,7 +50,7 @@ export async function POST(req: Request) {
     if (originBlocked) return originBlocked;
     const actor = await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = CreateBody.parse(await readJsonBody(req));
-    const created = await createApiKey(liveApiKeyDeps, body.name);
+    const created = await createApiKey(liveApiKeyDeps, body.name, body.expiresAt);
     // Audit trail for credential issuance: who created which key name,
     // correlated by request id. The plaintext key itself is never logged.
     log({
@@ -56,6 +65,31 @@ export async function POST(req: Request) {
   } catch (error) {
     // ApiKeyValidationError maps to 422 inside mapRouteError - no local
     // branch so the status mapping lives in exactly one place.
+    return mapRouteError(error, id);
+  }
+}
+
+export async function PATCH(req: Request) {
+  const id = requestId();
+  try {
+    checkRateLimit(req, "management/apikeys", STRICT_TIER);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
+    const actor = await requireManagementAuth(req, liveApiKeyAuthDeps);
+    const body = RenameBody.parse(await readJsonBody(req));
+    const renamed = await renameApiKey(liveApiKeyDeps, body.id, body.name);
+    if (!renamed) {
+      return jsonError("not_found", `API key ${body.id} does not exist.`, 404, id);
+    }
+    log({
+      level: "info",
+      msg: "apikeys.renamed",
+      requestId: id,
+      actor: actor.email ?? `apikey:${actor.apiKey?.id ?? "unknown"}`,
+      keyId: body.id,
+    });
+    return jsonOk({ renamed: body.id }, id);
+  } catch (error) {
     return mapRouteError(error, id);
   }
 }
