@@ -7,4 +7,12 @@
 -- constraint turns a theoretical duplicate insert into a loud failure
 -- instead of two rows sharing one credential.
 
-alter table public.api_keys add constraint api_keys_key_hash_unique unique (key_hash);
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'api_keys_key_hash_unique'
+  ) then
+    alter table public.api_keys add constraint api_keys_key_hash_unique unique (key_hash);
+  end if;
+end
+$$;

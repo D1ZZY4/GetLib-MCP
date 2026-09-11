@@ -7,6 +7,10 @@
 -- resurrect as active keys once the flag is gone. Remaining rows keep
 -- their hashes, names, prefixes, and timestamps untouched.
 
+begin;
+
 delete from public.api_keys where revoked = true;
 
 alter table public.api_keys drop column if exists revoked;
+
+commit;
