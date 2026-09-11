@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rate-limit client identity against header spoofing.
 - Fail production startup on fallback bootstrap credentials and
   audit API key issuance and revocation with correlation ids.
+- Close per-request MCP transports and evicted SSE sessions so
+  long-running hosts cannot accumulate stale servers or streams.
 
 ### Changed
 

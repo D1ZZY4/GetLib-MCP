@@ -111,8 +111,17 @@ export class UnknownSseSessionError extends Error {
   }
 }
 
+function closeEvicted(entries: SseSession[]): void {
+  for (const entry of entries) {
+    // Pruned sessions never fired their close hook - release the stream
+    // and server here so idle eviction cannot leak connections.
+    void entry.transport.close().catch(() => undefined);
+    void entry.server.close().catch(() => undefined);
+  }
+}
+
 function getSession(sessionId: string): SseSession {
-  pruneSessionMap(sessions);
+  closeEvicted(pruneSessionMap(sessions));
   const session = sessions.get(sessionId);
   if (!session) {
     throw new UnknownSseSessionError();
@@ -123,7 +132,7 @@ function getSession(sessionId: string): SseSession {
 
 /** Opens a session: connects a fresh MCP server to a new SSE stream. */
 export async function openSseSession(): Promise<{ sessionId: string; stream: ReadableStream<Uint8Array> }> {
-  pruneSessionMap(sessions);
+  closeEvicted(pruneSessionMap(sessions));
   if (getRuntimeSnapshot().vercelEnv !== undefined && !sseVercelWarned) {
     sseVercelWarned = true;
     log({
@@ -156,6 +165,7 @@ export function closeSseSession(sessionId: string): void {
   if (session) {
     sessions.delete(sessionId);
     void session.transport.close();
+    void session.server.close().catch(() => undefined);
   }
 }
 
@@ -170,6 +180,11 @@ export async function closeAllSseSessions(): Promise<void> {
       } catch {
         // Best-effort cleanup during shutdown.
       }
+      try {
+        await entry.server.close();
+      } catch {
+        // Best-effort cleanup during shutdown.
+      }
     }),
   );
 }
@@ -180,7 +195,7 @@ export interface SseClientSession extends ClientSessionSnapshot {
 
 /** Snapshot of live SSE sessions for the clients control plane. */
 export function listSseSessions(): SseClientSession[] {
-  pruneSessionMap(sessions);
+  closeEvicted(pruneSessionMap(sessions));
   return [...sessions.entries()].map(([id, entry]) => ({
     id,
     transport: "sse" as const,

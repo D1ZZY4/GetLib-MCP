@@ -72,7 +72,10 @@ export async function closeAllHttpSessions(): Promise<void> {
   recentClients.clear();
 }
 
-async function getTransport(): Promise<WebStandardStreamableHTTPServerTransport> {
+async function getTransport(): Promise<{
+  server: ReturnType<typeof createServer>;
+  transport: WebStandardStreamableHTTPServerTransport;
+}> {
   const server = createServer();
   const transport = new WebStandardStreamableHTTPServerTransport({
     // No sessionIdGenerator: stateless mode. Each request carries exactly
@@ -82,7 +85,7 @@ async function getTransport(): Promise<WebStandardStreamableHTTPServerTransport>
     enableJsonResponse: true,
   });
   await server.connect(transport);
-  return transport;
+  return { server, transport };
 }
 
 export async function handleHttpRequest(req: Request): Promise<Response> {
@@ -149,9 +152,20 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
     }
     throw error;
   }
-  const transport = await getTransport();
+  const { server, transport } = await getTransport();
   noteHttpClient(req.headers.get("user-agent") ?? undefined);
-  return transport.handleRequest(req);
+  try {
+    // Correlate successful tool calls like every error path does: the SDK
+    // owns the body, but the request id header stays ours.
+    const response = await transport.handleRequest(req);
+    response.headers.set("X-Request-Id", id);
+    return response;
+  } finally {
+    // Per-request server and transport must not accumulate on long-running
+    // hosts. Best-effort cleanup after the single stateless response.
+    await transport.close().catch(() => undefined);
+    await server.close().catch(() => undefined);
+  }
 }
 
 function errorBody(

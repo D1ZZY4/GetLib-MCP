@@ -19,15 +19,20 @@ export const SESSION_MAX_ENTRIES = 1000;
 export function pruneSessionMap<T extends SessionEntryBase>(
   sessions: Map<string, T>,
   now: number = Date.now(),
-): void {
+): T[] {
+  const evicted: T[] = [];
   for (const [id, entry] of sessions) {
     if (now - entry.lastSeenAt > SESSION_IDLE_TTL_MS) {
       sessions.delete(id);
+      evicted.push(entry);
     }
   }
   while (sessions.size > SESSION_MAX_ENTRIES) {
     const oldest = sessions.keys().next().value;
     if (oldest === undefined) break;
+    const entry = sessions.get(oldest);
     sessions.delete(oldest);
+    if (entry !== undefined) evicted.push(entry);
   }
+  return evicted;
 }
