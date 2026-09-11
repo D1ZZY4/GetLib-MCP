@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, Skeleton, Tabs } from "@heroui/react";
+import { Button, Card, Tabs } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { availabilityTone } from "@/web/components/ui/status-tone";
 import { Pill } from "@/web/components/ui/pill";
+import { DetailHeaderSkeleton, PanelCardSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
 import { copyText, transportLabel } from "../services/install-api.service";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -44,17 +45,13 @@ export function InstallAssistant() {
       <PageContainer>
         <PageHeader title="Install to your AI agents" description="Loading install instructions." />
         <div role="status" aria-label="Loading install instructions" className="flex flex-col gap-4">
-          <div aria-hidden="true">
-            <Skeleton className="h-5 w-40 rounded" />
-            <Skeleton className="mt-1 h-3 w-72 max-w-full rounded" />
+          <DetailHeaderSkeleton />
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
           </div>
-          <div className="grid gap-4 md:grid-cols-3" aria-hidden="true">
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-          </div>
-          <Skeleton className="h-10 w-64 max-w-full rounded-xl" aria-hidden="true" />
-          <Skeleton className="h-72 rounded-xl" aria-hidden="true" />
+          <PanelCardSkeleton rows={6} />
         </div>
       </PageContainer>
     );
@@ -141,16 +138,13 @@ export function InstallAssistant() {
                 <div className="flex items-center justify-between gap-2">
                   <Card.Title>{assistant.name}</Card.Title>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <Pill tone="bg-accent/10 text-accent font-mono" title="Transports this AI agent supports">
-                      {assistant.transports.map(transportLabel).join(" / ")}
+                    <Pill tone="bg-accent/10 text-accent" title="Transports this AI agent supports">
+                      <span className="font-mono">{assistant.transports.map(transportLabel).join(" / ")}</span>
                     </Pill>
                     <Pill
-                      tone=""
-                      className="data-[status=connected]:bg-success/15 data-[status=connected]:text-success data-[status=available]:bg-surface-tertiary data-[status=available]:text-muted"
+                      tone={assistant.status === "connected" ? "bg-success/15 text-success" : "bg-surface-tertiary text-muted"}
                     >
-                      <span data-status={assistant.status} className="contents">
-                        {assistant.status === "connected" ? "Connected" : "Available"}
-                      </span>
+                      {assistant.status === "connected" ? "Connected" : "Available"}
                     </Pill>
                   </div>
                 </div>

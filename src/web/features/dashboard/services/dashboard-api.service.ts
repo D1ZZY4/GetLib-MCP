@@ -49,9 +49,9 @@ export interface DashboardSnapshot {
 }
 
 /**
- * Dashboard snapshot from the authoritative backend capability. The
- * backend decides mock vs real - the frontend never branches on mock data
- * itself.
+ * Dashboard snapshot from the authoritative backend capability.
+ * The backend determines mock vs real; the frontend must never branch
+ * on mock data independently - see `flows-and-runtime.md` section 7.
  */
 export function fetchDashboard(): Promise<DashboardSnapshot> {
   return fetchJson<DashboardSnapshot>("/api/management/dashboard");

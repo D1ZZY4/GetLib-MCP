@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -37,13 +38,10 @@ export function McpPromptList() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.prompts.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No prompts registered. Restart the server to load the registry.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No prompts registered"
+          description="Restart the server to load the registry."
+        />
       ) : (
         <Card>
           <Card.Content>

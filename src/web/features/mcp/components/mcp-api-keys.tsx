@@ -24,6 +24,7 @@ export function McpApiKeys() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const handleCreate = async () => {
     if (name.trim().length === 0 || creating) return;
@@ -52,6 +53,18 @@ export function McpApiKeys() {
     } catch {
       setCopied(false);
       setCopyFailed(true);
+    }
+  };
+
+  const handleCopyRow = async (id: number, prefix: string) => {
+    // Only the stored prefix can be copied here: full keys exist
+    // solely in the one-time creation card because the database
+    // keeps hashes alone.
+    try {
+      await navigator.clipboard.writeText(prefix);
+      setCopiedId(id);
+    } catch {
+      setCopiedId(null);
     }
   };
 
@@ -196,7 +209,7 @@ export function McpApiKeys() {
               {snapshot.keys.map((key) => (
                 <li key={key.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
+                    <p className="truncate text-sm font-medium" title={`${key.name} ${key.prefix}...`}>
                       {key.name}{" "}
                       <span className="font-mono text-xs text-muted">{key.prefix}...</span>
                     </p>
@@ -205,14 +218,24 @@ export function McpApiKeys() {
                       {key.lastUsedAt ? ` · last used ${formatLogTime(key.lastUsedAt)}` : " · never used"}
                     </p>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => handleDeleteRequest(key.id, key.name)}
-                    aria-label={`Delete ${key.name}`}
-                  >
-                    Delete
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => void handleCopyRow(key.id, key.prefix)}
+                      aria-label={`Copy prefix for ${key.name}`}
+                    >
+                      {copiedId === key.id ? "Copied" : "Copy"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => handleDeleteRequest(key.id, key.name)}
+                      aria-label={`Delete ${key.name}`}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>

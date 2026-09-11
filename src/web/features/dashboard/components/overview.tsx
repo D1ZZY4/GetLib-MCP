@@ -154,7 +154,7 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
       <Card.Footer>
         <Link
           href="/statistics"
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           View full statistics
           <ArrowRightIcon className="size-3.5" />

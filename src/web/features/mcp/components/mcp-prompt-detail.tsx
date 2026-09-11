@@ -2,6 +2,7 @@
 
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -32,13 +33,10 @@ export function McpPromptDetail({ promptName }: { promptName: string }) {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : prompt === null ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No prompt named &ldquo;{promptName}&rdquo; is registered.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="Prompt not found"
+          description={`No prompt named "${promptName}" is registered.`}
+        />
       ) : (
         <>
           <PageHeader

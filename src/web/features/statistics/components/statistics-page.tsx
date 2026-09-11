@@ -1,10 +1,11 @@
 "use client";
 
-import { Card, Skeleton } from "@heroui/react";
+import { Card } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
-import { StatCardSkeleton } from "@/web/components/ui/skeletons";
+import { PanelCardSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { DocsShareChart } from "./docs-share-chart";
 import { FetchRadial } from "./fetch-radial";
 import { FetchRanking } from "./fetch-ranking";
@@ -31,10 +32,10 @@ export function StatisticsPage() {
             <StatCardSkeleton />
             <StatCardSkeleton />
           </div>
-          <Skeleton className="h-72 rounded-xl" />
+          <PanelCardSkeleton rows={5} />
           <div className="grid gap-4 lg:grid-cols-2">
-            <Skeleton className="h-72 rounded-xl" />
-            <Skeleton className="h-72 rounded-xl" />
+            <PanelCardSkeleton rows={4} />
+            <PanelCardSkeleton rows={4} />
           </div>
         </div>
       ) : error !== null || stats === null ? (
@@ -42,13 +43,10 @@ export function StatisticsPage() {
       ) : (
         <>
           {stats.days.length === 0 && stats.rows.length === 0 && stats.fetches.length === 0 ? (
-            <Card>
-              <Card.Content>
-                <p className="text-sm text-muted">
-                  No telemetry recorded yet. Run a search or call a tool to populate these charts.
-                </p>
-              </Card.Content>
-            </Card>
+            <EmptyState
+              title="No telemetry recorded yet"
+              description="Run a search or call a tool to populate these charts."
+            />
           ) : null}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Card variant="secondary">

@@ -114,9 +114,17 @@ export function AuthForm({ mode, onAuthenticated, verifyCredentials }: AuthFormP
             </p>
           ) : null}
           {mode === "sign-up" ? (
-            <TextField name="name" defaultValue={demoName}>
+            <TextField
+              name="name"
+              defaultValue={demoName}
+              maxLength={80}
+              validate={(value) =>
+                value.trim().length > 80 ? "Keep it under 80 characters." : null
+              }
+            >
               <Label>Name</Label>
               <Input placeholder="Ada Lovelace" variant="secondary" />
+              <FieldError />
             </TextField>
           ) : null}
           <TextField

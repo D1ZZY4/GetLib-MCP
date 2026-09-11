@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, Skeleton } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -61,7 +62,11 @@ export function SourceAccessPage() {
       {saveStatus === "error" ? (
         <p role="alert" className="text-sm text-danger">
           Couldn&apos;t save changes.{" "}
-          <button type="button" onClick={retrySave} className="underline">
+          <button
+            type="button"
+            onClick={retrySave}
+            className="rounded underline outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          >
             Retry now
           </button>
         </p>
@@ -110,11 +115,10 @@ export function SourceAccessPage() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : groups.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">No sources registered on this server.</p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No sources registered"
+          description="No sources registered on this server."
+        />
       ) : (
         <>
           <div className="grid gap-4 lg:grid-cols-3">

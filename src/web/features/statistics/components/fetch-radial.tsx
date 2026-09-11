@@ -2,7 +2,7 @@
 
 import { Card } from "@heroui/react";
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from "recharts";
-import type { LibraryFetch } from "../services/statistics-api.service";
+import type { LibraryFetch } from "@/web/lib/ranking";
 import { ChartTooltipCard } from "./chart-tooltip";
 import { chartFills } from "./chart-theme";
 

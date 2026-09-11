@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -34,13 +35,10 @@ export function McpResourceList() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.resources.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No resources registered. Restart the server to load the registry.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No resources registered"
+          description="Restart the server to load the registry."
+        />
       ) : (
         <Card>
           <Card.Content>

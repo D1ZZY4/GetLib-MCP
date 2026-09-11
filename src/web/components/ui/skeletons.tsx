@@ -10,7 +10,7 @@ import { Card, Skeleton } from "@heroui/react";
 
 export function StatCardSkeleton({ icon = false, compact = false }: { icon?: boolean; compact?: boolean }) {
   return (
-    <Card variant="secondary">
+    <Card variant="secondary" aria-label="Loading statistics" aria-live="polite" role="status">
       <Card.Content>
         <div className="flex items-start justify-between gap-2" aria-hidden="true">
           <div className="flex-1 space-y-2">
@@ -27,7 +27,7 @@ export function StatCardSkeleton({ icon = false, compact = false }: { icon?: boo
 
 export function PanelCardSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <Card className="h-full">
+    <Card className="h-full" aria-label="Loading panel" aria-live="polite" role="status">
       <Card.Header>
         <Skeleton className="h-4 w-32 rounded" />
         <Skeleton className="h-3 w-48 rounded" />
@@ -53,7 +53,7 @@ export function ListRowSkeleton({
   action?: "none" | "button" | "pill";
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5" aria-hidden="true">
+    <div className="flex items-center justify-between gap-3 py-2.5" aria-label="Loading row" aria-live="polite" role="status">
       <div className="min-w-0 flex-1 space-y-1.5">
         <Skeleton className="h-4 w-2/5 rounded" />
         <Skeleton className="h-3 w-3/5 rounded" />
@@ -66,7 +66,9 @@ export function ListRowSkeleton({
 export function DefinitionGridSkeleton({ columns = 3 }: { columns?: number }) {
   return (
     <div
-      aria-hidden="true"
+      aria-label="Loading definitions"
+      aria-live="polite"
+      role="status"
       className={`grid grid-cols-1 gap-2 ${columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
     >
       {Array.from({ length: columns }).map((_, index) => (
@@ -81,7 +83,7 @@ export function DefinitionGridSkeleton({ columns = 3 }: { columns?: number }) {
 
 export function DetailHeaderSkeleton() {
   return (
-    <div aria-hidden="true" className="space-y-2">
+    <div aria-label="Loading detail" aria-live="polite" role="status" className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <Skeleton className="h-8 w-48 rounded" />
         <Skeleton className="h-6 w-20 rounded-full" />
@@ -93,7 +95,7 @@ export function DetailHeaderSkeleton() {
 
 export function DefinitionListSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <div aria-hidden="true" className="flex flex-col gap-2.5">
+    <div aria-label="Loading list" aria-live="polite" role="status" className="flex flex-col gap-2.5">
       {Array.from({ length: rows }).map((_, index) => (
         <div key={index} className="flex items-center justify-between gap-4">
           <Skeleton className="h-3 w-24 rounded" />
@@ -107,14 +109,14 @@ export function DefinitionListSkeleton({ rows = 4 }: { rows?: number }) {
 export function FormRowSkeleton({ orientation = "vertical" }: { orientation?: "vertical" | "horizontal" }) {
   if (orientation === "horizontal") {
     return (
-      <div aria-hidden="true" className="flex flex-col gap-2 sm:flex-row">
+      <div aria-label="Loading form row" aria-live="polite" role="status" className="flex flex-col gap-2 sm:flex-row">
         <Skeleton className="h-10 flex-1 rounded-xl" />
         <Skeleton className="h-10 w-full rounded-xl sm:w-28" />
       </div>
     );
   }
   return (
-    <div aria-hidden="true" className="flex flex-col gap-2">
+    <div aria-label="Loading form row" aria-live="polite" role="status" className="flex flex-col gap-2">
       <Skeleton className="h-3 w-24 rounded" />
       <Skeleton className="h-10 rounded-xl" />
     </div>

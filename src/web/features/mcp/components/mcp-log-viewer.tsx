@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Key } from "@heroui/react";
 import { Card, ListBox, Select, Skeleton } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -151,19 +152,15 @@ export function McpLogViewer() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : logs.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">No tool runs recorded yet. Run a tool first.</p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No tool runs recorded yet"
+          description="Run a tool first, then its request appears here."
+        />
       ) : filtered.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No log entries match these filters. Clear the search or pick another status.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No log entries match these filters"
+          description="Clear the search or pick another status."
+        />
       ) : (
         <Card>
           <Card.Content>
@@ -176,7 +173,7 @@ export function McpLogViewer() {
                   key={entry.id}
                   className="flex items-center justify-between gap-3 py-2 font-mono text-xs"
                 >
-                  <span className="truncate">
+                  <span className="truncate" title={`${entry.name} - request ${entry.id}`}>
                     <Link href={`/mcp/logs/${entry.id}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       {entry.name}
                     </Link>{" "}

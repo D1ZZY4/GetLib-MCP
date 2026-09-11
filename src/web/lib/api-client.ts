@@ -7,7 +7,9 @@
  */
 
 const MAX_JSON_BYTES = 256 * 1024;
-const DEFAULT_TIMEOUT_MS = 30_000;
+// Covers the 55s server tool budget (GETLIB_TOOL_TIMEOUT_MS) with margin,
+// so dashboard runs surface server results instead of client timeouts.
+const DEFAULT_TIMEOUT_MS = 60_000;
 
 interface ApiErrorEnvelope {
   error?: { code?: string; message?: string };

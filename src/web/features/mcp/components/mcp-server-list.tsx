@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -47,13 +48,10 @@ export function McpServerList() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : servers.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No MCP servers registered. The local server registers on startup.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No MCP servers registered"
+          description="The local server registers on startup."
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {servers.map((server) => (

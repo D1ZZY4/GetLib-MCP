@@ -48,7 +48,12 @@ export function McpOverview() {
   } = useApiData(fetchServers, LOAD_ERROR, { refreshIntervalMs: 10_000 });
 
   const loading = catalogLoading || healthLoading || clientsLoading || serversLoading;
-  const error = catalogError ?? healthError ?? clientsError ?? serversError;
+  const sectionErrors = [catalogError, healthError, clientsError, serversError].filter(
+    (entry): entry is string => entry !== null,
+  );
+  const hasAnyData =
+    catalog.tools.length > 0 || health !== null || clients !== null || servers !== null;
+  const loadingInitial = loading && !hasAnyData;
   const retryAll = () => {
     retryCatalog();
     retryHealth();
@@ -72,7 +77,7 @@ export function McpOverview() {
         }
       />
 
-      {loading ? (
+      {loadingInitial ? (
         <div role="status" aria-label="Loading MCP overview" className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCardSkeleton compact />
@@ -94,10 +99,24 @@ export function McpOverview() {
             ))}
           </div>
         </div>
-      ) : error !== null ? (
-        <LoadError message={error} onRetry={retryAll} />
+      ) : !hasAnyData && sectionErrors.length > 0 ? (
+        <LoadError message={sectionErrors[0] ?? LOAD_ERROR} onRetry={retryAll} />
       ) : (
         <>
+          {sectionErrors.length > 0 ? (
+            <div className="flex flex-col items-start gap-1.5" role="alert">
+              <p className="text-sm text-warning">
+                Some sections failed to refresh. Showing available data.
+              </p>
+              <button
+                type="button"
+                onClick={retryAll}
+                className="rounded text-sm font-medium text-accent underline outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              >
+                Retry
+              </button>
+            </div>
+          ) : null}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Card variant="secondary">
               <Card.Content>

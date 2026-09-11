@@ -179,7 +179,7 @@ export function DevelopmentsPage() {
             </Card.Header>
             <Card.Content>
               <div role="group" aria-label="Database mode" className="grid gap-2 sm:grid-cols-2">
-                {(Object.keys(MODE_META) as DatabaseModeOption[]).map((mode) => {
+                {settings.availableModes.map((mode) => {
                   const active = isActiveMode(settings, mode);
                   return (
                     <button

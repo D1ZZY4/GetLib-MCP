@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   memory with byte-aware eviction.
 - Add debug trails for best-effort fetch fallbacks and cache prune
   runs.
+- Share one empty-state primitive and structural skeletons across
+  dashboard pages.
+- Add visible focus rings and full-text titles to lists, links,
+  and retry actions.
+- Keep partial data with per-section retry on the MCP overview
+  instead of wiping the page on one failure.
+- Cap page width with a persistent main landmark and 44px touch
+  targets on navigation controls.
 
 ### Fixed
 

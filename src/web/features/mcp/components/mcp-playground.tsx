@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Key } from "@heroui/react";
 import { Button, Card, Label, ListBox, Select, Skeleton } from "@heroui/react";
 import { FormRowSkeleton } from "@/web/components/ui/skeletons";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -75,13 +76,10 @@ export function McpPlayground() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.tools.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No tools registered. Restart the server to load the registry.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No tools registered"
+          description="Restart the server to load the registry."
+        />
       ) : (
         <>
           <Card>

@@ -14,17 +14,11 @@
  * truth per visual dimension.
  */
 
-/* Layering hierarchy: base < sticky < dropdown < overlay < modal < popover < toast.
- * Declared via @theme so Tailwind generates real utilities (z-dropdown,
- * z-modal, ...) consumed by overlays like the profile menu. */
+/* Layering hierarchy for overlays like the profile menu.
+ * Declared via @theme so Tailwind generates real utilities (z-dropdown).
+ * Add higher layers only with a valid consumer per the dead CSS rule. */
 @theme {
-  --z-base: 0;
-  --z-sticky: 10;
   --z-dropdown: 30;
-  --z-overlay: 40;
-  --z-modal: 50;
-  --z-popover: 60;
-  --z-toast: 70;
 }
 
 /* Global accessibility defaults (theme-agnostic).

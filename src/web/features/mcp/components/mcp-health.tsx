@@ -151,6 +151,9 @@ export function McpHealth() {
             <Card.Content>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
+                  <caption className="sr-only">
+                    Last health check per dependency, with latency and errors
+                  </caption>
                   <thead>
                     <tr className="border-b border-border text-xs text-muted">
                       <th scope="col" className="py-2 pr-4 font-medium">
@@ -184,7 +187,10 @@ export function McpHealth() {
                         <td className="py-2 pr-4 tabular-nums">
                           {dep.latencyMs === null ? "-" : `${dep.latencyMs}ms`}
                         </td>
-                        <td className="max-w-xs truncate py-2 pr-4 text-muted">
+                        <td
+                          className="max-w-xs truncate py-2 pr-4 text-muted"
+                          title={dep.error ?? undefined}
+                        >
                           {dep.error ?? "-"}
                         </td>
                         <td className="py-2 text-xs text-muted tabular-nums">

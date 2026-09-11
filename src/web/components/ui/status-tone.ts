@@ -1,5 +1,7 @@
 /**
- * Canonical status-to-tone mapping for every status pill in the dashboard.
+ * Canonical status-to-tone mapping for every status pill.
+ * Complies with `ui-ux.md` sections 37 (semantic color), 17 (state
+ * consistency), and 4 (semantic tokens over raw palette values).
  *
  * success: online, healthy
  * warning: degraded
@@ -37,6 +39,19 @@ export function libraryStatusTone(status: string): string {
   if (status === "outdated") return "bg-warning/10 text-warning";
   if (status === "vulnerable") return "bg-danger/10 text-danger";
   return "bg-surface-tertiary text-muted";
+}
+
+/**
+ * Canonical activity-kind-to-dot mapping for the dashboard recent-activity
+ * timeline. Kinds are content categories, not health states, so they use
+ * solid dots instead of statusTone. Centralized here so a new kind cannot
+ * drift into an ad-hoc color in the feature component.
+ */
+export function activityKindTone(kind: string): string {
+  if (kind === "resolve") return "bg-accent";
+  if (kind === "docs") return "bg-success";
+  if (kind === "audit") return "bg-warning";
+  return "bg-muted";
 }
 
 /**

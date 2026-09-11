@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button, Card } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -55,13 +56,10 @@ export function McpToolList() {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : catalog.tools.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No tools registered. Restart the server to load the registry.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No tools registered"
+          description="Restart the server to load the registry."
+        />
       ) : (
         <>
           <Card>
@@ -72,12 +70,12 @@ export function McpToolList() {
                   return (
                     <li key={tool.name} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
-                        <p className="truncate font-mono text-sm">
+                        <p className="truncate font-mono text-sm" title={tool.name}>
                           <Link href={`/mcp/tools/${tool.name}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                             {tool.name}
                           </Link>
                         </p>
-                        <p className="truncate text-xs text-muted">{tool.description}</p>
+                        <p className="truncate text-xs text-muted" title={tool.description}>{tool.description}</p>
                       </div>
                       <Button
                         variant="secondary"

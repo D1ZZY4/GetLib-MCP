@@ -2,6 +2,7 @@
 
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -37,13 +38,10 @@ export function McpLogDetail({ requestId }: { requestId: string }) {
       ) : error !== null || data === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : entry === null ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No log entry with this id. The ring keeps the last 100 entries per process.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="Log entry not found"
+          description="No log entry with this id. The ring keeps the last 100 entries per process."
+        />
       ) : (
         <>
           <PageHeader
@@ -77,7 +75,7 @@ export function McpLogDetail({ requestId }: { requestId: string }) {
                 {entry.requestId ? (
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted">Request id</dt>
-                    <dd className="max-w-xs truncate font-mono text-xs">{entry.requestId}</dd>
+                    <dd className="max-w-xs truncate font-mono text-xs" title={entry.requestId}>{entry.requestId}</dd>
                   </div>
                 ) : null}
               </dl>

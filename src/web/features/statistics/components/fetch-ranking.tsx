@@ -1,4 +1,4 @@
-import { Card } from "@heroui/react";
+import { Card, ScrollShadow } from "@heroui/react";
 import { RankingBarList } from "@/web/components/ui/ranking-bar-list";
 import { rankLibraryFetches } from "@/web/lib/ranking";
 import type { LibraryFetch } from "@/web/lib/ranking";
@@ -13,7 +13,9 @@ export function FetchRanking({ fetches }: { fetches: LibraryFetch[] }) {
         <Card.Description>Doc fetch ranking per library</Card.Description>
       </Card.Header>
       <Card.Content>
-        <RankingBarList entries={ranked} label="Most fetched libraries" />
+        <ScrollShadow className="max-h-[300px]" orientation="vertical">
+          <RankingBarList entries={ranked} label="Most fetched libraries" />
+        </ScrollShadow>
       </Card.Content>
     </Card>
   );

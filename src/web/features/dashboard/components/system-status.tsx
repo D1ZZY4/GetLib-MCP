@@ -2,46 +2,38 @@
 
 import { Card } from "@heroui/react";
 import { formatLogTime } from "@/web/lib/format";
-import { statusTone } from "@/web/components/ui/status-tone";
 import type { DashboardSnapshot } from "../services/dashboard-api.service";
 
 export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot }) {
   const items = [
-    { label: "System", value: dashboard.system.status, tone: statusTone(dashboard.system.status) },
+    { label: "System", value: dashboard.system.status },
     {
       label: "MCP tools",
       value: String(dashboard.mcp.tools),
-      tone: "bg-accent/10 text-accent",
     },
     {
       label: "Database",
       value: dashboard.database.health,
-      tone: statusTone(dashboard.database.health === "mock" ? "degraded" : dashboard.database.health),
     },
     {
       label: "Success rate",
       value: `${Math.round(dashboard.mcp.successRate * 1000) / 10}%`,
-      tone: "bg-success/10 text-success",
     },
     {
       label: "Authentication",
       value: dashboard.system.authEnabled ? "enabled" : "disabled",
-      tone: dashboard.system.authEnabled ? "bg-success/10 text-success" : "bg-surface-tertiary text-muted",
     },
     {
       label: "Transports",
       value: String(dashboard.mcp.transports.length),
-      tone: "bg-accent/10 text-accent",
     },
     {
       label: "Cache entries",
       value: String(dashboard.mcp.cacheEntries),
-      tone: "bg-accent/10 text-accent",
     },
     {
       label: "Latency",
       value: dashboard.database.latencyMs === null ? "-" : `${dashboard.database.latencyMs}ms`,
-      tone: "bg-accent/10 text-accent",
     },
   ] as const;
 

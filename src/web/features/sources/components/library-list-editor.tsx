@@ -37,6 +37,9 @@ export function LibraryListEditor({
   const [query, setQuery] = useState("");
 
   const handleAdd = () => {
+    // Keep the query when it is blank so keyboard users do not lose
+    // their place; the parent reports empty/duplicate adds via notice.
+    if (query.trim().length === 0) return;
     onAdd(query);
     setQuery("");
   };
@@ -90,7 +93,7 @@ export function LibraryListEditor({
                   type="button"
                   onClick={() => onRemove(entry)}
                   aria-label={`Remove ${entry}`}
-                  className="shrink-0 text-xs font-medium text-muted transition-colors hover:text-danger"
+                  className="shrink-0 rounded text-xs font-medium text-muted outline-none transition-colors hover:text-danger focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   Remove
                 </button>

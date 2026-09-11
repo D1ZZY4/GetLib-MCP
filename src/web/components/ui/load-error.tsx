@@ -12,7 +12,7 @@ export function LoadError({ message, onRetry }: { message: string; onRetry: () =
       <button
         type="button"
         onClick={onRetry}
-        className="text-sm font-medium text-accent underline"
+        className="rounded text-sm font-medium text-accent underline outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         Retry
       </button>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -33,13 +34,10 @@ export function McpToolDetail({ toolName }: { toolName: string }) {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : tool === null ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No tool named &ldquo;{toolName}&rdquo; is registered.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="Tool not found"
+          description={`No tool named "${toolName}" is registered.`}
+        />
       ) : (
         <>
           <PageHeader

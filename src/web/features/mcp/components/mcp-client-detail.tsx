@@ -2,6 +2,7 @@
 
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -36,13 +37,10 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
       ) : error !== null || data === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : client === null ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No recently seen client with this id. Entries expire as new clients arrive.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="Client not found"
+          description="No recently seen client with this id. Entries expire as new clients arrive."
+        />
       ) : (
         <>
           <PageHeader
@@ -76,7 +74,7 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
                 {client.userAgent !== undefined ? (
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted">User agent</dt>
-                    <dd className="max-w-xs truncate font-mono text-xs">{client.userAgent}</dd>
+                    <dd className="max-w-xs truncate font-mono text-xs" title={client.userAgent}>{client.userAgent}</dd>
                   </div>
                 ) : null}
               </dl>

@@ -15,8 +15,8 @@ import { ArrowRightIcon } from "@/web/components/ui/icons";
 const LOAD_ERROR = "We couldn't load this document. Try again in a moment.";
 
 const VERDICT_LABEL: Record<string, string> = {
-  strong: "Strong match",
-  weak: "Weak match",
+  strong: "Strong evidence",
+  weak: "Weak evidence",
   miss: "No strong match",
   untargeted: "Full document",
 };

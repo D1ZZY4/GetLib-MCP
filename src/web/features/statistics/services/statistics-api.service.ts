@@ -1,8 +1,6 @@
 import { fetchJson } from "@/web/lib/api-client";
 import type { LibraryFetch } from "@/web/lib/ranking";
 
-export type { LibraryFetch };
-
 export interface UsageDay {
   date: string;
   requests: number;

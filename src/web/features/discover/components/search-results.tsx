@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { verdictTone } from "@/web/components/ui/verdict-tone";
 import { Pill } from "@/web/components/ui/pill";
 import type { DiscoverResult } from "../services/discover.service";
@@ -15,16 +16,17 @@ const VERDICT_LABEL: Record<DiscoverResult["evidence"]["verdict"], string> = {
 export function SearchResults({ result }: { result: DiscoverResult }) {
   if (result.sources.length === 0) {
     return (
-      <Card>
-        <Card.Content>
-          <p className="text-sm font-medium">No results for &ldquo;{result.query}&rdquo;</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
+      <EmptyState
+        title={`No results for "${result.query}"`}
+        description="Try a different query."
+        action={
+          <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
             <li>Be more specific, add the library name and topic.</li>
             <li>Try resolving a library first, then ask about it.</li>
             <li>Check the spelling and try again.</li>
           </ul>
-        </Card.Content>
-      </Card>
+        }
+      />
     );
   }
 

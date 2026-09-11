@@ -1,17 +1,11 @@
 import { Card } from "@heroui/react";
+import { activityKindTone } from "@/web/components/ui/status-tone";
 import { formatActivityTime } from "@/web/lib/format";
 import type { MockActivity } from "@/web/types/library";
 
 interface RecentActivityListProps {
   activities: MockActivity[];
 }
-
-const KIND_TONE: Record<MockActivity["kind"], string> = {
-  resolve: "bg-accent",
-  docs: "bg-success",
-  audit: "bg-warning",
-  scan: "bg-muted",
-};
 
 export function RecentActivityList({ activities }: RecentActivityListProps) {
   return (
@@ -34,7 +28,7 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
               <li key={activity.id} className="relative">
                 <span
                   aria-hidden="true"
-                  className={`absolute top-1.5 -left-5 size-[11px] rounded-full border-2 border-surface ${KIND_TONE[activity.kind]}`}
+                  className={`absolute top-1.5 -left-5 size-[11px] rounded-full border-2 border-surface ${activityKindTone(activity.kind)}`}
                 />
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="text-sm font-medium">

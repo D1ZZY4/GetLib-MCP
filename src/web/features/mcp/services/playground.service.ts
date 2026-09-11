@@ -4,7 +4,6 @@ export interface PlaygroundResult {
   output: string;
   durationMs: number;
   requestId: string;
-  ok: boolean;
 }
 
 const EXAMPLE_ARGS: Record<string, string> = {
@@ -45,6 +44,5 @@ export async function runToolWithArgs(name: string, argsText: string): Promise<P
     output: JSON.stringify(run.result, null, 2),
     durationMs: run.durationMs,
     requestId: run.requestId,
-    ok: true,
   };
 }

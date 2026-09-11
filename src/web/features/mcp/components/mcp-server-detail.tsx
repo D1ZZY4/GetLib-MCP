@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -38,13 +39,10 @@ export function McpServerDetail({ serverId }: { serverId: string }) {
       ) : error !== null || data === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : server === null ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No server with id &ldquo;{serverId}&rdquo; is registered.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="Server not found"
+          description={`No server with id "${serverId}" is registered.`}
+        />
       ) : (
         <>
           <PageHeader

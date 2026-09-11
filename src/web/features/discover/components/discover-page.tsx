@@ -43,7 +43,7 @@ export function DiscoverPage() {
                     setQuery(example);
                     void search(example);
                   }}
-                  className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent hover:text-foreground"
+                  className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted outline-none transition-colors hover:border-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   {example}
                 </button>

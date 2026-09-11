@@ -96,9 +96,10 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
     }
     return null;
   }
-  const hasSession = authEnabled !== false || session.email !== "guest@localhost";
-
-  const showSignOut = hasSession && authEnabled !== false;
+  // Sign out only exists when an authentication mode is active. The menu
+  // itself only renders for a loaded session, so no email comparison is
+  // needed here - display identity must never drive security decisions.
+  const showSignOut = authEnabled !== false;
   // Index for keyboard navigation refs: visible items first, sign out last.
   let itemIndex = -1;
 
@@ -112,7 +113,7 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
         aria-haspopup="menu"
         aria-label={`Account menu for ${session.email}`}
         title={collapsed ? session.email : undefined}
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
+        className="flex size-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
       >
         <span aria-hidden="true">{sessionInitial(session.name)}</span>
       </button>

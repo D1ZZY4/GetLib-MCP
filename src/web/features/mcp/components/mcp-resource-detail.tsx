@@ -2,6 +2,7 @@
 
 import { Card, Skeleton } from "@heroui/react";
 import { BackLink } from "@/web/components/ui/back-link";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -33,13 +34,10 @@ export function McpResourceDetail({ resourceId }: { resourceId: string }) {
       ) : error !== null ? (
         <LoadError message={error} onRetry={retry} />
       ) : resource === null ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No resource named &ldquo;{resourceId}&rdquo; is registered.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="Resource not found"
+          description={`No resource named "${resourceId}" is registered.`}
+        />
       ) : (
         <>
           <PageHeader title={resource.name} description={resource.description} />
