@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   status with a dashboard warning so a broken sink never looks
   like an idle one again.
 
+### Changed
+
+- Squash the api_keys migration chain into one canonical guarded
+  file with documented naming conventions, and give the
+  app_bootstrap trigger a distinct name. Verified by applying
+  the full set to a scratch database and diffing the schema.
+
 </details>
 
 ## [1.4.1] - 2026-09-11

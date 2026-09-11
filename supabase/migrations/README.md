@@ -22,9 +22,33 @@ files are never edited, only extended by new ones.
 - `2026090906_bootstrap_password_hash.sql` - nullable `password_hash`
   on `app_bootstrap` for same-account rotation detection. Additive
   only; shipped files are never edited.
-- `2026090907_api_keys_drop_revoked.sql` - drops the `revoked` flag
-  (deletion is now the only removal path; revoked rows are purged
-  so dead credentials cannot resurrect).
+- `2026090908_mcp_clients.sql` - stable MCP client identities
+  (`mcp_clients`). Owner: `SupabaseDatabaseRepository` + transport
+  sightings.
+- `2026090909_mcp_logs_subject.sql` - nullable `subject` on
+  `mcp_logs` for per-library usage statistics, plus index.
+- `2026090911_api_keys.sql` - canonical long-lived API keys
+  (`api_keys`, hashes only, nullable `expires_at`): squashes the
+  removed 0904/0905/0907/0910 chain into one guarded file. The
+  runner re-applies every file without tracking, so the squash is
+  end-state identical on old and fresh databases (verified by
+  applying the full set to a scratch database and diffing the
+  resulting schema).
+- `2026090912_app_bootstrap_trigger_name.sql` - renames the
+  `updated_at` trigger to `trg_app_bootstrap_updated_at` so it no
+  longer shares a name with the function it calls.
+
+Naming conventions (enforced by review, pinned by migration tests):
+
+- Tables: plural snake_case (`api_keys`, `mcp_logs`, `mcp_clients`).
+- Columns: snake_case, timestamps end in `_at` (`created_at`,
+  `last_seen_at`, `expires_at`).
+- Indexes: `{table}_{column}_idx` (`api_keys_key_hash_idx`).
+- Unique constraints: `{table}_{column}_unique`
+  (`api_keys_key_hash_unique`).
+- Triggers: `trg_{table}_{purpose}`
+  (`trg_app_bootstrap_updated_at`); the function keeps its
+  descriptive `touch_...` name.
 
 Rules:
 

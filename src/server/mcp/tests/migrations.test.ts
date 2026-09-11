@@ -54,19 +54,19 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/alter table/i);
   });
 
-  test("api keys table stores hashes, is RLS-locked, and stays additive", () => {
-    const sql = readMigration("2026090904_api_keys.sql");
+  test("api keys canonical file carries the final shape", () => {
+    const sql = readMigration("2026090911_api_keys.sql");
     expect(sql).toContain("create table if not exists public.api_keys");
     expect(sql).toContain("key_hash");
+    expect(sql).toContain("expires_at");
     expect(sql).toContain("enable row level security");
     expect(sql).toContain("api_keys_key_hash_idx");
-    expect(sql).not.toMatch(/drop table/i);
-  });
-
-  test("api key hashes are unique and additive-only", () => {
-    const sql = readMigration("2026090905_api_keys_unique_hash.sql");
     expect(sql).toContain("api_keys_key_hash_unique");
-    expect(sql).not.toMatch(/create table/i);
+    expect(sql).toContain("api_keys_expires_at_idx");
+    // The word survives only in the compatibility shim and its comment:
+    // no column definition may bring the flag back.
+    expect(sql).toMatch(/drop column if exists revoked/i);
+    expect(sql).not.toMatch(/^\s*revoked\s+(boolean|text)/im);
     expect(sql).not.toMatch(/drop table/i);
   });
 
@@ -76,13 +76,6 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/create table/i);
     expect(sql).not.toMatch(/drop table/i);
     expect(sql).not.toMatch(/not null/i);
-  });
-
-  test("revoked flag removal purges dead keys and drops the column", () => {
-    const sql = readMigration("2026090907_api_keys_drop_revoked.sql");
-    expect(sql).toContain("where revoked = true");
-    expect(sql).toMatch(/drop column if exists revoked/i);
-    expect(sql).not.toMatch(/drop table/i);
   });
 
   test("mcp clients table stores stable identities and is RLS-locked", () => {
@@ -99,6 +92,13 @@ describe("supabase migrations", () => {
     expect(sql).toContain("add column if not exists subject");
     expect(sql).toContain("mcp_logs_subject_idx");
     expect(sql).not.toMatch(/drop column/i);
+    expect(sql).not.toMatch(/drop table/i);
+  });
+
+  test("bootstrap trigger carries a distinct name", () => {
+    const sql = readMigration("2026090912_app_bootstrap_trigger_name.sql");
+    expect(sql).toContain("trg_app_bootstrap_updated_at");
+    expect(sql).toContain("drop trigger if exists touch_app_bootstrap_updated_at");
     expect(sql).not.toMatch(/drop table/i);
   });
 
