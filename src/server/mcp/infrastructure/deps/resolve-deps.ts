@@ -1,6 +1,7 @@
 import type { ResolveDeps } from "@/application/library/resolve.service";
 import { fuzzySearch, lookupByAlias } from "@/server/mcp/sources/registry";
 import { resolveBareNameCandidates } from "@/server/mcp/services/resolve";
+import { resolvePrefixedCandidate } from "@/server/mcp/services/resolve/registries";
 import { isLibraryBlocked, isSourceEnabled } from "@/server/mcp/services/source-settings";
 
 /**
@@ -13,6 +14,7 @@ export const liveResolveDeps: ResolveDeps = {
   lookupByAlias,
   fuzzySearch,
   resolveBareNameCandidates,
+  resolvePrefixedCandidate,
   isSourceEnabled,
   isLibraryBlocked,
 };

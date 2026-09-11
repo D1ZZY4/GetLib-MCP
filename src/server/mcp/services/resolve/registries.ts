@@ -190,3 +190,42 @@ export async function resolveFromGo(moduleName: string): Promise<LibraryMatch | 
     return null;
   }
 }
+
+const PREFIXED_PATTERN = /^(npm|pypi|crates|go):(.+)$/;
+
+/**
+ * True for explicit `ecosystem:name` identifiers (npm:express,
+ * pypi:requests, crates:serde, go:gin-gonic/gin). Lets callers skip
+ * the prefixed dispatch entirely for bare names.
+ */
+export function hasExplicitPrefix(libraryName: string): boolean {
+  return PREFIXED_PATTERN.test(libraryName.trim());
+}
+
+/**
+ * Direct registry dispatch for explicit `ecosystem:name` identifiers
+ * (npm:express, pypi:requests, crates:serde, go:gin-gonic/gin) - the ID
+ * shape the resolve tool itself advertises. Routes to exactly one
+ * provider instead of feeding the prefixed string into the bare-name
+ * pipeline, where it resolved to unrelated packages. Returns null for
+ * non-prefixed names (not our concern) and for unknown providers.
+ */
+export async function resolvePrefixedCandidate(libraryName: string): Promise<LibraryMatch | null> {
+  if (!hasExplicitPrefix(libraryName)) return null;
+  const match = PREFIXED_PATTERN.exec(libraryName.trim());
+  if (!match) return null;
+  const [, provider, name] = match;
+  if (!name || name.trim().length === 0) return null;
+  switch (provider) {
+    case "npm":
+      return resolveFromNpm(name);
+    case "pypi":
+      return resolveFromPypi(name);
+    case "crates":
+      return resolveFromCrates(name);
+    case "go":
+      return resolveFromGo(name);
+    default:
+      return null;
+  }
+}

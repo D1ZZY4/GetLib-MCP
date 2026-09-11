@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Route explicit ecosystem prefixes to one provider instead of
+  resolving unrelated packages through fuzzy matching.
+
 </details>
 
 ## [1.2.6] - 2026-09-11

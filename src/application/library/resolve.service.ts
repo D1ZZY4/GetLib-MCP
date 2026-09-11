@@ -1,4 +1,5 @@
 import type { LibraryEntry, LibraryMatch } from "@/server/mcp/types";
+import { hasExplicitPrefix } from "@/server/mcp/services/resolve/registries";
 import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
 
 export const RESOLVE_NAME_MAX = 200;
@@ -56,6 +57,12 @@ export interface ResolveDeps {
   lookupByAlias: (name: string) => LibraryEntry | null | undefined;
   fuzzySearch: (name: string, limit: number) => LibraryEntry[];
   resolveBareNameCandidates: (name: string) => Promise<LibraryMatch[]>;
+  /**
+   * Direct dispatch for explicit `ecosystem:name` identifiers. Optional
+   * so existing stubs keep compiling; absent means prefixed names fall
+   * through to the bare-name pipeline as before.
+   */
+  resolvePrefixedCandidate?: (name: string) => Promise<LibraryMatch | null>;
   isSourceEnabled: (source: string) => boolean;
   isLibraryBlocked: (id: string, names: string[]) => boolean;
 }
@@ -111,7 +118,16 @@ export async function resolveLibraryUseCase(input: ResolveInput, deps: ResolveDe
     });
   }
 
-  // 2. Fuzzy search registry
+  // 2. Explicit ecosystem prefix (npm:express, pypi:requests): route
+  // to exactly one provider. Without this the prefixed string falls
+  // into fuzzy/bare matching and resolves to unrelated packages.
+  // A miss falls through to the normal pipeline below.
+  if (matches.length === 0 && hasExplicitPrefix(name) && deps.resolvePrefixedCandidate) {
+    const prefixed = await deps.resolvePrefixedCandidate(name);
+    if (prefixed && !matches.some((m) => m.id === prefixed.id)) matches.push(prefixed);
+  }
+
+  // 3. Fuzzy search registry
   if (registryOn && matches.length === 0) {
     const fuzzy = deps.fuzzySearch(name, 5);
     for (const entry of fuzzy) {
@@ -131,7 +147,7 @@ export async function resolveLibraryUseCase(input: ResolveInput, deps: ResolveDe
     }
   }
 
-  // 3. Fallback to package registries via the shared bare-name pipeline.
+  // 4. Fallback to package registries via the shared bare-name pipeline.
   // Only runs when the registry gave nothing, or very few low-quality fuzzy
   // hits. Multiple decent fuzzy results suppress the external round-trips
   // (a well-aliased entry should not trigger npm/pypi lookups just for
