@@ -129,15 +129,33 @@ function firstEnv(...names: string[]): string | undefined {
 function allowedHostsEnv(): string[] {
   const raw = stringEnv("GETLIB_ALLOWED_HOSTS");
   if (!raw) return [];
-  return raw
+  const entries = raw
     .split(",")
     .map((entry) => entry.trim().toLowerCase())
     .filter((entry) => entry.length > 0);
+  for (const entry of entries) {
+    // Consumers match bare hostnames exactly (URL.hostname, no port), so
+    // anything else can never match and only hides operator typos.
+    if (
+      entry.length > 253 ||
+      entry.includes("/") ||
+      entry.includes(":") ||
+      entry.includes("?") ||
+      entry.includes("#") ||
+      /\s/.test(entry)
+    ) {
+      throw new Error(`Invalid GETLIB_ALLOWED_HOSTS entry: "${entry}" -- must be a bare hostname`);
+    }
+  }
+  return entries;
 }
 
 const baseConfig: GetLibConfig = {
-  tokenLimit: intEnv("GETLIB_TOKEN_LIMIT", 8000),
-  maxTokenLimit: intEnv("GETLIB_MAX_TOKEN_LIMIT", 20000),
+  // Documentation retrieval token budget contract: targeted lookups
+  // default to 10,000 tokens and wide-context retrieval caps at 100,000.
+  // Feature code must not duplicate these values.
+  tokenLimit: intEnv("GETLIB_TOKEN_LIMIT", 10_000),
+  maxTokenLimit: intEnv("GETLIB_MAX_TOKEN_LIMIT", 100_000),
   cacheTtlMs: intEnv("GETLIB_CACHE_TTL_MS", 30 * 60 * 1000),
   fetchTimeoutMs: intEnv("GETLIB_FETCH_TIMEOUT_MS", 15_000, 1),
   deepFetchMaxPages: intEnv("GETLIB_DEEP_FETCH_MAX_PAGES", 8, 1),

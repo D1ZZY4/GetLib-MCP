@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   audit API key issuance and revocation with correlation ids.
 - Close per-request MCP transports and evicted SSE sessions so
   long-running hosts cannot accumulate stale servers or streams.
+- Reject non-hostname allowlist entries at startup and align the
+  documentation token budget with the retrieval contract.
 
 ### Changed
 
