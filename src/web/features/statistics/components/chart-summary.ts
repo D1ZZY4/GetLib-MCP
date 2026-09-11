@@ -1,4 +1,4 @@
-import type { UsageDay } from "../services/statistics-api.service";
+import type { UsageDay } from "@/web/lib/statistics";
 
 /** Total requests across the window, for card footers. */
 export function totalRequests(days: UsageDay[]): number {

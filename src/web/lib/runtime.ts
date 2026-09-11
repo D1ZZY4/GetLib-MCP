@@ -1,6 +1,13 @@
 import { fetchJson } from "@/web/lib/api-client";
 import type { HealthStatus } from "@/web/types/mcp";
 
+/**
+ * Shared runtime contract for environment-aware UI.
+ *
+ * Canonical owner for the `/api/management/runtime` client shape. Feature
+ * services re-export from here so sidebar, profile menu, auth, and settings
+ * share one fetch and one type instead of drifting between surfaces.
+ */
 export interface RuntimeInfo {
   environment: "development" | "production";
   databaseMode: "mock" | "supabase-development" | "supabase-production";

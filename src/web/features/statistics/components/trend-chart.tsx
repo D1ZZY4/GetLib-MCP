@@ -10,10 +10,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { UsageDay } from "../services/statistics-api.service";
-import { chartAccent, chartAxisTick, chartGridStroke } from "./chart-theme";
+import type { UsageDay } from "@/web/lib/statistics";
+import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/components/charts/chart-theme";
 import { trendSummary } from "./chart-summary";
-import { ChartTooltipCard } from "./chart-tooltip";
+import { ChartTooltipCard } from "@/web/components/charts/chart-tooltip";
 
 export function TrendChart({ days }: { days: UsageDay[] }) {
   if (days.length === 0) {

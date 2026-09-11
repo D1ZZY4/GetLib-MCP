@@ -3,6 +3,7 @@
  * CSS variables so light/dark themes stay consistent without per-chart
  * style objects drifting apart. Tooltip rendering lives in
  * chart-tooltip.tsx (custom card content); this file keeps scalar tokens.
+ * Owned by shared UI: consumed by the statistics and dashboard features.
  */
 export const chartAxisTick = {
   fill: "var(--muted)",

@@ -7,7 +7,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
-import { fetchRuntimeInfo } from "@/web/features/settings/services/runtime-api.service";
+import { fetchRuntimeInfo } from "@/web/lib/runtime";
 import {
   fetchDevelopmentSettings,
   resetDevelopmentData,

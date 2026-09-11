@@ -10,9 +10,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { UsageDay } from "../services/statistics-api.service";
-import { chartAccent, chartAxisTick, chartGridStroke } from "./chart-theme";
-import { ChartTooltipCard } from "./chart-tooltip";
+import type { UsageDay } from "@/web/lib/statistics";
+import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/components/charts/chart-theme";
+import { ChartTooltipCard } from "@/web/components/charts/chart-tooltip";
 import { totalRequests } from "./chart-summary";
 
 interface UsageChartProps {

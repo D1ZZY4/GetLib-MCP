@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/web/providers/auth-provider";
-import { useEnvironment } from "@/web/features/development/hooks/use-environment";
+import { useEnvironment } from "@/web/hooks/use-environment";
 
 function sessionInitial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";

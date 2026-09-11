@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card } from "@heroui/react";
 import { EmptyState } from "@/web/components/ui/empty-state";
-import { verdictTone } from "@/web/components/ui/verdict-tone";
+import { verdictTone } from "./verdict-tone";
 import { Pill } from "@/web/components/ui/pill";
 import type { DiscoverResult } from "../services/discover.service";
 

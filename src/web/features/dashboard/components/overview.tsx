@@ -12,13 +12,14 @@ import {
   YAxis,
 } from "recharts";
 import { formatPercent } from "@/web/lib/format";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { RankingBarList } from "@/web/components/ui/ranking-bar-list";
-import type { StatisticsSnapshot } from "@/web/features/statistics/services/statistics-api.service";
+import type { StatisticsSnapshot } from "@/web/lib/statistics";
 import { rankLibraryFetches } from "@/web/lib/ranking";
 import { ArrowRightIcon } from "@/web/components/ui/icons";
-import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/features/statistics/components/chart-theme";
-import { ChartTooltipCard } from "@/web/features/statistics/components/chart-tooltip";
+import { chartAccent, chartAxisTick, chartGridStroke } from "@/web/components/charts/chart-theme";
+import { ChartTooltipCard } from "@/web/components/charts/chart-tooltip";
 
 interface OverviewProps {
   stats: StatisticsSnapshot | null;
@@ -70,17 +71,10 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
 
   if (stats.days.length === 0 && stats.fetches.length === 0) {
     return (
-      <Card aria-label="Overview">
-        <Card.Header>
-          <Card.Title>Overview</Card.Title>
-          <Card.Description>Request activity and top fetches.</Card.Description>
-        </Card.Header>
-        <Card.Content>
-          <p className="text-sm text-muted">
-            No usage recorded yet. Run a search or call a tool to populate this overview.
-          </p>
-        </Card.Content>
-      </Card>
+      <EmptyState
+        title="No usage recorded yet"
+        description="Run a search or call a tool to populate this overview."
+      />
     );
   }
 

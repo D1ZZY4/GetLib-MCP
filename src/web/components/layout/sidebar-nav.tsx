@@ -14,7 +14,7 @@ import {
   SearchIcon,
   TerminalIcon,
 } from "../ui/icons";
-import { useEnvironment } from "@/web/features/development/hooks/use-environment";
+import { useEnvironment } from "@/web/hooks/use-environment";
 
 interface NavChild {
   href: string;

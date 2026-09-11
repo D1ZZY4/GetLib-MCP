@@ -1,6 +1,11 @@
-import { fetchJson } from "@/web/lib/api-client";
-import type { LibraryFetch } from "@/web/lib/ranking";
+import { fetchJson } from "./api-client";
+import type { LibraryFetch } from "./ranking";
 
+/**
+ * Canonical statistics snapshot contract. Owned by shared UI lib:
+ * consumed by the statistics feature and the dashboard overview alike,
+ * so neither feature owns the cross-surface telemetry shape.
+ */
 export interface UsageDay {
   date: string;
   requests: number;

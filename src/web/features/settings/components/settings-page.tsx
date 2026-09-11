@@ -8,7 +8,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
-import { fetchRuntimeInfo } from "../services/runtime-api.service";
+import { fetchRuntimeInfo } from "@/web/lib/runtime";
 import { fetchSettings } from "../services/settings-api.service";
 
 type TabId = "profile" | "account" | "preferences" | "security" | "about" | "configuration";

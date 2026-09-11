@@ -2,15 +2,18 @@
 
 import { Card } from "@heroui/react";
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from "recharts";
+import { rankLibraryFetches } from "@/web/lib/ranking";
 import type { LibraryFetch } from "@/web/lib/ranking";
-import { ChartTooltipCard } from "./chart-tooltip";
-import { chartFills } from "./chart-theme";
+import { ChartTooltipCard } from "@/web/components/charts/chart-tooltip";
+import { chartFills } from "@/web/components/charts/chart-theme";
 
 export function FetchRadial({ fetches }: { fetches: LibraryFetch[] }) {
-  const data = fetches.map((entry, index) => ({
+  // Same ranked order as the ranking card so colors and legends agree.
+  const data = rankLibraryFetches(fetches).map((entry, index) => ({
     ...entry,
     fill: chartFills[index % chartFills.length],
   }));
+
   if (data.length === 0) {
     return (
       <Card className="h-full">

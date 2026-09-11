@@ -13,7 +13,7 @@ import { FetchRanking } from "./fetch-ranking";
 import { LibraryTable } from "./library-table";
 import { TrendChart } from "./trend-chart";
 import { UsageCard } from "./usage-chart";
-import { useStatisticsData } from "../hooks/use-statistics-data";
+import { useStatisticsData } from "@/web/hooks/use-statistics-data";
 
 export function StatisticsPage() {
   const { stats, loading, error, retry } = useStatisticsData();

@@ -12,7 +12,7 @@ import { ProjectSummaryCard } from "./project-summary-card";
 import { QuickActionsPanel } from "./quick-actions";
 import { RecentActivityList } from "./recent-activity";
 import { StatsRow } from "./stats-grid";
-import { useStatisticsData } from "@/web/features/statistics/hooks/use-statistics-data";
+import { useStatisticsData } from "@/web/hooks/use-statistics-data";
 import { useDashboardData } from "../hooks/use-dashboard-data";
 
 export function DashboardPage() {

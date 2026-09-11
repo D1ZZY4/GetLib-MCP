@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "@/web/providers/auth-provider";
-import { useEnvironment } from "@/web/features/development/hooks/use-environment";
+import { useEnvironment } from "@/web/hooks/use-environment";
 import { ProfileMenu } from "./profile-menu";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeControls } from "./theme-controls";

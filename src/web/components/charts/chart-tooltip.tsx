@@ -38,7 +38,8 @@ function datumFill(payload: unknown): string | null {
 /**
  * Shared recharts tooltip modeled on the shadcn chart tooltip pattern:
  * a compact card with a label row plus mono tabular values, themed with
- * product tokens so it adapts to light and dark mode.
+ * product tokens so it adapts to light and dark mode. Owned by shared
+ * UI: consumed by the statistics and dashboard features.
  */
 export function ChartTooltipCard({ active, payload, label }: ChartTooltipCardProps) {
   if (!active || !payload || payload.length === 0) return null;

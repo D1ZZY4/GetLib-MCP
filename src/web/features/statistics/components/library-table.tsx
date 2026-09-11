@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import type { LibraryStatRow } from "../services/statistics-api.service";
+import type { LibraryStatRow } from "@/web/lib/statistics";
 import { EmptyState } from "@/web/components/ui/empty-state";
 import { Pill } from "@/web/components/ui/pill";
 import { libraryStatusTone } from "@/web/components/ui/status-tone";

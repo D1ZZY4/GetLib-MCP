@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  fetchRuntimeInfo,
-  type RuntimeInfo,
-} from "@/web/features/settings/services/runtime-api.service";
+import { fetchRuntimeInfo, type RuntimeInfo } from "@/web/lib/runtime";
 
 type Environment = "development" | "production";
 

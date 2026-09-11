@@ -14,7 +14,7 @@ import {
 } from "@heroui/react";
 import { mockSession } from "../services/auth.service";
 import { validateEmail, validatePassword, validateSigninPassword } from "@/web/lib/validation";
-import { useEnvironment } from "@/web/features/development/hooks/use-environment";
+import { useEnvironment } from "@/web/hooks/use-environment";
 import type { MockSession } from "@/web/types/library";
 
 export type AuthMode = "sign-in" | "sign-up";

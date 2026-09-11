@@ -2,9 +2,9 @@
 
 import { Card } from "@heroui/react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import type { LibraryStatRow } from "../services/statistics-api.service";
-import { ChartTooltipCard } from "./chart-tooltip";
-import { chartFills } from "./chart-theme";
+import type { LibraryStatRow } from "@/web/lib/statistics";
+import { ChartTooltipCard } from "@/web/components/charts/chart-tooltip";
+import { chartFills } from "@/web/components/charts/chart-theme";
 
 export function DocsShareChart({ rows }: { rows: LibraryStatRow[] }) {
   if (rows.length === 0) {
