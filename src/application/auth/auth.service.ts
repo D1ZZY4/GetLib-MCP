@@ -187,22 +187,6 @@ export async function ensureBootstrapAccount(deps: AuthDeps): Promise<BootstrapS
   return bootstrapCache;
 }
 
-export function getBootstrapStatusSync(): BootstrapStatus {
-  if (bootstrapCache) return bootstrapCache;
-  const bootstrap = resolveBootstrapCredentials({
-    account: config.defaultAccount,
-    password: config.defaultPass,
-  });
-  // Best-effort pre-init view derived from env alone: custom credentials
-  // report changed (not fallback) so the status is never self-contradictory.
-  return {
-    account: bootstrap.account,
-    isFallback: bootstrap.isFallback,
-    credentialsChanged: !bootstrap.isFallback,
-    initializedAt: null,
-  };
-}
-
 /** Test hook - clears the cached bootstrap status. */
 export function resetBootstrapCache(): void {
   bootstrapCache = null;
