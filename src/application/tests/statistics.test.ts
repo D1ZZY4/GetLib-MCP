@@ -18,7 +18,7 @@ describe("statistics application service", () => {
 
   test("aggregates one outcome list into days, tools, and rate", () => {
     const day = new Date("2026-09-01T10:00:00Z").getTime();
-    const { days, fetches, successRate } = summarizeOutcomePoints([
+    const { days, fetches, libraries, successRate } = summarizeOutcomePoints([
       { tool: "gl_search", ts: day, success: true },
       { tool: "gl_search", ts: day + 1000, success: true },
       { tool: "gl_docs", ts: day + 2000, success: false },
@@ -28,7 +28,35 @@ describe("statistics application service", () => {
       { id: "gl_search", name: "gl_search", fetches: 2 },
       { id: "gl_docs", name: "gl_docs", fetches: 1 },
     ]);
+    expect(libraries).toEqual([]);
     expect(successRate).toBe(0.667);
+  });
+
+  test("ranks libraries with subjects by uses, skipping the rest", () => {
+    const day = new Date("2026-09-01T10:00:00Z").getTime();
+    const { libraries, fetches } = summarizeOutcomePoints([
+      { tool: "gl_get_docs", ts: day, success: true, subject: "facebook/react" },
+      { tool: "gl_get_docs", ts: day + 1000, success: false, subject: "facebook/react" },
+      { tool: "gl_snippets", ts: day + 2000, success: true, subject: "colinhacks/zod" },
+      { tool: "gl_search", ts: day + 3000, success: true },
+    ]);
+    expect(fetches).toHaveLength(3);
+    expect(libraries).toEqual([
+      {
+        id: "facebook/react",
+        name: "facebook/react",
+        uses: 2,
+        successRate: 0.5,
+        lastUsedAt: new Date(day + 1000).toISOString(),
+      },
+      {
+        id: "colinhacks/zod",
+        name: "colinhacks/zod",
+        uses: 1,
+        successRate: 1,
+        lastUsedAt: new Date(day + 2000).toISOString(),
+      },
+    ]);
   });
 
   test("empty outcomes report a neutral full rate", () => {

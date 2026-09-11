@@ -43,7 +43,10 @@ export function StatisticsPage() {
         <LoadError message={error ?? "We could not load statistics."} onRetry={retry} />
       ) : (
         <>
-          {stats.days.length === 0 && stats.rows.length === 0 && stats.fetches.length === 0 ? (
+          {stats.days.length === 0 &&
+          stats.rows.length === 0 &&
+          stats.fetches.length === 0 &&
+          stats.libraries.length === 0 ? (
             <EmptyState
               title="No telemetry recorded yet"
               description="Run a search or call a tool to populate these charts."
@@ -98,7 +101,7 @@ export function StatisticsPage() {
             <FetchRanking fetches={stats.fetches} />
             <FetchRadial fetches={stats.fetches} />
           </div>
-          <LibraryTable rows={stats.rows} />
+          <LibraryTable libraries={stats.libraries} />
         </>
       )}
     </PageContainer>

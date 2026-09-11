@@ -20,6 +20,16 @@ export interface LibraryStatRow {
   docsPages: number;
 }
 
+export interface LibraryUsage {
+  id: string;
+  name: string;
+  uses: number;
+  /** 0-1 fraction, same scale as the other rates on this page. */
+  successRate: number;
+  /** ISO-8601 timestamp of the newest call about this library. */
+  lastUsedAt: string;
+}
+
 export interface UsageStats {
   requestsUsed: number;
   docsPages: number;
@@ -33,6 +43,7 @@ export interface StatisticsSnapshot {
   days: UsageDay[];
   rows: LibraryStatRow[];
   fetches: LibraryFetch[];
+  libraries: LibraryUsage[];
   isMock: boolean;
 }
 

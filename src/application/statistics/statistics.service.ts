@@ -31,6 +31,17 @@ export interface LibraryFetch {
   fetches: number;
 }
 
+/** One library ranked by real tool usage: calls, success share, last use. */
+export interface LibraryUsage {
+  id: string;
+  name: string;
+  uses: number;
+  /** 0-1 fraction, same scale as the other rates on this page. */
+  successRate: number;
+  /** ISO-8601 timestamp of the newest call about this library. */
+  lastUsedAt: string;
+}
+
 export interface UsageStats {
   requestsUsed: number;
   docsPages: number;
@@ -44,6 +55,7 @@ export interface StatisticsSnapshot {
   days: UsageDay[];
   rows: LibraryStatRow[];
   fetches: LibraryFetch[];
+  libraries: LibraryUsage[];
   isMock: boolean;
 }
 
@@ -68,6 +80,12 @@ const MOCK_FETCHES: LibraryFetch[] = [
   { id: "example-vuln", name: "example-legacy-auth", fetches: 4 },
 ];
 
+const MOCK_LIBRARIES: LibraryUsage[] = [
+  { id: "facebook/react", name: "facebook/react", uses: 38, successRate: 1, lastUsedAt: "2026-09-07T12:00:00.000Z" },
+  { id: "tailwindlabs/tailwindcss", name: "tailwindlabs/tailwindcss", uses: 27, successRate: 0.963, lastUsedAt: "2026-09-07T11:00:00.000Z" },
+  { id: "supabase/supabase", name: "supabase/supabase", uses: 15, successRate: 1, lastUsedAt: "2026-09-06T12:00:00.000Z" },
+];
+
 const MOCK_ROWS: LibraryStatRow[] = [
   { id: "react", name: "react", installedVersion: "19.2.0", latestVersion: "19.2.0", status: "up-to-date", docsPages: 48 },
   { id: "tailwindcss", name: "tailwindcss", installedVersion: "4.0.0", latestVersion: "4.1.13", status: "outdated", docsPages: 36 },
@@ -89,6 +107,7 @@ interface OutcomePoint {
   tool: string;
   ts: number;
   success: boolean;
+  subject?: string | null;
 }
 
 /**
@@ -99,6 +118,7 @@ interface OutcomePoint {
 export function summarizeOutcomePoints(points: OutcomePoint[]): {
   days: UsageDay[];
   fetches: LibraryFetch[];
+  libraries: LibraryUsage[];
   /** 0-1 fraction; 1 when there are no points (neutral, like the telemetry summary). */
   successRate: number;
 } {
@@ -130,9 +150,30 @@ export function summarizeOutcomePoints(points: OutcomePoint[]): {
     name: tool,
     fetches: count,
   }));
+  // Most-used libraries: only calls with a recorded subject count, ranked
+  // by uses. Rows without a subject (old logs, non-library tools) keep
+  // feeding the tool ranking above and never dilute this one.
+  const byLibrary = new Map<string, { uses: number; success: number; lastUsedAt: number }>();
+  for (const point of points) {
+    if (point.subject === undefined || point.subject === null || point.subject.length === 0) continue;
+    const entry = byLibrary.get(point.subject) ?? { uses: 0, success: 0, lastUsedAt: 0 };
+    entry.uses += 1;
+    if (point.success) entry.success += 1;
+    if (point.ts > entry.lastUsedAt) entry.lastUsedAt = point.ts;
+    byLibrary.set(point.subject, entry);
+  }
+  const libraries: LibraryUsage[] = [...byLibrary.entries()]
+    .map(([id, entry]) => ({
+      id,
+      name: id,
+      uses: entry.uses,
+      successRate: Math.round((entry.success / entry.uses) * 1000) / 1000,
+      lastUsedAt: new Date(entry.lastUsedAt).toISOString(),
+    }))
+    .sort((a, b) => b.uses - a.uses || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const successRate =
     points.length === 0 ? 1 : Math.round((points.filter((p) => p.success).length / points.length) * 1000) / 1000;
-  return { days, fetches, successRate };
+  return { days, fetches, libraries, successRate };
 }
 
 // Bounded recent window for charts and per-tool counts. Totals come from
@@ -155,7 +196,7 @@ interface TelemetryTotals {
 export interface StatisticsDeps {
   getDatabase: () => Pick<DatabaseRepository, "countLogs" | "listLogs">;
   getInvocationSummary: () => TelemetryTotals;
-  getRecentOutcomes: () => ReadonlyArray<Pick<InvocationOutcome, "tool" | "ts" | "success">>;
+  getRecentOutcomes: () => ReadonlyArray<Pick<InvocationOutcome, "tool" | "ts" | "success" | "subject">>;
 }
 
 /**
@@ -194,6 +235,7 @@ async function durableOutcomePoints(deps: StatisticsDeps): Promise<OutcomePoint[
       tool: entry.name,
       ts: Date.parse(entry.timestamp),
       success: entry.ok,
+      subject: entry.subject ?? null,
     }));
   } catch (error) {
     log({ level: "warn", msg: "statistics.outcomes.fallback", error: String(error) });
@@ -202,22 +244,27 @@ async function durableOutcomePoints(deps: StatisticsDeps): Promise<OutcomePoint[
 }
 
 function memoryOutcomePoints(deps: StatisticsDeps): OutcomePoint[] {
-  return deps.getRecentOutcomes().map((o) => ({ tool: o.tool, ts: o.ts, success: o.success }));
+  return deps.getRecentOutcomes().map((o) => ({
+    tool: o.tool,
+    ts: o.ts,
+    success: o.success,
+    subject: o.subject ?? null,
+  }));
 }
 
 export async function getStatisticsSnapshot(deps: StatisticsDeps): Promise<StatisticsSnapshot> {
   const runtime = getRuntimeSnapshot();
   if (runtime.isMock) {
-    return { usage: mockUsage(), days: MOCK_DAYS, rows: MOCK_ROWS, fetches: MOCK_FETCHES, isMock: true };
+    return { usage: mockUsage(), days: MOCK_DAYS, rows: MOCK_ROWS, fetches: MOCK_FETCHES, libraries: MOCK_LIBRARIES, isMock: true };
   }
   const totals = await getTelemetryTotals(deps);
   const points = (await durableOutcomePoints(deps)) ?? memoryOutcomePoints(deps);
-  const { days, fetches, successRate: windowRate } = summarizeOutcomePoints(points);
+  const { days, fetches, libraries, successRate: windowRate } = summarizeOutcomePoints(points);
   const usage: UsageStats = {
     requestsUsed: totals.totalCalls,
     docsPages: 0,
     activeLibraries: fetches.length,
     successRate: totals.totalCalls > 0 ? Math.round(totals.successRate * 1000) / 1000 : windowRate,
   };
-  return { usage, days, rows: [], fetches, isMock: false };
+  return { usage, days, rows: [], fetches, libraries, isMock: false };
 }

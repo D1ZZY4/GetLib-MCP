@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Rank most-used libraries from real tool calls with per-library
+  success rates and last-used stamps in a sortable HeroUI table,
+  replacing the always-empty installed-versions list on real
+  databases.
 - Record which library each tool call is about: single-library
   tools note their library id, compare notes its first entry,
   and runs persist the canonical subject on durable logs for
