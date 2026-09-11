@@ -12,7 +12,7 @@ import { SELECT_MENU_POPOVER_CLASS } from "@/web/components/ui/select-menu";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { FormRowSkeleton, ListRowSkeleton } from "@/web/components/ui/skeletons";
 import { formatLogTime } from "@/web/lib/format";
-import { notifyCopied, notifyCopyFailed, notifySuccess } from "@/web/lib/notify";
+import { notifyCopied, notifyCopyFailed, notifyError, notifySuccess } from "@/web/lib/notify";
 import type { ApiKeyView, CreatedApiKey } from "@/web/types/mcp";
 import {
   createApiKey,
@@ -83,7 +83,9 @@ export function McpApiKeys() {
       setExpiry("never");
       retry();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : LOAD_ERROR);
+      const message = err instanceof Error ? err.message : LOAD_ERROR;
+      setCreateError(message);
+      notifyError("Could not create API key", message);
     } finally {
       setCreating(false);
     }
@@ -137,9 +139,10 @@ export function McpApiKeys() {
       notifySuccess("API key deleted", `"${deleteTarget.name}" stopped working immediately.`);
       retry();
     } catch (err) {
-      setDeleteError(
-        err instanceof Error ? `Could not delete "${deleteTarget.name}". ${err.message}` : LOAD_ERROR,
-      );
+      const message =
+        err instanceof Error ? `Could not delete "${deleteTarget.name}". ${err.message}` : LOAD_ERROR;
+      setDeleteError(message);
+      notifyError("Could not delete API key", message);
     } finally {
       setDeleting(false);
     }
@@ -170,9 +173,10 @@ export function McpApiKeys() {
       );
       retry();
     } catch (err) {
-      setRevokeError(
-        err instanceof Error ? `Could not revoke "${revokeTarget.name}". ${err.message}` : LOAD_ERROR,
-      );
+      const message =
+        err instanceof Error ? `Could not revoke "${revokeTarget.name}". ${err.message}` : LOAD_ERROR;
+      setRevokeError(message);
+      notifyError("Could not revoke API key", message);
     } finally {
       setRevoking(false);
     }
@@ -213,9 +217,10 @@ export function McpApiKeys() {
       notifySuccess("API key updated", `"${trimmed.length > 0 ? trimmed : editTarget.name}" saved.`);
       retry();
     } catch (err) {
-      setEditError(
-        err instanceof Error ? `Could not update "${editTarget.name}". ${err.message}` : LOAD_ERROR,
-      );
+      const message =
+        err instanceof Error ? `Could not update "${editTarget.name}". ${err.message}` : LOAD_ERROR;
+      setEditError(message);
+      notifyError("Could not update API key", message);
     } finally {
       setEditing(false);
     }

@@ -69,9 +69,11 @@ async function runInitialization(): Promise<void> {
   }
   if (environment === "production" && !config.authEnabled) {
     // Authentication disabled in production is a valid mode, but it must
-    // never happen by accident (e.g. a missing env var). Loud by design.
+    // never happen by accident (e.g. a missing env var). Warn, not error:
+    // cold starts re-log boot on every instance, and error level on a
+    // healthy steady state trains operators to ignore real failures.
     log({
-      level: "error",
+      level: "warn",
       msg: "init.auth-disabled-production",
       detail: "GETLIB_AUTHENTICATION_ENABLE is not enabled: the dashboard and MCP serve without sign-in.",
     });

@@ -12,7 +12,7 @@ const MAX_JSON_BYTES = 256 * 1024;
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 interface ApiErrorEnvelope {
-  error?: { code?: string; message?: string };
+  error?: { code?: string; message?: string; requestId?: string };
 }
 
 /**
@@ -74,7 +74,15 @@ async function errorMessage(response: Response, path: string): Promise<string> {
     }
     const message =
       typeof body === "object" && body !== null ? (body as ApiErrorEnvelope).error?.message : undefined;
-    if (typeof message === "string" && message.length > 0) return message;
+    const requestId =
+      typeof body === "object" && body !== null ? (body as ApiErrorEnvelope).error?.requestId : undefined;
+    // The request id rides along so every toast, inline error, and bug
+    // report correlates to exactly one server log line.
+    if (typeof message === "string" && message.length > 0) {
+      return typeof requestId === "string" && requestId.length > 0
+        ? `${message} (request ${requestId})`
+        : message;
+    }
   } catch {
     // Fall through to the generic HTTP message below.
   }

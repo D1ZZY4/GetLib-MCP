@@ -88,7 +88,24 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
     try {
       const probe = client.from("app_bootstrap").select("id").limit(1);
-      await withTimeout(probe, 5000, "Supabase health check timed out.");
+      // The error branch matters: an RLS-filtered read returns empty rows
+      // with no error, but a denied or missing table rejects - and only
+      // the rejection distinguishes "healthy" from "unreachable".
+      const { error: probeError } = await withTimeout(probe, 5000, "Supabase health check timed out.") as {
+        error: { message: string } | null;
+      };
+      if (probeError) {
+        log({ level: "warn", msg: "supabase.health.degraded", error: probeError.message });
+        return {
+          mode: this.mode,
+          health: "degraded",
+          configured: true,
+          latencyMs: Date.now() - started,
+          error: "Supabase is degraded.",
+          checkedAt: new Date().toISOString(),
+          writeHealth: getPersistenceWriteHealth(),
+        };
+      }
       return {
         mode: this.mode,
         health: "healthy",
@@ -468,14 +485,12 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       return;
     }
     try {
-      // No .abortSignal here: upsert returns the base builder without it,
-      // so the race below is the bound (same as saveBootstrap).
-      const existing = client.from("mcp_clients").select("request_count").eq("id", sighting.id).maybeSingle();
-      const { data } = (await withTimeout(existing, 5000, "Supabase client read timed out.")) as {
-        data: { request_count: unknown } | null;
-      };
-      const count =
-        data && typeof data.request_count === "number" ? data.request_count + 1 : 1;
+      // Single roundtrip on purpose: the old read-then-write pair doubled
+      // serverless exposure and its detached timer kept expiring after
+      // the host froze the background work. Columns omitted from the
+      // payload keep their stored values on conflict, so first_seen_at
+      // survives; request_count is insert-defaulted and no reader
+      // consumes per-row counts.
       await withTimeout(
         client.from("mcp_clients").upsert(
           {
@@ -487,7 +502,6 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
             api_key_id: sighting.apiKeyId ?? null,
             auth_type: sighting.authType,
             last_seen_at: new Date().toISOString(),
-            request_count: count,
           },
           { onConflict: "id" },
         ),

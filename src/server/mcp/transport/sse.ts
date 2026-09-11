@@ -8,6 +8,7 @@ import { createServer } from "../server";
 import { getRuntimeSnapshot } from "../runtime";
 import { getDatabase } from "../infrastructure/database";
 import { identifyClient, type ClientIdentity } from "../services/client-identity";
+import { afterWork } from "../utils/after-work";
 import { log } from "../utils/logger";
 import { pruneSessionMap } from "./sessions";
 
@@ -105,23 +106,27 @@ interface SseSession {
 
 /** Best-effort durable sighting: observation must never fail the session. */
 function persistSighting(identity: ClientIdentity): void {
-  try {
-    void getDatabase()
-      .touchClient({
-        id: identity.id,
-        name: identity.name,
-        ...(identity.version !== undefined ? { clientVersion: identity.version } : {}),
-        transport: "sse",
-        ...(identity.userAgent !== undefined ? { userAgent: identity.userAgent } : {}),
-        ...(identity.apiKeyId !== undefined ? { apiKeyId: identity.apiKeyId } : {}),
-        authType: identity.authType,
-      })
-      .catch((error: unknown) => {
-        log({ level: "debug", msg: "sse.client.persist-failed", error: String(error) });
-      });
-  } catch (error) {
-    log({ level: "debug", msg: "sse.client.persist-failed", error: String(error) });
-  }
+  // afterWork keeps the write alive past the response on serverless
+  // hosts; see the extended note at the http.ts call site.
+  afterWork(() => {
+    try {
+      void getDatabase()
+        .touchClient({
+          id: identity.id,
+          name: identity.name,
+          ...(identity.version !== undefined ? { clientVersion: identity.version } : {}),
+          transport: "sse",
+          ...(identity.userAgent !== undefined ? { userAgent: identity.userAgent } : {}),
+          ...(identity.apiKeyId !== undefined ? { apiKeyId: identity.apiKeyId } : {}),
+          authType: identity.authType,
+        })
+        .catch((error: unknown) => {
+          log({ level: "debug", msg: "sse.client.persist-failed", error: String(error) });
+        });
+    } catch (error) {
+      log({ level: "debug", msg: "sse.client.persist-failed", error: String(error) });
+    }
+  });
 }
 
 const sessions = new Map<string, SseSession>();

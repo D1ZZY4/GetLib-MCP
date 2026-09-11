@@ -12,6 +12,7 @@ import { liveApiKeyAuthDeps } from "../infrastructure/deps/apikeys-deps";
 import { getDatabase } from "../infrastructure/database";
 import { identifyClient } from "../services/client-identity";
 import { log } from "../utils/logger";
+import { afterWork } from "../utils/after-work";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER, RateLimitError } from "../utils/rate-limit";
 import { generateRequestId } from "../utils/guard";
 import { createServer } from "../server";
@@ -85,24 +86,29 @@ function noteHttpClient(
     });
   }
   // Durable sighting, best-effort: transport observation must never fail
-  // the request it observes. Failures stay in the server log only.
-  try {
-    void getDatabase()
-      .touchClient({
-        id: identity.id,
-        name: identity.name,
-        ...(identity.version !== undefined ? { clientVersion: identity.version } : {}),
-        transport: "streamable-http",
-        ...(identity.userAgent !== undefined ? { userAgent: identity.userAgent } : {}),
-        ...(identity.apiKeyId !== undefined ? { apiKeyId: identity.apiKeyId } : {}),
-        authType: identity.authType,
-      })
-      .catch((error: unknown) => {
-        log({ level: "debug", msg: "http.client.persist-failed", error: String(error) });
-      });
-  } catch (error) {
-    log({ level: "debug", msg: "http.client.persist-failed", error: String(error) });
-  }
+  // the request it observes. afterWork keeps the write alive past the
+  // response on serverless hosts (a bare floating promise freezes with
+  // the process and its orphaned timer then misreports a timeout).
+  // Failures stay in the server log and the write-health tracker only.
+  afterWork(() => {
+    try {
+      void getDatabase()
+        .touchClient({
+          id: identity.id,
+          name: identity.name,
+          ...(identity.version !== undefined ? { clientVersion: identity.version } : {}),
+          transport: "streamable-http",
+          ...(identity.userAgent !== undefined ? { userAgent: identity.userAgent } : {}),
+          ...(identity.apiKeyId !== undefined ? { apiKeyId: identity.apiKeyId } : {}),
+          authType: identity.authType,
+        })
+        .catch((error: unknown) => {
+          log({ level: "debug", msg: "http.client.persist-failed", error: String(error) });
+        });
+    } catch (error) {
+      log({ level: "debug", msg: "http.client.persist-failed", error: String(error) });
+    }
+  });
 }
 
 export function listSessions(): ClientSession[] {

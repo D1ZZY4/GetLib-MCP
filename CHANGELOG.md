@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Keep background persistence writes alive past the response on
+  serverless hosts and collapse the client sighting to a single
+  database roundtrip, ending the timeout spam that also left
+  tables empty.
+- Report database probe errors as degraded instead of healthy,
+  and turn the per-request auth-disabled notice down to a
+  warning so real errors stay visible.
+- Carry the server request id on every dashboard error and fire
+  error toasts on API key actions so failures correlate to one
+  log line.
+- Style toasts with the documented frame (rounded-xl, border,
+  shadow, outer ring) so overlay corners render crisply.
+
 </details>
 
 ## [1.5.1] - 2026-09-11
