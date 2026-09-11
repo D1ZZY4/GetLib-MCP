@@ -6,6 +6,7 @@ import { ensureRegistryLoaded } from "../registry/registry-loader";
 import { runTool } from "../registry/tool-registry";
 import { nonBlankString } from "../utils/schemas";
 import { hasNoResultSignal, passesFeatureGate } from "../services/compat-sources";
+import { matchesRequestedName } from "../services/changelog-sources";
 import { checkEvidence } from "../utils/evidence";
 import { isGarbageContent } from "../services/content-guards";
 import { passesIdentityGate } from "@/application/library/best-practices.service";
@@ -165,5 +166,23 @@ describe("F6 - morphological word families count as topic evidence", () => {
   test("unrelated install mentions do not pass a different topic", () => {
     const text = "## Installing Tailwind CSS as a Vite plugin\n\nInstall via npm.";
     expect(checkEvidence(text, "postgres row level security").ok).toBe(false);
+  });
+});
+
+describe("F7 - changelog refuses near-miss fuzzy names", () => {
+  test("garbage identifier against unrelated repo does not match", () => {
+    expect(matchesRequestedName("fictional-xyz-999", "fictional")).toBe(false);
+  });
+
+  test("cased, punctuated, and prefixed variants match", () => {
+    expect(matchesRequestedName("react", "React")).toBe(true);
+    expect(matchesRequestedName("next.js", "Next.js")).toBe(true);
+    expect(matchesRequestedName("npm:express", "express")).toBe(true);
+  });
+
+  test("empty folded names never match", () => {
+    expect(matchesRequestedName("", "react")).toBe(false);
+    expect(matchesRequestedName("react", "")).toBe(false);
+    expect(matchesRequestedName("!!!", "react")).toBe(false);
   });
 });
