@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   between best-practices modules instead of duplicating them.
 - Move shared chart chrome, verdict tones, and the statistics and
   runtime contracts to owned shared layers with their consumers.
+- Trim dead skeleton variants and require the row action explicitly.
 - Cancel deep-fetch fan-out cooperatively once the deadline or an
   external signal fires instead of letting it run past timeout.
 - Harden db:push with named helpers, postgres URL validation, and
