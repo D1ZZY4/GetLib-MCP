@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of wiping the page on one failure.
 - Cap page width with a persistent main landmark and 44px touch
   targets on navigation controls.
+- Validate tool, resource, and prompt registrations at define time
+  and type tool schemas against the SDK contract.
 
 ### Fixed
 

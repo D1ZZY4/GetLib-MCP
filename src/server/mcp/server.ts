@@ -1,5 +1,4 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import { z } from "zod";
 import { SERVER_NAME, SERVER_VERSION } from "./constants";
 import { getPrompt, listPrompts, renderPrompt, type GlPromptArg } from "./registry/prompt-registry";
@@ -37,7 +36,7 @@ export function createServer(): McpServer {
         description: tool.description,
         ...(def?.annotations ? { annotations: def.annotations } : {}),
         ...(def?._meta ? { _meta: def._meta } : {}),
-        ...(inputSchema ? { inputSchema: inputSchema as ZodRawShapeCompat } : {}),
+        ...(inputSchema ? { inputSchema } : {}),
       },
       respond,
     );
@@ -67,7 +66,7 @@ export function createServer(): McpServer {
       name,
       {
         description: prompt.description,
-        ...(argsSchema ? { argsSchema: argsSchema as ZodRawShapeCompat } : {}),
+        ...(argsSchema ? { argsSchema } : {}),
       },
       respond,
     );

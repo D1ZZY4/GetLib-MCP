@@ -1,9 +1,10 @@
+import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import { appendLog } from "../middleware/logging";
 import { generateRequestId, withToolTimeout } from "../utils/guard";
 import { timeoutResponse } from "../tools/timeout";
 
 export interface GlToolRun {
-  (args?: unknown): unknown | Promise<unknown>;
+  (args?: unknown, signal?: AbortSignal): unknown | Promise<unknown>;
 }
 
 export interface GlToolAnnotations {
@@ -19,7 +20,7 @@ export interface GlToolDef {
   description: string;
   annotations?: GlToolAnnotations;
   _meta?: Record<string, unknown>;
-  inputSchema?: Record<string, object>;
+  inputSchema?: ZodRawShapeCompat;
   run: GlToolRun;
 }
 
@@ -28,6 +29,9 @@ const tools = new Map<string, GlToolDef>();
 export function defineTool(def: GlToolDef): GlToolDef {
   if (def.name.length === 0) {
     throw new Error("Tool name must not be empty");
+  }
+  if (def.description.trim().length === 0) {
+    throw new Error(`Tool description must not be empty: "${def.name}"`);
   }
   if (tools.has(def.name)) {
     throw new Error(`Duplicate tool registration: "${def.name}"`);
@@ -59,7 +63,7 @@ export async function runTool(name: string, args?: unknown, requestId?: string):
     // inner wrapper fires first on the same deadline, so specific
     // payloads are preserved.
     const result = await withToolTimeout(
-      () => Promise.resolve(tool.run(args)),
+      (signal) => Promise.resolve(tool.run(args, signal)),
       timeoutResponse(`Tool "${name}" timed out. Retry, or narrow the request.`, { timedOut: true }),
     );
     appendLog({ kind: "tool", name, durationMs: Date.now() - started, ok: true, requestId: id });

@@ -16,6 +16,12 @@ export function defineResource(def: GlResourceDef): GlResourceDef {
   if (def.name.length === 0) {
     throw new Error("Resource name must not be empty");
   }
+  if (def.description.trim().length === 0) {
+    throw new Error(`Resource description must not be empty: "${def.name}"`);
+  }
+  if (!def.uri.startsWith("getlib://")) {
+    throw new Error(`Resource URI must start with "getlib://": "${def.name}"`);
+  }
   if (resources.has(def.name)) {
     throw new Error(`Duplicate resource registration: "${def.name}"`);
   }

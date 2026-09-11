@@ -19,6 +19,22 @@ export function definePrompt(def: GlPromptDef): GlPromptDef {
   if (def.name.length === 0) {
     throw new Error("Prompt name must not be empty");
   }
+  if (def.description.trim().length === 0) {
+    throw new Error(`Prompt description must not be empty: "${def.name}"`);
+  }
+  const seenArgs = new Set<string>();
+  for (const arg of def.args ?? []) {
+    if (arg.name.length === 0) {
+      throw new Error(`Prompt argument name must not be empty: "${def.name}"`);
+    }
+    if (arg.description.trim().length === 0) {
+      throw new Error(`Prompt argument description must not be empty: "${def.name}/${arg.name}"`);
+    }
+    if (seenArgs.has(arg.name)) {
+      throw new Error(`Duplicate prompt argument: "${def.name}/${arg.name}"`);
+    }
+    seenArgs.add(arg.name);
+  }
   if (prompts.has(def.name)) {
     throw new Error(`Duplicate prompt registration: "${def.name}"`);
   }
