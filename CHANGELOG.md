@@ -65,6 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared timing-safe hash helper.
 - Resolve npm and GitHub searches through one shared pipeline and
   give every registry resolver the same fail-soft miss policy.
+- Rank web-search URLs through one shared helper so engine
+  fallbacks cannot drift apart.
 
 </details>
 

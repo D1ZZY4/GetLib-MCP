@@ -112,7 +112,16 @@ export function isAuthoritativeUrl(url: string): boolean {
   }
 }
 
-/** Score URLs for documentation relevance - higher score = more likely to be useful docs */
+/** Rank documentation URLs for a query, best first. Shared by every
+ * search-engine fallback so ranking cannot drift between providers. */
+export function rankDocUrls(urls: string[], query: string): string[] {
+  return urls
+    .map((url) => ({ url, score: scoreDocUrl(url, query) }))
+    .sort((a, b) => b.score - a.score)
+    .map((r) => r.url);
+}
+
+/** Score one URL for documentation relevance - higher = more likely useful docs. */
 export function scoreDocUrl(url: string, query: string): number {
   const lower = url.toLowerCase();
   let score = 0;

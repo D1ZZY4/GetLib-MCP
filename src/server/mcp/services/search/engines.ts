@@ -3,7 +3,7 @@ import { extractDomain, isCircuitOpen, recordSuccess, recordFailure } from "../c
 import { isSourceEnabled } from "../source-settings";
 import { readBodyCapped } from "../http/request";
 import { externalSchemas, parseExternal } from "../../utils/validate-external";
-import { extractDDGUrls, extractUrlsFromHtml, scoreDocUrl } from "./url-rank";
+import { extractDDGUrls, extractUrlsFromHtml, rankDocUrls } from "./url-rank";
 
 /**
  * Search MDN Web Docs via their free JSON API (no auth, no rate limit issues).
@@ -170,10 +170,7 @@ export async function webSearch(query: string): Promise<string[]> {
         if (html !== null) {
           const urls = extractDDGUrls(html);
           if (urls.length > 0) {
-            return urls
-              .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-              .sort((a, b) => b.score - a.score)
-              .map((r) => r.url);
+            return rankDocUrls(urls, query);
           }
           // Fallback to generic extraction if uddg pattern missing
           const legacyUrls = extractUrlsFromHtml(html);
@@ -194,10 +191,7 @@ export async function webSearch(query: string): Promise<string[]> {
         if (html !== null) {
           const urls = extractDDGUrls(html);
           if (urls.length > 0) {
-            return urls
-              .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-              .sort((a, b) => b.score - a.score)
-              .map((r) => r.url);
+            return rankDocUrls(urls, query);
           }
         }
       }
@@ -209,10 +203,7 @@ export async function webSearch(query: string): Promise<string[]> {
     try {
       const searxUrls = await searchSearXNG(searchQuery);
       if (searxUrls.length > 0) {
-        return searxUrls
-          .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-          .sort((a, b) => b.score - a.score)
-          .map((r) => r.url);
+        return rankDocUrls(searxUrls, query);
       }
     } catch { /* SearXNG failed */ }
   }
@@ -231,10 +222,7 @@ export async function webSearch(query: string): Promise<string[]> {
           // Mojeek uses direct hrefs - no redirect wrapping
           const urls = extractUrlsFromHtml(html);
           if (urls.length > 0) {
-            return urls
-              .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-              .sort((a, b) => b.score - a.score)
-              .map((r) => r.url);
+            return rankDocUrls(urls, query);
           }
         }
       }
