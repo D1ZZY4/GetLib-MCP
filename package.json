@@ -1,6 +1,6 @@
 {
   "name": "getlib-mcp",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "type": "module",
   "description": "GetLib MCP - powerful modular self-hostable library docs MCP server and dashboard (Context7 alternative)",
   "license": "SSPL-1.0",
