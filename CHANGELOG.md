@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Added
+
+- Persist stable MCP client identities (`slug=uuid`) in a new
+  `mcp_clients` table with mock and Supabase repositories behind
+  the database seam.
+
 ### Fixed
 
 - Guard the revoked-keys purge on the column existing so the

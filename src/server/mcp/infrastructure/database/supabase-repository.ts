@@ -4,9 +4,11 @@ import { getSupabaseServiceClient } from "../supabase/client";
 import type {
   ApiKeyRecord,
   BootstrapRecord,
+  ClientRecord,
   DatabaseRepository,
   DatabaseStatus,
   NewApiKey,
+  NewClientSighting,
   PersistedLogEntry,
   StoredLogEntry,
 } from "./types";
@@ -377,6 +379,96 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
       log({ level: "warn", msg: "supabase.apikeys.touch-failed", error: String(error) });
     }
   }
+
+  async touchClient(sighting: NewClientSighting): Promise<void> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.clients.unconfigured", this.mode);
+      return;
+    }
+    try {
+      // No .abortSignal here: upsert returns the base builder without it,
+      // so the race below is the bound (same as saveBootstrap).
+      const existing = client.from("mcp_clients").select("request_count").eq("id", sighting.id).maybeSingle();
+      const { data } = (await withTimeout(existing, 5000, "Supabase client read timed out.")) as {
+        data: { request_count: unknown } | null;
+      };
+      const count =
+        data && typeof data.request_count === "number" ? data.request_count + 1 : 1;
+      await withTimeout(
+        client.from("mcp_clients").upsert(
+          {
+            id: sighting.id,
+            name: sighting.name,
+            client_version: sighting.clientVersion ?? null,
+            transport: sighting.transport,
+            user_agent: sighting.userAgent ?? null,
+            api_key_id: sighting.apiKeyId ?? null,
+            auth_type: sighting.authType,
+            last_seen_at: new Date().toISOString(),
+            request_count: count,
+          },
+          { onConflict: "id" },
+        ),
+        5000,
+        "Supabase client write timed out.",
+      );
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.clients.touch-failed", error: String(error) });
+    }
+  }
+
+  async listClients(limit: number): Promise<ClientRecord[]> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.clients.unconfigured", this.mode);
+      return [];
+    }
+    try {
+      const query = client
+        .from("mcp_clients")
+        .select("id,name,client_version,transport,user_agent,api_key_id,auth_type,first_seen_at,last_seen_at,request_count")
+        .order("last_seen_at", { ascending: false })
+        .limit(Math.max(1, Math.min(200, Math.floor(limit))));
+      const { data, error } = await withTimeout(query, 5000, "Supabase clients read timed out.");
+      if (error || !Array.isArray(data)) return [];
+      const records: ClientRecord[] = [];
+      for (const row of data) {
+        const parsed = parseClientRow(row);
+        if (parsed) records.push(parsed);
+      }
+      return records;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.clients.read-failed", error: String(error) });
+      return [];
+    }
+  }
+
+  async getClientById(id: string): Promise<ClientRecord | null> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.clients.unconfigured", this.mode);
+      return null;
+    }
+    try {
+      const query = client
+        .from("mcp_clients")
+        .select("id,name,client_version,transport,user_agent,api_key_id,auth_type,first_seen_at,last_seen_at,request_count")
+        .eq("id", id)
+        .abortSignal(AbortSignal.timeout(5000))
+        .maybeSingle();
+      const { data, error } = (await withTimeout(
+        query,
+        5000,
+        "Supabase client lookup timed out.",
+      )) as { data: unknown; error: { message: string } | null };
+      if (error || !data) return null;
+      return parseClientRow(data);
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.clients.find-failed", error: String(error) });
+      return null;
+    }
+  }
 }
 
 function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
@@ -401,8 +493,41 @@ function parseApiKeyRow(row: unknown): ApiKeyRecord | null {
   };
 }
 
-function parseLogRow(row: unknown): StoredLogEntry | null {
+function parseClientRow(row: unknown): ClientRecord | null {
   if (typeof row !== "object" || row === null) return null;
+  const record = row as Record<string, unknown>;
+  const {
+    id,
+    name,
+    client_version,
+    transport,
+    user_agent,
+    api_key_id,
+    auth_type,
+    first_seen_at,
+    last_seen_at,
+    request_count,
+  } = record;
+  if (typeof id !== "string" || typeof name !== "string") return null;
+  if (typeof transport !== "string") return null;
+  if (typeof first_seen_at !== "string" || typeof last_seen_at !== "string") return null;
+  if (typeof request_count !== "number" || !Number.isFinite(request_count)) return null;
+  if (auth_type !== "anonymous" && auth_type !== "api_key" && auth_type !== "session") return null;
+  return {
+    id,
+    name,
+    clientVersion: typeof client_version === "string" ? client_version : null,
+    transport,
+    userAgent: typeof user_agent === "string" ? user_agent : null,
+    apiKeyId: typeof api_key_id === "number" ? api_key_id : null,
+    authType: auth_type,
+    firstSeenAt: first_seen_at,
+    lastSeenAt: last_seen_at,
+    requestCount: request_count,
+  };
+}
+
+function parseLogRow(row: unknown): StoredLogEntry | null {  if (typeof row !== "object" || row === null) return null;
   const record = row as Record<string, unknown>;
   const { id, request_id, kind, name, duration_ms, ok, created_at } = record;
   if (typeof id !== "number" || !Number.isFinite(id)) return null;

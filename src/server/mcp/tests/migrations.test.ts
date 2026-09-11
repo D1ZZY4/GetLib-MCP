@@ -85,6 +85,15 @@ describe("supabase migrations", () => {
     expect(sql).not.toMatch(/drop table/i);
   });
 
+  test("mcp clients table stores stable identities and is RLS-locked", () => {
+    const sql = readMigration("2026090908_mcp_clients.sql");
+    expect(sql).toContain("create table if not exists public.mcp_clients");
+    expect(sql).toContain("primary key");
+    expect(sql).toContain("enable row level security");
+    expect(sql).toContain("mcp_clients_last_seen_idx");
+    expect(sql).not.toMatch(/drop table/i);
+  });
+
   test("no migration stores real secrets or drops tables", () => {
     for (const file of migrationFiles()) {
       const sql = readMigration(file);

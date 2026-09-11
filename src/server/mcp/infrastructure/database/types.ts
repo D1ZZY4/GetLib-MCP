@@ -47,6 +47,38 @@ export interface NewApiKey {
   keyPrefix: string;
 }
 
+/** Client authentication basis. Display only - never a security boundary. */
+export type ClientAuthType = "anonymous" | "api_key" | "session";
+
+/**
+ * Stable MCP client identity row. The id is `<slug>=<uuid>`, minted once
+ * per identity (API key or user-agent) and never renamed: renames only
+ * change display metadata. Auth decisions always use sessions and API
+ * keys; these labels exist for the control plane.
+ */
+export interface ClientRecord {
+  id: string;
+  name: string;
+  clientVersion: string | null;
+  transport: string;
+  userAgent: string | null;
+  apiKeyId: number | null;
+  authType: ClientAuthType;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  requestCount: number;
+}
+
+export interface NewClientSighting {
+  id: string;
+  name: string;
+  clientVersion?: string;
+  transport: string;
+  userAgent?: string;
+  apiKeyId?: number;
+  authType: ClientAuthType;
+}
+
 export interface PersistedLogEntry {
   requestId?: string;
   kind: string;
@@ -104,4 +136,21 @@ export interface DatabaseRepository {
   deleteApiKey(id: number): Promise<boolean>;
   /** Best-effort last-used stamp. Never rejects. */
   touchApiKeyLastUsed(id: number): Promise<void>;
+  /**
+   * Record a client sighting: insert on first sight, otherwise refresh
+   * last-seen metadata and bump the counter. Never rejects: transport
+   * observation must not fail requests, so failures only reach the log.
+   */
+  touchClient(sighting: NewClientSighting): Promise<void>;
+  /**
+   * Client rows ordered by last sighting, newest first, capped at limit.
+   * Never rejects: returns [] when unreadable so callers fall back to
+   * live transport snapshots.
+   */
+  listClients(limit: number): Promise<ClientRecord[]>;
+  /**
+   * Single client row by stable id. Never rejects: returns null when
+   * unreadable or absent.
+   */
+  getClientById(id: string): Promise<ClientRecord | null>;
 }

@@ -3,7 +3,7 @@ import { MockDatabaseRepository } from "./mock-repository";
 import { SupabaseDatabaseRepository } from "./supabase-repository";
 import type { DatabaseRepository, DatabaseStatus } from "./types";
 
-export type { ApiKeyRecord, BootstrapRecord, DatabaseHealth, DatabaseRepository, DatabaseStatus, NewApiKey, PersistedLogEntry, StoredLogEntry } from "./types";
+export type { ApiKeyRecord, BootstrapRecord, ClientAuthType, ClientRecord, DatabaseHealth, DatabaseRepository, DatabaseStatus, NewApiKey, NewClientSighting, PersistedLogEntry, StoredLogEntry } from "./types";
 
 const repositories = new Map<DatabaseMode, DatabaseRepository>();
 

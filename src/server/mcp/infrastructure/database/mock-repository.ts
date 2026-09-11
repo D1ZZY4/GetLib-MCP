@@ -1,9 +1,11 @@
 import type {
   ApiKeyRecord,
   BootstrapRecord,
+  ClientRecord,
   DatabaseRepository,
   DatabaseStatus,
   NewApiKey,
+  NewClientSighting,
   PersistedLogEntry,
   StoredLogEntry,
 } from "./types";
@@ -17,6 +19,7 @@ export class MockDatabaseRepository implements DatabaseRepository {
   private bootstrap: BootstrapRecord | null = null;
   private logs: PersistedLogEntry[] = [];
   private apiKeys: ApiKeyRecord[] = [];
+  private clients: ClientRecord[] = [];
   private nextApiKeyId = 1;
 
   async getStatus(): Promise<DatabaseStatus> {
@@ -91,10 +94,52 @@ export class MockDatabaseRepository implements DatabaseRepository {
     if (found) found.lastUsedAt = new Date().toISOString();
   }
 
+  async touchClient(sighting: NewClientSighting): Promise<void> {
+    const now = new Date().toISOString();
+    const found = this.clients.find((client) => client.id === sighting.id);
+    if (found) {
+      found.name = sighting.name;
+      found.clientVersion = sighting.clientVersion ?? null;
+      found.transport = sighting.transport;
+      found.userAgent = sighting.userAgent ?? null;
+      found.apiKeyId = sighting.apiKeyId ?? null;
+      found.authType = sighting.authType;
+      found.lastSeenAt = now;
+      found.requestCount += 1;
+      return;
+    }
+    this.clients.unshift({
+      id: sighting.id,
+      name: sighting.name,
+      clientVersion: sighting.clientVersion ?? null,
+      transport: sighting.transport,
+      userAgent: sighting.userAgent ?? null,
+      apiKeyId: sighting.apiKeyId ?? null,
+      authType: sighting.authType,
+      firstSeenAt: now,
+      lastSeenAt: now,
+      requestCount: 1,
+    });
+  }
+
+  async listClients(limit: number): Promise<ClientRecord[]> {
+    return this.clients
+      .slice()
+      .sort((a, b) => (a.lastSeenAt < b.lastSeenAt ? 1 : -1))
+      .slice(0, Math.max(0, limit))
+      .map((client) => ({ ...client }));
+  }
+
+  async getClientById(id: string): Promise<ClientRecord | null> {
+    const found = this.clients.find((client) => client.id === id);
+    return found ? { ...found } : null;
+  }
+
   reset(): void {
     this.bootstrap = null;
     this.logs = [];
     this.apiKeys = [];
+    this.clients = [];
     this.nextApiKeyId = 1;
   }
 }
