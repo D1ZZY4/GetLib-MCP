@@ -82,7 +82,7 @@ function isActiveLink(pathname: string, href: string): boolean {
 }
 
 const linkClasses = (collapsed: boolean) =>
-  `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground aria-[current=page]:bg-surface-tertiary aria-[current=page]:text-foreground ${
+  `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-[current=page]:bg-surface-tertiary aria-[current=page]:text-foreground ${
     collapsed ? "justify-center" : ""
   }`;
 

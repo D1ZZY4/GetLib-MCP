@@ -30,13 +30,13 @@ export default function NotFound() {
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
           <Link
             href="/"
-            className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+            className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Back to dashboard
           </Link>
           <Link
             href="/discover"
-            className="inline-flex items-center justify-center rounded-xl border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Discover libraries
           </Link>
@@ -51,7 +51,7 @@ export default function NotFound() {
               ) : null}
               <Link
                 href={shortcut.href}
-                className="rounded px-1.5 py-1 text-muted transition-colors hover:text-foreground"
+                className="inline-flex min-h-[44px] items-center rounded px-1.5 py-1 text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 {shortcut.label}
               </Link>

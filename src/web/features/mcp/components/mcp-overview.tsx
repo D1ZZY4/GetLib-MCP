@@ -162,7 +162,7 @@ export function McpOverview() {
                 <Card.Footer>
                   <Link
                     href={section.href}
-                    className="inline-flex w-full items-center justify-center rounded-xl bg-default px-4 py-2 text-sm font-medium transition-colors hover:bg-default-hover"
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-default px-4 py-2 text-sm font-medium transition-colors hover:bg-default-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
                     Open {section.title.toLowerCase()}
                   </Link>

@@ -245,7 +245,7 @@ export function McpApiKeys() {
       {deleteError && deleteTarget === null ? (
         <p role="alert" className="text-sm text-danger">
           {deleteError}{" "}
-          <button type="button" onClick={retry} className="underline">
+          <button type="button" onClick={retry} className="rounded underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             Retry
           </button>
         </p>

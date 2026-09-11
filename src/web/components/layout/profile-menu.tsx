@@ -113,7 +113,7 @@ export function ProfileMenu({ collapsed = false }: { collapsed?: boolean }) {
         aria-haspopup="menu"
         aria-label={`Account menu for ${session.email}`}
         title={collapsed ? session.email : undefined}
-        className="flex size-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent transition-colors hover:bg-accent/20"
+        className="flex size-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent transition-colors hover:bg-accent/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <span aria-hidden="true">{sessionInitial(session.name)}</span>
       </button>

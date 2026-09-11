@@ -77,6 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cards cannot drift at rounding edges.
 - Cover partial empty states on charts and the overview instead of
   rendering empty axes when one section has no data.
+- Add explicit focus-visible rings to sidebar, theme, menu, nav,
+  overview, dialog, and 404 controls.
 
 </details>
 
