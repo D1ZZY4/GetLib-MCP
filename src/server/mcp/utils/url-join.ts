@@ -28,6 +28,15 @@ const GENERIC_BASE_SEGMENTS = new Set([
   "reference", "api", "learn", "manual", "help", "handbook",
 ]);
 
+/** Origin of a URL, or null when it does not parse as an absolute URL. */
+export function originOf(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** First path segment of a docs URL ("/docs/guides" -> "docs"), or "" at root. */
 export function docsBaseSegment(docsUrl: string): string {
   try {

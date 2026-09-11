@@ -1,6 +1,6 @@
 import { JINA_BASE_URL, CACHE_TTLS } from "../../constants";
 import { extractDomain, isCircuitOpen, recordSuccess, recordFailure } from "../circuit-breaker";
-import { backoffDelayMs } from "./negative-cache";
+import { backoffDelayMs, sleep } from "./negative-cache";
 import { assertPublicUrl } from "../../utils/guard";
 import { log } from "../../utils/logger";
 import { fetchWithTimeout, readBodyCapped, withFetchCache } from "./request";
@@ -32,7 +32,7 @@ export async function fetchViaJina(url: string): Promise<string | null> {
         if (res.status === 429 || res.status === 503) {
           recordFailure(jinaDomain);
           if (attempt === 0) {
-            await new Promise((r) => setTimeout(r, backoffDelayMs(0)));
+            await sleep(backoffDelayMs(0));
             continue;
           }
           return null;
@@ -60,7 +60,7 @@ export async function fetchViaJina(url: string): Promise<string | null> {
         return text;
       } catch {
         recordFailure(jinaDomain);
-        if (attempt === 0) await new Promise((r) => setTimeout(r, backoffDelayMs(0)));
+        if (attempt === 0) await sleep(backoffDelayMs(0));
       }
     }
     return null;

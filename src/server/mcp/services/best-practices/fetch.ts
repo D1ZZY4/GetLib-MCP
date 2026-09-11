@@ -2,11 +2,11 @@ import { fetchDocs } from "../fetcher";
 import { deepFetchForTopic } from "../deep-fetch";
 import { extractRelevantContent, expandTopicTokens } from "../../utils/extract";
 import { sanitizeContent } from "../../utils/sanitize";
-import { joinDocPaths } from "../../utils/url-join";
+import { joinDocPaths, originOf } from "../../utils/url-join";
 import { BEST_PRACTICES_URLS, GENERIC_BP_SUFFIXES } from "../../sources/best-practice-urls";
 import { isSourceEnabled } from "../source-settings";
 import { raceUrls } from "./race";
-import { sitemapCandidates, fetchDocsLlmsTxt, fetchFromGitHub } from "./discovery";
+import { FALLBACK_TOPIC, sitemapCandidates, fetchDocsLlmsTxt, fetchFromGitHub } from "./discovery";
 
 export interface BestPracticesContent {
   text: string;
@@ -17,16 +17,6 @@ export interface BestPracticesContent {
 }
 
 type RaceHit = { content: string; url: string; extraUrls: string[] };
-
-const FALLBACK_TOPIC = "best practices patterns guide";
-
-function originOf(docsUrl: string): string | null {
-  try {
-    return new URL(docsUrl).origin;
-  } catch {
-    return null;
-  }
-}
 
 /** Sanitize + BM25-extract a raced page into the tool's result shape. */
 function asContent(hit: RaceHit, topic: string, tokens: number): BestPracticesContent {

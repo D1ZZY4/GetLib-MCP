@@ -3,7 +3,7 @@ import { extractDomain, isCircuitOpen, recordSuccess, recordFailure } from "../c
 import { assertPublicUrl } from "../../utils/guard";
 import { log } from "../../utils/logger";
 import { fetchWithTimeout, readBodyCapped } from "./request";
-import { RETRYABLE_STATUS, backoffDelayMs, isKnownMissing, rememberMissing } from "./negative-cache";
+import { RETRYABLE_STATUS, backoffDelayMs, isKnownMissing, rememberMissing, sleep } from "./negative-cache";
 
 /** Single-URL fetch with retry, circuit-breaker accounting and negative caching. */
 export async function tryFetch(url: string, retries = 1, extraHeaders?: Record<string, string>): Promise<string | null> {
@@ -29,7 +29,7 @@ export async function tryFetch(url: string, retries = 1, extraHeaders?: Record<s
       if (RETRYABLE_STATUS.has(res.status)) {
         recordFailure(domain);
         if (attempt < retries) {
-          await new Promise((r) => setTimeout(r, backoffDelayMs(attempt)));
+          await sleep(backoffDelayMs(attempt));
           continue;
         }
         log({ level: "warn", msg: "tryFetch.upstream_unavailable", url, status: res.status, attempts: attempt + 1 });
@@ -68,7 +68,7 @@ export async function tryFetch(url: string, retries = 1, extraHeaders?: Record<s
       // burns another semaphore slot and timeout window for no gain.
       if (err instanceof Error && err.name === "AbortError") break;
       if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, backoffDelayMs(attempt, 500)));
+        await sleep(backoffDelayMs(attempt, 500));
       }
     }
   }

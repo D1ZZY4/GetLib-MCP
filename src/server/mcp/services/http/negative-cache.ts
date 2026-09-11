@@ -19,6 +19,21 @@ export function backoffDelayMs(attempt: number, base = 1000, cap = 8000): number
 }
 
 /**
+ * Jittered-delay sleep that never holds the process open on its own.
+ * The unref guard keeps the capability check runtime-safe: runtimes
+ * without timer.unref simply skip it.
+ */
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const timer: unknown = setTimeout(resolve, ms);
+    if (typeof timer === "object" && timer !== null && "unref" in timer) {
+      const unref = timer.unref;
+      if (typeof unref === "function") unref.call(timer);
+    }
+  });
+}
+
+/**
  * Negative cache for URLs that answered 404/410. Auto-discovery probes a fixed
  * set of candidate paths per domain; without this, every cache-miss call re-probes
  * the same known-dead URLs over the network.

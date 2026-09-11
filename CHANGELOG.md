@@ -67,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   give every registry resolver the same fail-soft miss policy.
 - Rank web-search URLs through one shared helper so engine
   fallbacks cannot drift apart.
+- Share the fallback topic, origin helper, and backoff sleep
+  between best-practices modules instead of duplicating them.
 
 </details>
 

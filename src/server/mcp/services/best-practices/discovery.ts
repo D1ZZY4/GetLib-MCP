@@ -1,18 +1,11 @@
 import { fetchGitHubContent, fetchGitHubExamples, fetchAsMarkdownRace, fetchSitemapUrls, isIndexContent } from "../fetcher";
+import { originOf } from "../../utils/url-join";
 import { extractRelevantContent, tokenize } from "../../utils/extract";
 import { sanitizeContent } from "../../utils/sanitize";
 import type { BestPracticesContent } from "./fetch";
 
-const FALLBACK_TOPIC = "best practices patterns guide";
-
-function originOf(docsUrl: string): string | null {
-  try {
-    return new URL(docsUrl).origin;
-  } catch {
-    return null;
-  }
-}
-
+/** Enriched topic used when the caller topic is empty or too thin to extract on. */
+export const FALLBACK_TOPIC = "best practices patterns guide";
 /** Best-practice URLs discovered from the site's sitemap, topic matches first. */
 export async function sitemapCandidates(docsUrl: string, topic: string): Promise<string[]> {
   const sitemapUrls = await fetchSitemapUrls(docsUrl);
