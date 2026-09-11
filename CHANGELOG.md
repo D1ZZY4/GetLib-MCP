@@ -92,6 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   overview, dialog, and 404 controls.
 - Unify empty states, list semantics, and truncated-text titles
   across dashboard, install, MCP, and discovery surfaces.
+- Add HeroUI to the library registry with best-practices URLs and
+  resolution coverage.
 
 </details>
 

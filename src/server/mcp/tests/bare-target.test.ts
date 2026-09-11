@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resolveBareTarget } from "../services/docs/docs-resolve";
+import { resolveBareTarget, resolveDocsTarget } from "../services/docs/docs-resolve";
 import { resolveSnippetTarget } from "../services/snippets/resolve";
 
 describe("resolveBareTarget", () => {
@@ -44,5 +44,26 @@ describe("resolveSnippetTarget delegation", () => {
     expect(resolveSnippetTarget("http://127.0.0.1:3000/x")).toBe(
       "URL not allowed: must be a public HTTPS address.",
     );
+  });
+});
+
+describe("registry UI libraries", () => {
+  test("heroui resolves by alias to official docs", async () => {
+    const { lookupByAlias } = await import("../sources/registry");
+    const entry = lookupByAlias("heroui");
+    expect(entry?.docsUrl).toBe("https://heroui.com/docs/react/getting-started");
+    const target = await resolveDocsTarget("heroui", entry ?? null);
+    if (typeof target === "string") throw new Error(`unexpected refusal: ${target}`);
+    expect(target.docsUrl).toBe("https://heroui.com/docs/react/getting-started");
+  });
+
+  test("shadcn resolves to ui.shadcn.com docs", async () => {
+    const { lookupByAlias } = await import("../sources/registry");
+    expect(lookupByAlias("shadcn")?.docsUrl).toBe("https://ui.shadcn.com/docs");
+  });
+
+  test("mantine resolves to mantine.dev docs", async () => {
+    const { lookupByAlias } = await import("../sources/registry");
+    expect(lookupByAlias("mantine")?.docsUrl).toContain("https://mantine.dev/");
   });
 });

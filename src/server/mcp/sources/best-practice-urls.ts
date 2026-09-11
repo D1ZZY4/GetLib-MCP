@@ -69,6 +69,11 @@ export const BEST_PRACTICES_URLS: Record<string, string[]> = {
     "https://ui.shadcn.com/docs/theming",
     "https://ui.shadcn.com/docs/dark-mode",
   ],
+  "heroui-inc/heroui": [
+    "https://heroui.com/docs/react/getting-started/theming",
+    "https://heroui.com/docs/react/getting-started/styling",
+    "https://heroui.com/docs/react/getting-started/dark-mode",
+  ],
   "radix-ui/primitives": [
     "https://www.radix-ui.com/primitives/docs/overview/accessibility",
     "https://www.radix-ui.com/primitives/docs/overview/getting-started",

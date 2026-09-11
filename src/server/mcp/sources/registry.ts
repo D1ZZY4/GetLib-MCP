@@ -204,6 +204,21 @@ export const LIBRARY_REGISTRY: LibraryEntry[] = [
     bestPracticesPaths: ["/docs/theming", "/docs/dark-mode"],
     urlPatterns: ["/docs/components/{slug}", "/docs/{slug}"],
   },
+  {
+    id: "heroui-inc/heroui",
+    name: "HeroUI",
+    aliases: ["heroui", "hero-ui", "hero ui", "@heroui/react"],
+    description: "Beautiful accessible React components built on React Aria and Tailwind CSS v4",
+    docsUrl: "https://heroui.com/docs/react/getting-started",
+    llmsTxtUrl: "https://heroui.com/llms.txt",
+    llmsFullTxtUrl: "https://heroui.com/llms-full.txt",
+    githubUrl: "https://github.com/heroui-inc/heroui",
+    npmPackage: "@heroui/react",
+    language: ["typescript", "javascript"],
+    tags: ["ui", "components", "react", "react-aria", "tailwind"],
+    bestPracticesPaths: ["/docs/react/getting-started/theming", "/docs/react/getting-started/styling"],
+    urlPatterns: ["/docs/react/components/{slug}", "/docs/react/{slug}"],
+  },
   // ─── State Management ─────────────────────────────────────────────────────────
   {
     id: "pmndrs/zustand",
