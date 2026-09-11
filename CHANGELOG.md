@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Guard the revoked-keys purge on the column existing so the
+  migration re-runs cleanly on databases whose api_keys table
+  predates the flag and no longer aborts the production push.
+
 </details>
 
 ## [1.2.8] - 2026-09-11
