@@ -3,7 +3,7 @@ import { docCache, diskDocCache } from "./cache";
 import { cacheDoc } from "./http/request";
 import { tryFetch } from "./http/try-fetch";
 import { fetchViaJina } from "./http/jina";
-import { isErrorPage } from "./content-guards";
+import { isErrorPage, isGarbageContent } from "./content-guards";
 import { safeJsonParse } from "../utils/validate-external";
 
 /** Query npm registry for package metadata */
@@ -76,7 +76,11 @@ export async function fetchDevDocs(slug: string, topic?: string): Promise<string
 
   for (const url of urls) {
     const content = await fetchViaJina(url);
-    if (content && content.length >= 200 && !isErrorPage(content)) {
+    // DevDocs pages are JS SPA shells ("requires JavaScript to run") that
+    // pass a naive length check with nav text only. Reject shells and error
+    // pages alike so callers fall through to official docs instead of
+    // caching and evidence-gating thin shell text.
+    if (content && content.length >= 200 && !isErrorPage(content) && !isGarbageContent(content).garbage) {
       cacheDoc(cacheKey, content, CACHE_TTLS.DEVDOCS);
       return content;
     }

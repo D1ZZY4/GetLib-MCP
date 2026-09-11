@@ -81,8 +81,18 @@ export async function fetchBestPracticesContent(
   // 1b. Construct docs URLs from the topic slug. Safe only because the fetch layer
   // garbage-gates Jina results: a fabricated path that 404s fails cleanly instead
   // of short-circuiting the real discovery paths below with a rendered error page.
+  // DevDocs hosts are excluded: /docs/guides/* patterns are meaningless there
+  // and produced honest-miss "sources checked" entries like
+  // devdocs.io/<slug>/docs/guides/<slug>.
   const origin = originOf(docsUrl);
-  if (topic && origin) {
+  let originIsDevDocs = false;
+  try {
+    const host = new URL(docsUrl).hostname.toLowerCase();
+    originIsDevDocs = host === "devdocs.io" || host.endsWith(".devdocs.io");
+  } catch {
+    originIsDevDocs = false;
+  }
+  if (topic && origin && !originIsDevDocs) {
     const slug = topic.toLowerCase().replace(/\s+/g, "/").replace(/[^a-z0-9/-]/g, "");
     const hit = await raceUrls([`${origin}/docs/guides/${slug}`, `${origin}/docs/${slug}`, `${docsUrl}/${slug}`], topic);
     if (hit) return asContent(hit, topic, tokens);

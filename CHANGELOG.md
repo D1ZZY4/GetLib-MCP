@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documentation token budget with the retrieval contract.
 - Validate reflected install hosts before rendering snippets and
   move security-state writes to the strict rate-limit tier.
+- Route devdocs.io hosts to official docs instead of serving
+  unrenderable SPA shells or guessing meaningless topic URLs.
 
 ### Changed
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { resolveBareTarget, resolveDocsTarget } from "../services/docs/docs-resolve";
 import { resolveSnippetTarget } from "../services/snippets/resolve";
+import { buildTopicUrls } from "../services/links";
 
 describe("resolveBareTarget", () => {
   test("resolves npm: ids", () => {
@@ -47,6 +48,22 @@ describe("resolveSnippetTarget delegation", () => {
   });
 });
 
+describe("resolveDocsTarget devdocs mapping", () => {
+  test("devdocs tailwindcss URL resolves to official registry docs", async () => {
+    const target = await resolveDocsTarget("https://devdocs.io/tailwindcss/", null);
+    if (typeof target === "string") throw new Error(`unexpected refusal: ${target}`);
+    expect(target.docsUrl).toBe("https://tailwindcss.com/docs");
+    expect(target.displayName).toBe("Tailwind CSS");
+  });
+
+  test("devdocs unknown slug keeps the bare URL target", async () => {
+    const target = await resolveDocsTarget("https://devdocs.io/unknowntechxyz/", null);
+    if (typeof target === "string") throw new Error(`unexpected refusal: ${target}`);
+    expect(target.docsUrl).toBe("https://devdocs.io/unknowntechxyz/");
+    expect(target.displayName).toBe("devdocs.io");
+  });
+});
+
 describe("registry UI libraries", () => {
   test("heroui resolves by alias to official docs", async () => {
     const { lookupByAlias } = await import("../sources/registry");
@@ -65,5 +82,16 @@ describe("registry UI libraries", () => {
   test("mantine resolves to mantine.dev docs", async () => {
     const { lookupByAlias } = await import("../sources/registry");
     expect(lookupByAlias("mantine")?.docsUrl).toContain("https://mantine.dev/");
+  });
+});
+
+describe("buildTopicUrls devdocs guard", () => {
+  test("returns no guessed URLs for devdocs hosts", () => {
+    expect(buildTopicUrls("https://devdocs.io/tailwindcss/", "tailwindcss", undefined)).toEqual([]);
+  });
+
+  test("still builds topic URLs for official docs hosts", () => {
+    const urls = buildTopicUrls("https://tailwindcss.com/docs", "tailwindcss", ["/docs/{slug}"]);
+    expect(urls).toContain("https://tailwindcss.com/docs/tailwindcss");
   });
 });

@@ -113,6 +113,30 @@ export async function resolveDocsTarget(
   if (typeof bareTarget === "string") return bareTarget;
   if (bareTarget !== null) {
     if (bareTarget.kind === "url") {
+      // DevDocs pages are JS SPA shells our fetchers cannot render - a bare
+      // devdocs.io URL for a known technology resolves to its registry entry
+      // so callers serve official docs (e.g. tailwindcss.com) instead of an
+      // honest miss on shell text. Unknown slugs keep the bare URL path.
+      if (bareTarget.hostname === "devdocs.io" || bareTarget.hostname.endsWith(".devdocs.io")) {
+        try {
+          const firstSegment = new URL(bareTarget.url).pathname.split("/").filter(Boolean)[0] ?? "";
+          const slugBase = firstSegment.split("~")[0]?.toLowerCase() ?? "";
+          if (slugBase) {
+            const entry = lookupByAlias(slugBase) ?? lookupById(slugBase);
+            if (entry) {
+              return {
+                docsUrl: entry.docsUrl,
+                llmsTxtUrl: entry.llmsTxtUrl,
+                llmsFullTxtUrl: entry.llmsFullTxtUrl,
+                githubUrl: entry.githubUrl,
+                displayName: entry.name,
+              };
+            }
+          }
+        } catch {
+          // Malformed path - fall through to the bare URL target below.
+        }
+      }
       return { ...bare, docsUrl: bareTarget.url, displayName: bareTarget.hostname };
     }
     if (bareTarget.kind === "npm") {

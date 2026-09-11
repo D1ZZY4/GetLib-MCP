@@ -106,11 +106,19 @@ export function buildTopicUrls(
   topic: string,
   urlPatterns?: string[],
 ): string[] {
+  let docsHost: string;
   try {
-    new URL(docsUrl);
+    const parsed = new URL(docsUrl);
+    docsHost = parsed.hostname.toLowerCase();
   } catch {
     return [];
   }
+
+  // DevDocs serves technology at /<slug>/ as a JS SPA - generic /docs/*
+  // patterns fabricate nonsense like /tailwindcss/docs/guides/<slug> that
+  // 404 or return shells. Skip guessed topic URLs for devdocs hosts; the
+  // DevDocs JSON path (fetchDevDocs) or official docs resolution owns it.
+  if (docsHost === "devdocs.io" || docsHost.endsWith(".devdocs.io")) return [];
 
   const hyphenSlug = topic
     .toLowerCase()
