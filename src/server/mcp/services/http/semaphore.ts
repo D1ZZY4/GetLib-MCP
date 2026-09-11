@@ -15,16 +15,23 @@ class FetchSemaphore {
     this.max = max;
   }
 
-  async acquire(): Promise<void> {
+  async acquire(timeoutMs = 30_000): Promise<boolean> {
     if (this.active < this.max) {
       this.active++;
-      return;
+      return true;
     }
-    return new Promise<void>((resolve) => {
-      this.queue.push(() => {
+    return new Promise<boolean>((resolve) => {
+      const waiter = (): void => {
         this.active++;
-        resolve();
-      });
+        resolve(true);
+      };
+      this.queue.push(waiter);
+      const timer = setTimeout(() => {
+        const index = this.queue.indexOf(waiter);
+        if (index >= 0) this.queue.splice(index, 1);
+        resolve(false);
+      }, timeoutMs);
+      if (typeof timer.unref === "function") timer.unref();
     });
   }
 

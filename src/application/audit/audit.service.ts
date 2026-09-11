@@ -1,5 +1,6 @@
 import { safeguardPath, withToolTimeout } from "@/server/mcp/utils/guard";
-import { renderAuditReport, type AuditReport, type AuditReportInput } from "./audit-report";
+import { log } from "@/server/mcp/utils/logger";
+import type { AuditReport, AuditReportInput } from "./audit-report";
 import type { Issue } from "@/server/mcp/sources/audit-patterns";
 import type { SourceFile } from "@/server/mcp/services/project/scan";
 import type { DependencySource } from "@/server/mcp/utils/deps/manifest";
@@ -53,14 +54,16 @@ export async function auditProjectUseCase(input: AuditInput, deps: AuditDeps): P
   let resolvedPath: string;
   try {
     resolvedPath = safeguardPath(projectPath ?? process.cwd());
-  } catch {
+  } catch (error) {
+    log({ level: "debug", msg: "audit.project-path.invalid", error: error instanceof Error ? error.message : String(error) });
     return { response: { content: [{ type: "text", text: `Invalid project path.` }] }, resolved: false };
   }
 
   let files: SourceFile[];
   try {
     files = await deps.readProjectFiles(resolvedPath, input.maxFiles);
-  } catch {
+  } catch (error) {
+    log({ level: "debug", msg: "audit.read-project.failed", error: error instanceof Error ? error.message : String(error) });
     return {
       response: { content: [{ type: "text", text: `Could not read project at: ${resolvedPath}` }] },
       resolved: false,
@@ -119,5 +122,3 @@ export async function auditProjectUseCase(input: AuditInput, deps: AuditDeps): P
     resolved: allIssues.length > 0 || files.length > 0,
   };
 }
-
-export { renderAuditReport };

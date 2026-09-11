@@ -30,7 +30,7 @@ export interface HealthSnapshot {
     successRate: number;
     resolveRate: number;
     errorRate: number;
-    byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }>;
+    byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number; p99: number }>;
   };
   environment: "development" | "production";
   databaseMode: string;

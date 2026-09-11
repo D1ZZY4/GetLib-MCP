@@ -1,4 +1,5 @@
 import { safeguardPath, withNotice, withToolTimeout } from "@/server/mcp/utils/guard";
+import { log } from "@/server/mcp/utils/logger";
 import type { ScanReport } from "./auto-scan-report";
 import type { LibraryEntry } from "@/server/mcp/types";
 import type { DependencySource } from "@/server/mcp/utils/deps/manifest";
@@ -71,7 +72,8 @@ export async function autoScanUseCase(input: AutoScanInput, deps: AutoScanDeps):
         ? process.cwd()
         : input.projectPath,
     );
-  } catch {
+  } catch (error) {
+    log({ level: "debug", msg: "auto-scan.project-path.invalid", error: error instanceof Error ? error.message : String(error) });
     return { response: text(`Invalid project path.`), resolved: false };
   }
 

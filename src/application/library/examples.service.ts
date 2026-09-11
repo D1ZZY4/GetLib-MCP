@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isExtractionAttempt, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
-import { parseExternal, externalSchemas } from "@/server/mcp/utils/validate-external";
+import { parseExternal, externalSchemas, safeJsonParse } from "@/server/mcp/utils/validate-external";
 import { log } from "@/server/mcp/utils/logger";
 import { docsFallbackResponse, type ExamplesFallbackDeps } from "./examples-fallback";
 import { renderCodeSearch, type CodeSearchItem } from "./examples-render";
@@ -133,10 +133,8 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
     if (bodyText === null) {
       return fallbackAsync("GitHub code search returned an oversized response.");
     }
-    let raw: unknown = null;
-    try {
-      raw = JSON.parse(bodyText) as unknown;
-    } catch {
+    const raw: unknown = safeJsonParse(bodyText);
+    if (raw === null) {
       return fallbackAsync("GitHub code search returned malformed JSON.");
     }
     const envelope = parseExternal(externalSchemas.githubCodeSearch, raw);
@@ -174,7 +172,8 @@ export async function examplesUseCase(input: ExamplesInput, deps: ExamplesDeps):
     deps.cacheSet(cacheKey, rendered, ttl);
     void deps.diskCacheSet(cacheKey, rendered, ttl);
     return { response, resolved: true };
-  } catch {
+  } catch (error) {
+    log({ level: "debug", msg: "examples.search.failed", library, error: error instanceof Error ? error.message : String(error) });
     return fallbackAsync(
       "GitHub code search failed (network error).",
       `Failed to search GitHub for "${library}" examples. Check network and GETLIB_GITHUB_TOKEN.`,

@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Added
+
+- Expose p99 latency per tool in telemetry summaries and health
+  snapshots.
+- Correlate rate-limit and internal errors with request ids in
+  server logs.
+- Bound fetch concurrency with timeouts and cap document cache
+  memory with byte-aware eviction.
+- Add debug trails for best-effort fetch fallbacks and cache prune
+  runs.
+
 ### Fixed
 
 - Correct the authentication env var spelling to

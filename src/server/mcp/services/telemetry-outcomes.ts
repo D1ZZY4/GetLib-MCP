@@ -43,7 +43,7 @@ export function getInvocationSummary(): {
   successRate: number;
   resolveRate: number;
   errorRate: number;
-  byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }>;
+  byTool: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number; p99: number }>;
 } {
   if (recentOutcomes.length === 0) {
     // Cold start, not proven reliability: zero calls with neutral 100%
@@ -71,17 +71,19 @@ export function getInvocationSummary(): {
     entry.latencies.push(o.durationMs);
   }
 
-  const byToolOut: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number }> = {};
+  const byToolOut: Record<string, { calls: number; successRate: number; resolveRate: number; p50: number; p95: number; p99: number }> = {};
   for (const [tool, m] of byTool.entries()) {
     const sorted = [...m.latencies].sort((a, b) => a - b);
     const p50 = percentileOfSorted(sorted, 50);
     const p95 = percentileOfSorted(sorted, 95);
+    const p99 = percentileOfSorted(sorted, 99);
     byToolOut[tool] = {
       calls: m.calls,
       successRate: m.calls > 0 ? +(m.success / m.calls).toFixed(3) : 1,
       resolveRate: m.calls > 0 ? +(m.resolved / m.calls).toFixed(3) : 1,
       p50,
       p95,
+      p99,
     };
   }
 

@@ -1,14 +1,17 @@
 import { createHash } from "crypto";
 import { isExtractionAttempt, withNotice } from "@/server/mcp/utils/guard";
+import { log } from "@/server/mcp/utils/logger";
 import { extractRelevantContent } from "@/server/mcp/utils/extract";
 import { sanitizeContent } from "@/server/mcp/utils/sanitize";
 import type { LibraryEntry } from "@/server/mcp/types";
 
-export interface FetchResult {
+export interface CompareFetchResult {
   content: string;
   url: string | null;
   sourceType: string;
 }
+
+export const COMPARE_TOKENS_DEFAULT = 2000;
 
 /**
  * Capability seams of the compare use case. Registry lookup, docs
@@ -26,7 +29,7 @@ export interface CompareDeps {
     llmsTxtUrl: string | undefined,
     llmsFullTxtUrl: string | undefined,
     topic: string,
-  ) => Promise<FetchResult | null>;
+  ) => Promise<CompareFetchResult | null>;
   fetchFirstIndexDeepLink: (
     content: string,
     topic: string,
@@ -86,7 +89,7 @@ export async function compareUseCase(input: CompareInput, deps: CompareDeps): Pr
       const topicHash = createHash("sha256").update(topic).digest("hex").slice(0, 16);
       // Tokens shape the extracted content, so the key must include
       // them - otherwise the same topic with different budgets collides.
-      const cacheKey = `compare:${entry?.id ?? lib}:${topicHash}:${tokens ?? 2000}`;
+      const cacheKey = `compare:${entry?.id ?? lib}:${topicHash}:${tokens ?? COMPARE_TOKENS_DEFAULT}`;
       const cached = deps.cacheGet(cacheKey);
       if (typeof cached === "string") return { lib, entry, content: cached };
 
@@ -102,10 +105,11 @@ export async function compareUseCase(input: CompareInput, deps: CompareDeps): Pr
         );
         if (deep) fetchResult = { content: deep.content, url: deep.url, sourceType: "jina" };
         const safe = sanitizeContent(fetchResult.content);
-        const { text } = extractRelevantContent(safe, topic, tokens ?? 2000);
+        const { text } = extractRelevantContent(safe, topic, tokens ?? COMPARE_TOKENS_DEFAULT);
         deps.cacheSet(cacheKey, text);
         return { lib, entry, content: text };
-      } catch {
+      } catch (error) {
+        log({ level: "debug", msg: "compare.fetch.failed", lib, error: error instanceof Error ? error.message : String(error) });
         return { lib, entry, content: null };
       }
     }),

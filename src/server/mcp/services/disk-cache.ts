@@ -31,7 +31,8 @@ export class DiskCache {
       await mkdir(this.dir, { recursive: true });
       this.initialized = true;
       return true;
-    } catch {
+    } catch (err) {
+      log({ level: "debug", msg: "DiskCache.ensureDir.failed", error: err instanceof Error ? err.message : String(err) });
       return false;
     }
   }
@@ -62,7 +63,8 @@ export class DiskCache {
         return undefined;
       }
       return entry.data;
-    } catch {
+    } catch (err) {
+      log({ level: "debug", msg: "DiskCache.get.failed", error: err instanceof Error ? err.message : String(err) });
       return undefined;
     }
   }
@@ -111,7 +113,8 @@ export class DiskCache {
       }
       const now = Date.now();
       return now <= entry.expiresAt + SWR_STALE_TTL_MS;
-    } catch {
+    } catch (err) {
+      log({ level: "debug", msg: "DiskCache.has.failed", error: err instanceof Error ? err.message : String(err) });
       return false;
     }
   }
@@ -169,7 +172,7 @@ export class DiskCache {
           removed++;
         }
       }
-    } catch { /* readdir failed - cache dir may not exist */ }
+    } catch (err) { log({ level: "debug", msg: "DiskCache.prune.failed", error: err instanceof Error ? err.message : String(err) }); }
     return removed;
   }
 }

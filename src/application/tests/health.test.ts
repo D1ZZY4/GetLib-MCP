@@ -21,4 +21,13 @@ describe("health application service", () => {
       expect(rate).toBeLessThanOrEqual(1);
     }
   });
+
+  test("telemetry per-tool latencies expose p50, p95, and p99", async () => {
+    const { telemetry } = await getHealthSnapshot(liveHealthDeps);
+    for (const entry of Object.values(telemetry.byTool)) {
+      expect(entry.p50).toBeGreaterThanOrEqual(0);
+      expect(entry.p95).toBeGreaterThanOrEqual(entry.p50);
+      expect(entry.p99).toBeGreaterThanOrEqual(entry.p95);
+    }
+  });
 });

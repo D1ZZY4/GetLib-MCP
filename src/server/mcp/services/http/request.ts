@@ -37,6 +37,11 @@ export async function withFetchCache(
     return diskCached;
   }
 
+  // Double-check after the disk await: a concurrent caller may have
+  // populated memory or registered the in-flight load while this caller
+  // was suspended, and without this second look both would fetch.
+  const memRecheck = docCache.get(key);
+  if (memRecheck) return memRecheck;
   const inFlight = inFlightRequests.get(key);
   if (inFlight) return inFlight;
 
@@ -129,10 +134,18 @@ export async function fetchWithTimeout(
   // Host bulkhead first, then the global cap: acquiring globally first would
   // let queued same-host waiters occupy global slots while blocked.
   const hostSem = hostSemaphore(url);
-  await hostSem?.acquire();
+  const hostAcquired = await hostSem?.acquire();
+  if (hostSem && !hostAcquired) {
+    throw new Error(`Host concurrency limit reached for ${url}`);
+  }
   try {
-    await fetchSemaphore.acquire();
+    const globalAcquired = await fetchSemaphore.acquire();
+    if (!globalAcquired) {
+      throw new Error(`Global fetch concurrency limit reached for ${url}`);
+    }
   } catch (err) {
+    // Single release point: the throw above and any acquire rejection
+    // both funnel here, so the host slot is freed exactly once.
     hostSem?.release();
     throw err;
   }

@@ -1,4 +1,5 @@
 import { safeguardPath, withNotice } from "@/server/mcp/utils/guard";
+import { log } from "@/server/mcp/utils/logger";
 import type { GlToolName, IntentInput, IntentMatch } from "@/server/mcp/services/intent/types";
 
 /**
@@ -56,8 +57,9 @@ export async function dispatchUseCase(input: DispatchInput, deps: DispatchDeps):
       const pathArg = typeof rawPath === "string" ? rawPath : undefined;
       const resolvedPath = safeguardPath(pathArg ?? projectPath ?? process.cwd());
       intent.args["projectPath"] = resolvedPath;
-    } catch {
-      // fall back to bare cwd marker - actual tool will re-validate
+    } catch (error) {
+      // Fall back to the raw arg - the actual tool re-validates it.
+      log({ level: "debug", msg: "dispatch.project-path.unresolved", error: error instanceof Error ? error.message : String(error) });
     }
   }
 
