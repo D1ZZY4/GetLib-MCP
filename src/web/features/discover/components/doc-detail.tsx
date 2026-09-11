@@ -82,7 +82,7 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
             }
             badge={
               <>
-                <Pill tone={verdictTone(data.verdict)}>{VERDICT_LABEL[data.verdict] ?? data.verdict}</Pill>
+                <Pill tone={verdictTone(data.verdict)}>{VERDICT_LABEL[data.verdict] ?? "Unknown evidence"}</Pill>
                 {data.truncated ? (
                   <Pill tone="bg-surface-tertiary text-muted">Truncated</Pill>
                 ) : null}
@@ -99,13 +99,19 @@ export function DocDetail({ sourceUrl, topic }: { sourceUrl: string; topic: stri
               </Card.Content>
             </Card>
           ) : null}
-          <Card>
-            <Card.Content>
-              <pre className="overflow-x-auto text-sm leading-relaxed whitespace-pre-wrap tabular-nums">
-                {data.content === "" ? "No readable content was extracted." : data.content}
-              </pre>
-            </Card.Content>
-          </Card>
+          {data.content === "" ? (
+            <p className="text-sm text-muted">
+              No readable content was extracted. Open the original page to read it there.
+            </p>
+          ) : (
+            <Card>
+              <Card.Content>
+                <pre className="overflow-x-auto text-sm leading-relaxed whitespace-pre-wrap tabular-nums">
+                  {data.content}
+                </pre>
+              </Card.Content>
+            </Card>
+          )}
         </>
       )}
     </PageContainer>

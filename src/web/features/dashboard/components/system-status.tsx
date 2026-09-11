@@ -64,7 +64,7 @@ export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot 
                           ? "Verified sessions"
                           : "Guest access"
                       : item.label === "Transports"
-                        ? dashboard.mcp.transports.join(" + ")
+                        ? dashboard.mcp.transports.join(" + ") || "No transports"
                         : item.label === "Cache entries"
                           ? "In-memory entries"
                           : item.label === "Latency"

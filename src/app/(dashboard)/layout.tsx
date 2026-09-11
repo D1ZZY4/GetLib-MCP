@@ -78,7 +78,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileNav />
-        <div id="main" className="flex-1">
+        {/* tabIndex makes the skip-link target focusable in every browser. */}
+        <div id="main" tabIndex={-1} className="flex-1 outline-none">
           {children}
         </div>
       </div>

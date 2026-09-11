@@ -4,13 +4,17 @@ import { PageContainer } from "@/web/components/layout/page-container";
 const SHORTCUTS = [
   { href: "/", label: "Dashboard" },
   { href: "/discover", label: "Discover" },
+  { href: "/install", label: "Install" },
+  { href: "/sources", label: "Sources" },
   { href: "/mcp", label: "MCP" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export default function NotFound() {
   return (
     <PageContainer variant="center">
       <div className="relative flex w-full flex-col items-center">
+        {/* Decorative glow behind the content, intentionally negative z. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 left-1/2 -z-10 size-72 -translate-x-1/2 rounded-full bg-accent/15 blur-3xl"

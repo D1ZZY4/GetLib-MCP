@@ -10,7 +10,7 @@ export interface SearchEvidence {
   ok: boolean;
   matchRatio: number;
   occurrences: number;
-  verdict: "strong" | "weak" | "miss";
+  verdict: "strong" | "weak" | "miss" | "untargeted";
 }
 
 export interface DiscoverResult {
@@ -67,7 +67,10 @@ function parseEvidence(value: unknown): SearchEvidence {
     ok: evidence.ok === true,
     matchRatio: typeof evidence.matchRatio === "number" ? evidence.matchRatio : 0,
     occurrences: typeof evidence.occurrences === "number" ? evidence.occurrences : 0,
-    verdict: verdict === "strong" || verdict === "weak" || verdict === "miss" ? verdict : "miss",
+    verdict:
+      verdict === "strong" || verdict === "weak" || verdict === "miss" || verdict === "untargeted"
+        ? verdict
+        : "miss",
   };
 }
 

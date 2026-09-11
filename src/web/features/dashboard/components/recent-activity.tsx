@@ -1,4 +1,5 @@
 import { Card } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { activityKindTone } from "@/web/components/ui/status-tone";
 import { formatActivityTime } from "@/web/lib/format";
 import type { MockActivity } from "@/web/types/library";
@@ -16,7 +17,10 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
       </Card.Header>
       <Card.Content>
         {activities.length === 0 ? (
-          <p className="text-sm text-muted">No activity yet. Resolve a library or run a tool and recent operations will appear here.</p>
+          <EmptyState
+            title="No activity yet"
+            description="Resolve a library or run a tool and recent operations will appear here."
+          />
         ) : (
           <ol className="relative flex flex-col gap-4 pl-5" aria-label="Recent activity items">
             {/* Rail centered under the 11px dots: (11px dot - 1px rail) / 2 = 5px offset. */}

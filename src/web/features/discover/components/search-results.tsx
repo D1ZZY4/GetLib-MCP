@@ -11,6 +11,7 @@ const VERDICT_LABEL: Record<DiscoverResult["evidence"]["verdict"], string> = {
   strong: "Strong evidence",
   weak: "Weak evidence",
   miss: "No strong match",
+  untargeted: "Full document",
 };
 
 export function SearchResults({ result }: { result: DiscoverResult }) {
@@ -47,8 +48,8 @@ export function SearchResults({ result }: { result: DiscoverResult }) {
               <Card className="flex h-full flex-col transition-colors hover:border-accent">
                 <Link href={detailHref} className="flex h-full flex-col rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-label={`Open details for ${source.name}`}>
                   <Card.Header>
-                    <Card.Title className="truncate">{source.name}</Card.Title>
-                    <Card.Description className="truncate font-mono text-xs text-accent">
+                    <Card.Title className="truncate" title={source.name}>{source.name}</Card.Title>
+                    <Card.Description className="truncate font-mono text-xs text-accent" title={source.url}>
                       {source.url}
                     </Card.Description>
                   </Card.Header>

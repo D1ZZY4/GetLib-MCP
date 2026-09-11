@@ -90,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rendering empty axes when one section has no data.
 - Add explicit focus-visible rings to sidebar, theme, menu, nav,
   overview, dialog, and 404 controls.
+- Unify empty states, list semantics, and truncated-text titles
+  across dashboard, install, MCP, and discovery surfaces.
 
 </details>
 

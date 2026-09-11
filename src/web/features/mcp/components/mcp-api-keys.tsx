@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertDialog, Button, Card, Label, Skeleton } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
@@ -194,14 +195,10 @@ export function McpApiKeys() {
       ) : error !== null || snapshot === null ? (
         <LoadError message={error ?? LOAD_ERROR} onRetry={retry} />
       ) : snapshot.keys.length === 0 ? (
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              No API keys yet. Create one above and pass it as{" "}
-              <code className="font-mono">Authorization: Bearer glk_...</code> from any MCP client.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No API keys yet"
+          description="Create one above and pass it as Authorization Bearer from any MCP client."
+        />
       ) : (
         <Card>
           <Card.Content>

@@ -5,6 +5,7 @@ import { Button, Card, Tabs } from "@heroui/react";
 import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { availabilityTone } from "@/web/components/ui/status-tone";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import { Pill } from "@/web/components/ui/pill";
 import { DetailHeaderSkeleton, PanelCardSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { useInstallCatalog } from "../hooks/use-install-catalog";
@@ -32,7 +33,7 @@ export function InstallAssistant() {
         setCopiedId((current) => (current === id ? null : current));
       }, 2000);
     } else {
-      setCopyError("Copy failed. Select the snippet manually and press Ctrl+C.");
+      setCopyError("Copy failed. Select the snippet manually to copy it.");
     }
   };
 
@@ -70,13 +71,10 @@ export function InstallAssistant() {
     return (
       <PageContainer>
         <PageHeader title="Install to your AI agents" description="No AI agents configured yet." />
-        <Card>
-          <Card.Content>
-            <p className="text-sm text-muted">
-              The install catalog is empty. Restart the server to reload assistant definitions.
-            </p>
-          </Card.Content>
-        </Card>
+        <EmptyState
+          title="No AI agents configured"
+          description="The install catalog is empty. Restart the server to reload assistant definitions."
+        />
       </PageContainer>
     );
   }
@@ -142,7 +140,7 @@ export function InstallAssistant() {
                       <span className="font-mono">{assistant.transports.map(transportLabel).join(" / ")}</span>
                     </Pill>
                     <Pill
-                      tone={assistant.status === "connected" ? "bg-success/15 text-success" : "bg-surface-tertiary text-muted"}
+                      tone={assistant.status === "connected" ? "bg-success/10 text-success" : "bg-surface-tertiary text-muted"}
                     >
                       {assistant.status === "connected" ? "Connected" : "Available"}
                     </Pill>
@@ -158,24 +156,25 @@ export function InstallAssistant() {
                 </ol>
                 <div className="mt-4">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-muted">{assistant.configFile}</p>
+                    <p className="min-w-0 truncate text-xs font-medium text-muted" title={assistant.configFile}>{assistant.configFile}</p>
                     <Button
                       variant="secondary"
                       size="sm"
+                      className="shrink-0"
                       onPress={() => void handleCopy(assistant.id, assistant.snippet)}
                       aria-label={`Copy ${assistant.name} config snippet`}
                     >
                       {copiedId === assistant.id ? "Copied" : "Copy"}
                     </Button>
                   </div>
-                  <pre className="overflow-x-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed tabular-nums">
+                  <pre className="max-h-[480px] overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed break-words tabular-nums">
                     <code>{assistant.snippet}</code>
                   </pre>
                 </div>
                 {assistant.remoteSnippet !== undefined ? (
                   <div className="mt-4">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
-                      <p className="text-xs font-medium text-muted">
+                      <p className="min-w-0 truncate text-xs font-medium text-muted" title={assistant.remoteConfigFile ?? "Remote"}>
                         {assistant.remoteConfigFile ?? "Remote"} ·{" "}
                         {assistant.remoteTransport !== undefined
                           ? transportLabel(assistant.remoteTransport)
@@ -184,6 +183,7 @@ export function InstallAssistant() {
                       <Button
                         variant="secondary"
                         size="sm"
+                        className="shrink-0"
                         onPress={() =>
                           void handleCopy(`${assistant.id}-remote`, assistant.remoteSnippet ?? "")
                         }
@@ -192,7 +192,7 @@ export function InstallAssistant() {
                         {copiedId === `${assistant.id}-remote` ? "Copied" : "Copy"}
                       </Button>
                     </div>
-                    <pre className="overflow-x-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed tabular-nums">
+                    <pre className="max-h-[480px] overflow-auto rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed break-words tabular-nums">
                       <code>{assistant.remoteSnippet}</code>
                     </pre>
                   </div>

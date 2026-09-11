@@ -67,7 +67,7 @@ export function AuthGate({ mode }: { mode: AuthMode }) {
           <Card.Footer>
             <Link
               href="/"
-              className="inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
             >
               Continue to dashboard
             </Link>
@@ -93,7 +93,7 @@ export function AuthGate({ mode }: { mode: AuthMode }) {
           <Card.Footer>
             <Link
               href="/signin"
-              className="inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
             >
               Go to sign in
             </Link>

@@ -23,7 +23,7 @@ export function RankingBarList({ entries, label, emptyMessage }: RankingBarListP
       {entries.map((entry, index) => (
         <li key={entry.id}>
           <div className="flex items-baseline justify-between gap-2">
-            <p className="truncate text-sm font-medium">
+            <p className="truncate text-sm font-medium" title={entry.name}>
               <span className="mr-2 font-mono text-xs text-muted tabular-nums">{index + 1}</span>
               {entry.name}
             </p>

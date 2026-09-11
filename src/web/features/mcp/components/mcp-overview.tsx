@@ -71,7 +71,10 @@ export function McpOverview() {
         description="First-class MCP module: one registry feeds the stdio server and these pages."
         badge={
           health !== null && degraded ? (
-            <span className="shrink-0 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
+            <span
+              role="status"
+              className="shrink-0 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning"
+            >
               Degraded
             </span>
           ) : null

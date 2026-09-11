@@ -64,14 +64,14 @@ export function UsageCard({ days }: UsageChartProps) {
     <Card>
       <Card.Header>
         <Card.Title>Usage</Card.Title>
-        <Card.Description>Last 10 days</Card.Description>
+        <Card.Description>Last {days.length} days</Card.Description>
       </Card.Header>
       <Card.Content>
         <UsageChart days={days} />
       </Card.Content>
       <Card.Footer>
         <p className="text-sm font-medium tabular-nums">
-          {totalRequests(days)} requests in the last 10 days
+          {totalRequests(days)} requests in the last {days.length} days (windowed)
         </p>
       </Card.Footer>
     </Card>

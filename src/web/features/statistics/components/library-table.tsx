@@ -3,6 +3,7 @@ import type { LibraryStatRow } from "@/web/lib/statistics";
 import { EmptyState } from "@/web/components/ui/empty-state";
 import { Pill } from "@/web/components/ui/pill";
 import { libraryStatusTone } from "@/web/components/ui/status-tone";
+import { statusLabel } from "@/web/features/dashboard/components/project-summary-card";
 
 interface LibraryTableProps {
   rows: LibraryStatRow[];
@@ -53,7 +54,7 @@ export function LibraryTable({ rows }: LibraryTableProps) {
                     {row.latestVersion}
                   </td>
                   <td className="py-2.5 pr-4">
-                    <Pill tone={libraryStatusTone(row.status)}>{row.status}</Pill>
+                    <Pill tone={libraryStatusTone(row.status)}>{statusLabel(row.status)}</Pill>
                   </td>
                   <td className="py-2.5 text-xs tabular-nums">{row.docsPages}</td>
                 </tr>

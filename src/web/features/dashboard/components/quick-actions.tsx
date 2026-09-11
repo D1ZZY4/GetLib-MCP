@@ -43,7 +43,7 @@ export function QuickActionsPanel() {
       <div className="grid gap-4 sm:grid-cols-3">
         {QUICK_ACTIONS.map((action) => (
           <Card key={action.id} className="flex h-full flex-col">
-            <action.icon className="size-6 text-accent" />
+            <action.icon aria-hidden="true" className="size-6 text-accent" />
             <Card.Header>
               <Card.Title>{action.title}</Card.Title>
               <Card.Description>{action.description}</Card.Description>

@@ -42,29 +42,31 @@ export function AttentionHighlightsPanel({ items }: AttentionHighlightsPanelProp
         ) : (
           <div className="grid items-start gap-3" role="list" aria-label="Attention items">
             {items.map((item) => (
-              <Alert key={item.id} status={STATUS_BY_SEVERITY[item.severity]} role="listitem" className={severityFill(item.severity)}>
-                <Alert.Indicator />
-                <Alert.Content>
-                  <Alert.Title>{item.libraryName}</Alert.Title>
-                  <Alert.Description>
-                    {item.message}
-                    {item.installedVersion !== undefined && item.latestVersion !== undefined ? (
-                      <span className="mt-1 block font-mono text-xs tabular-nums">
-                        {item.installedVersion} → {item.latestVersion}
-                      </span>
-                    ) : null}
-                    {item.actionHref !== undefined ? (
-                      <Link
-                        href={item.actionHref}
-                        className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                      >
-                        {item.actionLabel ?? "Take action"}
-                        <ArrowRightIcon className="size-3" />
-                      </Link>
-                    ) : null}
-                  </Alert.Description>
-                </Alert.Content>
-              </Alert>
+              <div key={item.id} role="listitem">
+                <Alert status={STATUS_BY_SEVERITY[item.severity]} className={severityFill(item.severity)}>
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Title>{item.libraryName}</Alert.Title>
+                    <Alert.Description>
+                      {item.message}
+                      {item.installedVersion !== undefined && item.latestVersion !== undefined ? (
+                        <span className="mt-1 block font-mono text-xs tabular-nums">
+                          {item.installedVersion} → {item.latestVersion}
+                        </span>
+                      ) : null}
+                      {item.actionHref !== undefined ? (
+                        <Link
+                          href={item.actionHref}
+                          className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                        >
+                          {item.actionLabel ?? "Take action"}
+                          <ArrowRightIcon className="size-3" />
+                        </Link>
+                      ) : null}
+                    </Alert.Description>
+                  </Alert.Content>
+                </Alert>
+              </div>
             ))}
           </div>
         )}

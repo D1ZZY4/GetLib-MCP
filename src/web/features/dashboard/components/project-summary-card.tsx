@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@heroui/react";
+import { EmptyState } from "@/web/components/ui/empty-state";
 import type { MockLibrary } from "@/web/types/library";
 import { libraryStatusTone } from "@/web/components/ui/status-tone";
 import { Pill } from "@/web/components/ui/pill";
@@ -11,7 +12,7 @@ interface ProjectSummaryCardProps {
   libraries: MockLibrary[];
 }
 
-function statusLabel(status: MockLibrary["status"]): string {
+export function statusLabel(status: string): string {
   switch (status) {
     case "up-to-date":
       return "Up to date";
@@ -19,6 +20,8 @@ function statusLabel(status: MockLibrary["status"]): string {
       return "Outdated";
     case "vulnerable":
       return "Vulnerable";
+    default:
+      return status;
   }
 }
 
@@ -33,16 +36,19 @@ export function ProjectSummaryCard({ libraries }: ProjectSummaryCardProps) {
       </Card.Header>
       <Card.Content>
         {libraries.length === 0 ? (
-          <p className="text-sm text-muted">No libraries tracked yet. Add your first library to see versions and status here.</p>
+          <EmptyState
+            title="No libraries tracked yet"
+            description="Add your first library to see versions and status here."
+          />
         ) : (
           <ul className="-mx-1" aria-label="Active libraries">
             {libraries.map((lib) => (
               <li
                 key={lib.id}
-                className="flex items-center justify-between gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-surface-secondary"
+                className="flex items-center justify-between gap-3 rounded-lg px-1 py-2"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{lib.name}</p>
+                  <p className="truncate text-sm font-medium" title={lib.name}>{lib.name}</p>
                   <p className="font-mono text-xs text-muted tabular-nums">
                     {lib.installedVersion} → {lib.latestVersion}
                   </p>
@@ -59,7 +65,7 @@ export function ProjectSummaryCard({ libraries }: ProjectSummaryCardProps) {
       <Card.Footer>
         <Button variant="ghost" size="sm" onPress={() => router.push("/discover")}>
           Discover libraries
-          <ArrowRightIcon className="size-3.5" />
+          <ArrowRightIcon aria-hidden="true" className="size-3.5" />
         </Button>
       </Card.Footer>
     </Card>
