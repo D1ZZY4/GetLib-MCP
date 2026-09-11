@@ -101,7 +101,7 @@ export async function fetchDocDetail(sourceUrl: string, topic: string): Promise<
   });
   const structured = envelope.result?.structuredContent ?? {};
   const evidence = parseEvidence(structured.evidence);
-  const verdictRaw = (structured.verdict as unknown) ?? evidence.verdict;
+  const verdictRaw = structured.verdict ?? evidence.verdict;
   return {
     displayName:
       typeof structured.displayName === "string" && structured.displayName.length > 0

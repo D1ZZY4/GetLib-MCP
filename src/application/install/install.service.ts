@@ -1,4 +1,4 @@
-import { TRANSPORT_MODES, type TransportMode, type TransportModeId } from "@/domain/mcp/catalog";
+import { TRANSPORT_MODES, type TransportModeId } from "@/domain/mcp/catalog";
 
 /**
  * Install application service - canonical installation metadata shared by
@@ -297,7 +297,7 @@ url = "${REMOTE_HTTP_URL}"`,
 ];
 
 function transportDocs(): TransportModeDoc[] {
-  return (TRANSPORT_MODES as readonly TransportMode[]).map((mode) => ({
+  return TRANSPORT_MODES.map((mode) => ({
     id: mode.id,
     label: mode.label,
     explanation: TRANSPORT_EXPLANATIONS[mode.id],

@@ -23,9 +23,10 @@ interface ApiErrorEnvelope {
 export async function fetchJson<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
   const controller = new AbortController();
   const callerSignal = init?.signal;
+  const onCallerAbort = () => controller.abort(callerSignal?.reason);
   if (callerSignal) {
     if (callerSignal.aborted) controller.abort(callerSignal.reason);
-    else callerSignal.addEventListener("abort", () => controller.abort(callerSignal.reason), { once: true });
+    else callerSignal.addEventListener("abort", onCallerAbort, { once: true });
   }
   const timer = setTimeout(() => controller.abort(new Error(`Request to ${path} timed out after ${timeoutMs}ms.`)), timeoutMs);
   try {
@@ -51,6 +52,7 @@ export async function fetchJson<T>(path: string, init?: RequestInit, timeoutMs =
     throw error;
   } finally {
     clearTimeout(timer);
+    callerSignal?.removeEventListener("abort", onCallerAbort);
   }
 }
 
