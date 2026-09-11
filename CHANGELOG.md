@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - End explicitly prefixed lookups in a clean miss instead of
   fuzzy-matching the prefixed string into unrelated packages.
+- Refuse migration targets whose fuzzy-resolved name does not
+  denote the requested library instead of laundering the mismatch
+  into an authoritative-looking guide.
 
 </details>
 

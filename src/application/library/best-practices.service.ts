@@ -64,9 +64,10 @@ function isRegistryIdentifier(libraryId: string, deps: IdentityDeps): boolean {
  * Explicitly-scoped targets the user deliberately addressed: registry
  * prefixes, direct docs URLs, and bare hostnames. These skip the
  * fuzzy-identity gate below because the user - not fuzzy search -
- * chose the target.
+ * chose the target. Shared with the migration use case, whose dynamic
+ * fallback needs the same explicitness distinction.
  */
-function isExplicitTarget(libraryId: string): boolean {
+export function isExplicitTarget(libraryId: string): boolean {
   const normalized = libraryId.trim();
   if (
     normalized.startsWith("npm:") ||

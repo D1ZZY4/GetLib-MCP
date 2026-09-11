@@ -1,4 +1,6 @@
 import { isExtractionAttempt, withNotice, EXTRACTION_REFUSAL } from "@/server/mcp/utils/guard";
+import { matchesRequestedName } from "@/server/mcp/services/changelog-sources";
+import { isExplicitTarget } from "./best-practices.service";
 import { extractRelevantContent, sliceVersionBand } from "@/server/mcp/utils/extract";
 import { checkEvidence, buildEvidenceBlock } from "@/server/mcp/utils/evidence";
 import { verdictForTopic } from "@/domain/evidence/verdict";
@@ -72,6 +74,22 @@ export async function migrationUseCase(input: MigrationInput, deps: MigrationDep
         r ? { docsUrl: r.docsUrl, githubUrl: r.githubUrl, displayName: r.displayName, resolvedId: libraryId } : null,
       );
   if (!resolved) {
+    return {
+      response: {
+        content: [{
+          type: "text",
+          text: `Could not resolve "${libraryId}". Try gl_resolve_library first to find the correct ID.`,
+        }],
+      },
+      resolved: false,
+    };
+  }
+  // Fuzzy-identity guard for the dynamic fallback: it latches onto
+  // near-miss repos for garbage input, and every fetch below would then
+  // launder that mismatch into an authoritative-looking guide. Explicit
+  // targets (prefixes, URLs, hostnames) skip the gate - the user chose
+  // them deliberately.
+  if (!entry && !isExplicitTarget(libraryId) && !matchesRequestedName(libraryId, resolved.displayName)) {
     return {
       response: {
         content: [{
