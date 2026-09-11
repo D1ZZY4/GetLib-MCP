@@ -16,6 +16,21 @@ import { trendSummary } from "./chart-summary";
 import { ChartTooltipCard } from "./chart-tooltip";
 
 export function TrendChart({ days }: { days: UsageDay[] }) {
+  if (days.length === 0) {
+    return (
+      <Card className="h-full">
+        <Card.Header>
+          <Card.Title>Request trend</Card.Title>
+          <Card.Description>Requests per day, last 10 days</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <p role="status" className="py-8 text-center text-sm text-muted">
+            No daily requests recorded yet.
+          </p>
+        </Card.Content>
+      </Card>
+    );
+  }
   return (
     <Card className="h-full">
       <Card.Header>

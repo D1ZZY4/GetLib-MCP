@@ -75,6 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   password delivery through PGPASSWORD instead of process argv.
 - Format every rate through one shared percent helper so dashboard
   cards cannot drift at rounding edges.
+- Cover partial empty states on charts and the overview instead of
+  rendering empty axes when one section has no data.
 
 </details>
 

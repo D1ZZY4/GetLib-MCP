@@ -7,6 +7,21 @@ import { ChartTooltipCard } from "./chart-tooltip";
 import { chartFills } from "./chart-theme";
 
 export function DocsShareChart({ rows }: { rows: LibraryStatRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <Card className="h-full">
+        <Card.Header>
+          <Card.Title>Docs pages share</Card.Title>
+          <Card.Description>Indexed pages per library</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <p role="status" className="py-8 text-center text-sm text-muted">
+            No indexed pages recorded yet.
+          </p>
+        </Card.Content>
+      </Card>
+    );
+  }
   return (
     <Card className="h-full">
       <Card.Header>

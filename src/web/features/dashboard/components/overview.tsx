@@ -98,40 +98,46 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
         <Card.Description>Request activity and top fetches.</Card.Description>
       </Card.Header>
       <Card.Content>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart
-            accessibilityLayer
-            data={stats.days}
-            margin={{ top: 8, right: 12, bottom: 0, left: -16 }}
-          >
-            <CartesianGrid vertical={false} stroke={chartGridStroke} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={10}
-              tick={{ ...chartAxisTick }}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              allowDecimals={false}
-              tick={{ ...chartAxisTick }}
-            />
-            <Tooltip
-              cursor={{ stroke: chartGridStroke }}
-              content={<ChartTooltipCard />}
-            />
-            <Line
-              type="monotone"
-              dataKey="requests"
-              stroke={chartAccent}
-              strokeWidth={2.5}
-              dot={{ fill: chartAccent, r: 3 }}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {stats.days.length === 0 ? (
+          <p role="status" className="py-6 text-center text-sm text-muted">
+            No daily requests recorded yet.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart
+              accessibilityLayer
+              data={stats.days}
+              margin={{ top: 8, right: 12, bottom: 0, left: -16 }}
+            >
+              <CartesianGrid vertical={false} stroke={chartGridStroke} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={10}
+                tick={{ ...chartAxisTick }}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                tick={{ ...chartAxisTick }}
+              />
+              <Tooltip
+                cursor={{ stroke: chartGridStroke }}
+                content={<ChartTooltipCard />}
+              />
+              <Line
+                type="monotone"
+                dataKey="requests"
+                stroke={chartAccent}
+                strokeWidth={2.5}
+                dot={{ fill: chartAccent, r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {summaryItems.map((item) => (
             <div

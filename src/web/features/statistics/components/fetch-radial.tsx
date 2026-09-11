@@ -11,6 +11,21 @@ export function FetchRadial({ fetches }: { fetches: LibraryFetch[] }) {
     ...entry,
     fill: chartFills[index % chartFills.length],
   }));
+  if (data.length === 0) {
+    return (
+      <Card className="h-full">
+        <Card.Header>
+          <Card.Title>Fetch share</Card.Title>
+          <Card.Description>Doc fetches per library, radial view</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <p role="status" className="py-8 text-center text-sm text-muted">
+            No doc fetches recorded yet.
+          </p>
+        </Card.Content>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full">

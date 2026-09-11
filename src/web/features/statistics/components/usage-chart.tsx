@@ -45,6 +45,21 @@ function UsageChart({ days }: UsageChartProps) {
 }
 
 export function UsageCard({ days }: UsageChartProps) {
+  if (days.length === 0) {
+    return (
+      <Card>
+        <Card.Header>
+          <Card.Title>Usage</Card.Title>
+          <Card.Description>No usage window recorded yet</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          <p role="status" className="py-8 text-center text-sm text-muted">
+            No requests recorded yet. Run a search or call a tool to populate usage.
+          </p>
+        </Card.Content>
+      </Card>
+    );
+  }
   return (
     <Card>
       <Card.Header>
