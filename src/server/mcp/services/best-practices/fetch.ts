@@ -119,7 +119,10 @@ export async function fetchBestPracticesContent(
   try {
     const enrichedTopic = topic ? `${topic} ${FALLBACK_TOPIC}` : `${FALLBACK_TOPIC} tips`;
     let result = await fetchDocs(docsUrl, llmsTxtUrl, llmsFullTxtUrl, topic || undefined);
-    result = await deepFetchForTopic(result, enrichedTopic, docsUrl, bestPracticesPaths);
+    // Bounded traversal: this pipeline plus the escalation below each get
+    // their own deep budget so the sum stays well under the tool timeout
+    // even when every upstream is slow.
+    result = await deepFetchForTopic(result, enrichedTopic, docsUrl, bestPracticesPaths, 5, false, undefined, 15_000);
     const { text, truncated } = extractRelevantContent(sanitizeContent(result.content), enrichedTopic, tokens);
     return { text, sourceUrl: result.url, truncated, extraSources: [], sourceType: result.sourceType };
   } catch {

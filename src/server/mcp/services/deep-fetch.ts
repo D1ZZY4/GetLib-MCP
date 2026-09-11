@@ -116,6 +116,7 @@ export async function deepFetchForTopic(
   maxPages = DEEP_FETCH_MAX_PAGES,
   force = false,
   signal?: AbortSignal,
+  timeoutMs = DEEP_FETCH_TIMEOUT_MS,
 ): Promise<FetchResult> {
   if (!topic || topic.trim().length === 0 || signal?.aborted) return initialResult;
 
@@ -202,6 +203,9 @@ export async function deepFetchForTopic(
   // their own per-request timeouts). An external signal aborts the same
   // way. The timer is cleared when the pipeline wins so it never fires
   // stray, and the listener is removed to avoid listener accumulation.
+  // Callers with their own outer deadline (best-practices runs two
+  // traversals back-to-back inside one tool timeout) pass a tighter
+  // budget here so the sum stays comfortably below that ceiling.
   const controller = new AbortController();
   const onExternalAbort = () => controller.abort();
   signal?.addEventListener("abort", onExternalAbort, { once: true });
@@ -213,7 +217,7 @@ export async function deepFetchForTopic(
         timer = setTimeout(() => {
           controller.abort();
           reject(new Error("deep-fetch timeout"));
-        }, DEEP_FETCH_TIMEOUT_MS);
+        }, timeoutMs);
         if (typeof timer === "object" && timer !== null && "unref" in timer) {
           const unref = timer.unref;
           if (typeof unref === "function") unref.call(timer);
@@ -224,7 +228,7 @@ export async function deepFetchForTopic(
     // Surface persistent timeouts so operators can see the deep-fetch budget is
     // too low or upstreams are slow; other errors fall through silently.
     if (err instanceof Error && err.message === "deep-fetch timeout") {
-      log({ level: "warn", msg: "deep-fetch-timeout", topic, docsUrl, timeoutMs: DEEP_FETCH_TIMEOUT_MS });
+      log({ level: "warn", msg: "deep-fetch-timeout", topic, docsUrl, timeoutMs });
     }
     return initialResult;
   } finally {

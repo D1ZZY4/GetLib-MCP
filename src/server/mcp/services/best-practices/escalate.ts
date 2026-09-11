@@ -51,8 +51,10 @@ export async function escalateWeakEvidence(input: EscalationInput): Promise<Esca
     topic,
     docsUrl,
     bestPracticesPaths,
-    undefined,
+    5,
     true,
+    undefined,
+    15_000,
   );
   const result: EscalationResult = { ...base, escalated: true };
   if (deeper.url !== input.sourceUrl) {

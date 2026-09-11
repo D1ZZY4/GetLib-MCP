@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Route explicit ecosystem prefixes to one provider instead of
   resolving unrelated packages through fuzzy matching.
+- Bound best-practices deep traversal so two back-to-back budgets
+  stay comfortably under the tool timeout.
 
 </details>
 
