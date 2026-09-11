@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { Button, Card, Skeleton } from "@heroui/react";
 import { useSearchParams } from "next/navigation";
 import { LoadError } from "@/web/components/ui/load-error";
@@ -9,6 +12,8 @@ import { PageContainer } from "@/web/components/layout/page-container";
 import { DefinitionListSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { fetchRuntimeInfo } from "@/web/lib/runtime";
+import { useSession } from "@/web/providers/auth-provider";
+import { notifySuccess } from "@/web/lib/notify";
 import { fetchSettings } from "../services/settings-api.service";
 
 type TabId = "profile" | "account" | "preferences" | "security" | "about" | "configuration";
@@ -37,7 +42,14 @@ function validTab(raw: string | null): TabId {
 
 export function SettingsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const { session, authEnabled, signOut } = useSession();
   const [tab, setTab] = useState<TabId>(() => validTab(searchParams.get("tab")));
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   useEffect(() => {
     setTab(validTab(searchParams.get("tab")));
   }, [searchParams]);
@@ -137,6 +149,12 @@ export function SettingsPage() {
                       {runtime.auth.fallbackActive ? "Fallback active - rotate now" : "Custom"}
                     </dd>
                   </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Session</dt>
+                    <dd className="font-medium">
+                      {session ? session.email : authEnabled === false ? "Guest (auth disabled)" : "Not signed in"}
+                    </dd>
+                  </div>
                 </dl>
                 {runtime.auth.fallbackActive ? (
                   <p role="alert" className="mt-3 rounded-xl bg-warning/10 px-3 py-2 text-sm text-warning">
@@ -150,6 +168,29 @@ export function SettingsPage() {
                     management operations remain policy-protected.
                   </p>
                 ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {session && authEnabled !== false ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => {
+                        signOut();
+                        notifySuccess("Signed out", "Your session has ended.");
+                        router.replace("/signin");
+                      }}
+                    >
+                      Sign out
+                    </Button>
+                  ) : null}
+                  {session === null && authEnabled === true ? (
+                    <Link
+                      href="/signin"
+                      className="rounded-xl bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                      Sign in
+                    </Link>
+                  ) : null}
+                </div>
               </Card.Content>
             </Card>
           ) : null}
@@ -158,13 +199,49 @@ export function SettingsPage() {
             <Card>
               <Card.Header>
                 <Card.Title>Preferences</Card.Title>
-                <Card.Description>Personal display preferences.</Card.Description>
+                <Card.Description>Personal display preferences. Applies immediately.</Card.Description>
               </Card.Header>
               <Card.Content>
-                <p className="text-sm text-muted">
-                  Theme controls live in the sidebar. More preferences will appear here
-                  when this dashboard gains user-configurable display options.
-                </p>
+                <div role="radiogroup" aria-labelledby="theme-label" className="flex flex-col gap-2">
+                  <p id="theme-label" className="text-sm font-medium">Color theme</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { value: "light", label: "Light" },
+                        { value: "dark", label: "Dark" },
+                        { value: "system", label: "System" },
+                      ] as const
+                    ).map((option) => {
+                      const checked = mounted && theme === option.value;
+                      return (
+                        <label
+                          key={option.value}
+                          className={`cursor-pointer rounded-xl px-3 py-1.5 text-sm font-medium transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent ${
+                            checked
+                              ? "bg-accent text-white"
+                              : "bg-surface-secondary text-foreground hover:bg-surface-tertiary"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="settings-theme"
+                            value={option.value}
+                            checked={checked}
+                            onChange={() => {
+                              setTheme(option.value);
+                              notifySuccess("Theme updated", `Using ${option.label.toLowerCase()} mode.`);
+                            }}
+                            className="sr-only"
+                          />
+                          {option.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted">
+                    The sidebar toggle switches between light and dark only; System follows your OS setting.
+                  </p>
+                </div>
               </Card.Content>
             </Card>
           ) : null}
