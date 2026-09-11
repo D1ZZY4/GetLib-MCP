@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from "crypto";
 import {
   displayNameFor,
   isDevDemoAllowed,
@@ -6,6 +5,7 @@ import {
   normalizeEmail,
   resolveBootstrapCredentials,
 } from "@/domain/auth/policy";
+import { secretsEqual, sha256Hex } from "./hash";
 import type { BootstrapRecord, DatabaseRepository } from "@/server/mcp/infrastructure/database";
 import { config } from "@/server/mcp/config";
 import { detectEnvironment, resolveDatabaseMode } from "@/server/mcp/runtime";
@@ -50,11 +50,7 @@ export function getAuthConfig(): AuthConfigSnapshot {
 }
 
 function passwordsMatch(candidate: string, expected: string): boolean {
-  // Compare fixed-length hashes so the early length check cannot leak the
-  // expected password length through timing.
-  const a = createHash("sha256").update(candidate, "utf-8").digest();
-  const b = createHash("sha256").update(expected, "utf-8").digest();
-  return timingSafeEqual(a, b);
+  return secretsEqual(candidate, expected);
 }
 
 /**
@@ -140,7 +136,7 @@ export async function ensureBootstrapAccount(deps: AuthDeps): Promise<BootstrapS
     password: config.defaultPass,
   });
   const now = new Date().toISOString();
-  const passwordHash = createHash("sha256").update(bootstrap.password, "utf-8").digest("hex");
+  const passwordHash = sha256Hex(bootstrap.password);
   try {
     const db = deps.getDatabase();
     const stored = await db.getBootstrap();

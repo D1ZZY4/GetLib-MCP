@@ -1,4 +1,5 @@
-import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import { randomBytes } from "crypto";
+import { equalBytes, sha256Bytes } from "../auth/hash";
 import type { ApiKeyRecord, DatabaseRepository, NewApiKey } from "@/server/mcp/infrastructure/database";
 import { log } from "@/server/mcp/utils/logger";
 
@@ -53,7 +54,7 @@ function toView(record: ApiKeyRecord): ApiKeyView {
 }
 
 function hashKey(presented: string): Buffer {
-  return createHash("sha256").update(presented, "utf-8").digest();
+  return sha256Bytes(presented);
 }
 
 /**
@@ -106,7 +107,7 @@ export async function verifyApiKey(deps: ApiKeyDeps, presented: string): Promise
   const record = await deps.getDatabase().findApiKeyByHash(candidate.toString("hex"));
   if (!record) return null;
   const stored = Buffer.from(record.keyHash, "hex");
-  if (stored.length !== candidate.length || !timingSafeEqual(stored, candidate)) return null;
+  if (!equalBytes(stored, candidate)) return null;
   try {
     await deps.getDatabase().touchApiKeyLastUsed(record.id);
   } catch (error) {

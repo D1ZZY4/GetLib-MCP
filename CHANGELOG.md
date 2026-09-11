@@ -55,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with production guardrails.
 - Land pending rule refinements (backup, review quorum, dependency
   updates) while keeping SSPL-1.0 declarations.
+- Compare passwords, API keys, and session signatures through one
+  shared timing-safe hash helper.
 
 </details>
 

@@ -1,4 +1,5 @@
-import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes } from "crypto";
+import { equalBytes } from "./hash";
 import { config } from "@/server/mcp/config";
 import { detectEnvironment } from "@/server/mcp/runtime";
 import { normalizeEmail } from "@/domain/auth/policy";
@@ -94,7 +95,7 @@ export function verifySessionToken(token: string, now: number = Date.now()): str
   const email = normalizeEmail(parsed.email);
   const expected = Buffer.from(sign(email, parsed.exp), "utf-8");
   const actual = Buffer.from(signature, "utf-8");
-  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
+  if (!equalBytes(expected, actual)) return null;
   return email;
 }
 
