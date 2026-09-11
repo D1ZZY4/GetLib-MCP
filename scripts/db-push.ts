@@ -1,6 +1,11 @@
 import { readdirSync } from "fs";
 import { join } from "path";
 
+const LOG_PREFIX = "db-push";
+const MIGRATION_FILE_PATTERN = /^\d+_.+\.sql$/;
+const POSTGRES_URL_PATTERN = /^postgres(ql)?:\/\//;
+const MAX_ERROR_DETAIL_LINES = 5;
+
 interface PushOptions {
   databaseUrl: string | null;
   target: string | null;
@@ -50,8 +55,10 @@ function usage(): string {
     "Usage:",
     "  bun scripts/db-push.ts --database-url <url> --target <label> [--allow-production] [--dry-run]",
     "",
-    "Options:",
-    "  --database-url <url>   Postgres connection string (or set DATABASE_URL).",
+  "Options:",
+  "  --database-url <url>   Postgres connection string (or set DATABASE_URL).",
+  "                           Prefer DATABASE_URL: a --database-url value stays",
+  "                           visible in this process argv to local observers.",
     "  --target <label>       Required audit label, e.g. development, staging.",
     "  --allow-production     Required when the target starts with \"prod\".",
     "  --dry-run              List the plan without touching any database.",
@@ -76,7 +83,7 @@ function listMigrations(dir: string): string[] {
     throw new Error(`No migration files found in ${dir}.`);
   }
   for (const file of files) {
-    if (!/^\d+_.+\.sql$/.test(file)) {
+    if (!MIGRATION_FILE_PATTERN.test(file)) {
       throw new Error(`Migration breaks the version-prefix convention: ${file}.`);
     }
   }
@@ -99,8 +106,75 @@ function isProductionTarget(target: string): boolean {
 }
 
 function fail(message: string): never {
-  console.error(`db-push: ${message}`);
+  console.error(`${LOG_PREFIX}: ${message}`);
   process.exit(1);
+}
+
+function requireTarget(options: PushOptions): string {
+  if (!options.target) {
+    fail("missing --target (e.g. development, staging, production).");
+  }
+  return options.target;
+}
+
+function requireDatabaseUrl(options: PushOptions): string {
+  const url = options.databaseUrl ?? process.env.DATABASE_URL ?? null;
+  if (!url) {
+    fail("missing database URL: pass --database-url or set DATABASE_URL.");
+  }
+  if (!POSTGRES_URL_PATTERN.test(url)) {
+    fail("database URL must be a postgres connection string.");
+  }
+  return url;
+}
+
+function findPsql(): string {
+  const psql = Bun.which("psql");
+  if (!psql) {
+    fail("psql not found on PATH. Install PostgreSQL client tools first.");
+  }
+  return psql;
+}
+
+/**
+ * Splits the password out of a Postgres URL so only the redacted URL
+ * reaches the child argv. Unparseable URLs pass through untouched and
+ * fail later at the connection-string validation.
+ */
+function splitPassword(databaseUrl: string): { url: string; password: string | null } {
+  let parsed: URL;
+  try {
+    parsed = new URL(databaseUrl);
+  } catch {
+    return { url: databaseUrl, password: null };
+  }
+  if (!parsed.password) return { url: databaseUrl, password: null };
+  const password = decodeURIComponent(parsed.password);
+  parsed.password = "";
+  return { url: parsed.toString(), password };
+}
+
+function pushMigrations(databaseUrl: string, psql: string, files: string[]): void {
+  // Never place the credential-bearing URL on the child argv (visible via
+  // ps): strip the password and hand it to libpq through PGPASSWORD.
+  const { url, password } = splitPassword(databaseUrl);
+  const env: Record<string, string | undefined> = { ...process.env };
+  if (password !== null) env.PGPASSWORD = password;
+  for (const file of files) {
+    const result = Bun.spawnSync({
+      cmd: [psql, url, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", file],
+      stdout: "pipe",
+      stderr: "pipe",
+      env,
+    });
+    if (result.exitCode !== 0) {
+      const detail = result.stderr.toString().trim().split("\n").slice(-MAX_ERROR_DETAIL_LINES).join("\n");
+      console.error(`${LOG_PREFIX}: FAIL ${file}\n${detail}`);
+      console.error(`${LOG_PREFIX}: stopped at ${file}. Fix it, then re-run to resume.`);
+      process.exit(2);
+    }
+    console.log(`${LOG_PREFIX}: ok ${file}`);
+  }
 }
 
 function main(): void {
@@ -114,10 +188,7 @@ function main(): void {
     console.log(usage());
     return;
   }
-  if (!options.target) {
-    fail("missing --target (e.g. development, staging, production).");
-  }
-  const target = options.target;
+  const target = requireTarget(options);
   let files: string[];
   try {
     files = listMigrations(options.migrationsDir ?? defaultMigrationsDir());
@@ -125,41 +196,19 @@ function main(): void {
     fail(error instanceof Error ? error.message : String(error));
   }
   if (options.dryRun) {
-    console.log(`db-push: plan for target=${target} (${files.length} files, no changes made)`);
-    for (const file of files) console.log(`db-push:   ${file}`);
+    console.log(`${LOG_PREFIX}: plan for target=${target} (${files.length} files, no changes made)`);
+    for (const file of files) console.log(`${LOG_PREFIX}:   ${file}`);
     return;
   }
-  const url = options.databaseUrl ?? process.env.DATABASE_URL ?? null;
-  if (!url) {
-    fail("missing database URL: pass --database-url or set DATABASE_URL.");
-  }
-  const databaseUrl = url as string;
-  if (!/^postgres(ql)?:\/\//.test(databaseUrl)) {
-    fail("database URL must be a postgres connection string.");
-  }
+  const databaseUrl = requireDatabaseUrl(options);
   if (isProductionTarget(target) && !options.allowProduction) {
-    fail('refusing production target without --allow-production.');
+    fail("refusing production target without --allow-production.");
   }
-  if (!Bun.which("psql")) {
-    fail("psql not found on PATH. Install PostgreSQL client tools first.");
-  }
-  console.log(`db-push: target=${target} database=${redactUrl(databaseUrl)} files=${files.length}`);
+  const psql = findPsql();
+  console.log(`${LOG_PREFIX}: target=${target} database=${redactUrl(databaseUrl)} files=${files.length}`);
   const started = Date.now();
-  for (const file of files) {
-    const result = Bun.spawnSync({
-      cmd: [Bun.which("psql") as string, databaseUrl, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", file],
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    if (result.exitCode !== 0) {
-      const detail = result.stderr.toString().trim().split("\n").slice(-5).join("\n");
-      console.error(`db-push: FAIL ${file}\n${detail}`);
-      console.error(`db-push: stopped at ${file}. Fix it, then re-run to resume.`);
-      process.exit(2);
-    }
-    console.log(`db-push: ok ${file}`);
-  }
-  console.log(`db-push: done ${files.length} files in ${Date.now() - started}ms.`);
+  pushMigrations(databaseUrl, psql, files);
+  console.log(`${LOG_PREFIX}: done ${files.length} files in ${Date.now() - started}ms.`);
 }
 
 main();
