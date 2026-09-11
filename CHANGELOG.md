@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fallbacks cannot drift apart.
 - Share the fallback topic, origin helper, and backoff sleep
   between best-practices modules instead of duplicating them.
+- Cancel deep-fetch fan-out cooperatively once the deadline or an
+  external signal fires instead of letting it run past timeout.
 
 </details>
 

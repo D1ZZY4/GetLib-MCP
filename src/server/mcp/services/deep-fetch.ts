@@ -13,8 +13,9 @@ export { extractInternalLinks, rankLinksForTopic } from "./links";
 async function fetchFirstSuccessful(
   urls: string[],
   minLength = 300,
+  signal?: AbortSignal,
 ): Promise<FetchResult | null> {
-  if (urls.length === 0) return null;
+  if (urls.length === 0 || signal?.aborted) return null;
 
   try {
     return await Promise.any(
@@ -56,10 +57,13 @@ export async function fetchFirstIndexDeepLink(
 export async function fetchMultiplePages(
   urls: string[],
   maxPages: number,
+  signal?: AbortSignal,
 ): Promise<Array<{ content: string; url: string }>> {
+  if (signal?.aborted) return [];
   const batch = urls.slice(0, maxPages);
   const results = await Promise.allSettled(
     batch.map(async (url) => {
+      if (signal?.aborted) throw new Error("aborted");
       const content = await fetchAsMarkdownRace(url);
       if (content && content.length >= 300) {
         return { content, url };
@@ -117,8 +121,9 @@ export async function deepFetchForTopic(
   urlPatterns?: string[],
   maxPages = DEEP_FETCH_MAX_PAGES,
   force = false,
+  signal?: AbortSignal,
 ): Promise<FetchResult> {
-  if (!topic || topic.trim().length === 0) return initialResult;
+  if (!topic || topic.trim().length === 0 || signal?.aborted) return initialResult;
 
   // force=true bypasses the cheap relevance early-exit. Used by the evidence
   // gate: scoreTopicRelevance accepts a single passing mention (per its test
@@ -133,9 +138,11 @@ export async function deepFetchForTopic(
     // Real links from an index/TOC (llms.txt) beat fabricated slug URLs - try
     // them FIRST. Guessed slugs mostly 404 and used to burn the deep-fetch
     // time budget before the reliable path ever ran.
+    const aborted = () => controller.signal.aborted;
     if (isIndexContent(initialResult.content)) {
+      if (aborted()) return initialResult;
       const ranked = rankIndexLinks(initialResult.content, topic, initialResult.url || docsUrl);
-      const pages = await fetchMultiplePages(ranked, maxPages);
+      const pages = await fetchMultiplePages(ranked, maxPages, controller.signal);
       if (pages.length > 0) {
         return {
           content: assemblePages(pages),
@@ -145,12 +152,14 @@ export async function deepFetchForTopic(
       }
     }
 
+    if (aborted()) return initialResult;
     const topicUrls = buildTopicUrls(docsUrl, topic, urlPatterns);
     if (topicUrls.length > 0) {
-      const directHit = await fetchFirstSuccessful(topicUrls.slice(0, 6));
+      const directHit = await fetchFirstSuccessful(topicUrls.slice(0, 6), 300, controller.signal);
       if (directHit) return directHit;
     }
 
+    if (aborted()) return initialResult;
     const internalLinks = extractInternalLinks(initialResult.content, docsUrl);
     if (internalLinks.length > 0) {
       const ranked = rankLinksForTopic(internalLinks, topic);
@@ -158,6 +167,7 @@ export async function deepFetchForTopic(
         const pages = await fetchMultiplePages(
           ranked.map((l) => l.url),
           maxPages,
+          controller.signal,
         );
         if (pages.length > 0) {
           return {
@@ -169,6 +179,7 @@ export async function deepFetchForTopic(
       }
     }
 
+    if (aborted()) return initialResult;
     const sitemapUrls = await fetchSitemapUrls(docsUrl);
     if (sitemapUrls.length > 0) {
       const sitemapLinks = sitemapUrls.map((url) => ({ url, text: url }));
@@ -177,6 +188,7 @@ export async function deepFetchForTopic(
         const pages = await fetchMultiplePages(
           ranked.map((l) => l.url),
           maxPages,
+          controller.signal,
         );
         if (pages.length > 0) {
           return {
@@ -191,12 +203,28 @@ export async function deepFetchForTopic(
     return initialResult;
   };
 
+  // Cooperative cancellation: the timeout aborts the controller so no new
+  // fan-out starts after the deadline (in-flight fetches still end via
+  // their own per-request timeouts). An external signal aborts the same
+  // way. The timer is cleared when the pipeline wins so it never fires
+  // stray, and the listener is removed to avoid listener accumulation.
+  const controller = new AbortController();
+  const onExternalAbort = () => controller.abort();
+  signal?.addEventListener("abort", onExternalAbort, { once: true });
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       pipeline(),
-      new Promise<FetchResult>((_, reject) =>
-        setTimeout(() => reject(new Error("deep-fetch timeout")), DEEP_FETCH_TIMEOUT_MS),
-      ),
+      new Promise<FetchResult>((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new Error("deep-fetch timeout"));
+        }, DEEP_FETCH_TIMEOUT_MS);
+        if (typeof timer === "object" && timer !== null && "unref" in timer) {
+          const unref = timer.unref;
+          if (typeof unref === "function") unref.call(timer);
+        }
+      }),
     ]);
   } catch (err) {
     // Surface persistent timeouts so operators can see the deep-fetch budget is
@@ -205,5 +233,8 @@ export async function deepFetchForTopic(
       log({ level: "warn", msg: "deep-fetch-timeout", topic, docsUrl, timeoutMs: DEEP_FETCH_TIMEOUT_MS });
     }
     return initialResult;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    signal?.removeEventListener("abort", onExternalAbort);
   }
 }
