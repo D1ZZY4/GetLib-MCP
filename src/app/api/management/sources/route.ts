@@ -3,7 +3,7 @@ import { requireManagementAuth } from "@/application/auth/session";
 import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { getSourcesSnapshot, updateSourcesSettings } from "@/application/sources/sources.service";
 import { liveSourcesDeps } from "@/server/mcp/infrastructure/deps/sources-deps";
-import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
+import { checkRateLimit, READ_TIER, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
 import { assertOriginOr403, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
@@ -32,7 +32,8 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   const id = requestId();
   try {
-    checkRateLimit(req, "management/sources", EXECUTION_TIER);
+    // Security-state write (blocklist): strict budget like apikeys.
+    checkRateLimit(req, "management/sources", STRICT_TIER);
     const originBlocked = assertOriginOr403(req, id);
     if (originBlocked) return originBlocked;
     await requireManagementAuth(req, liveApiKeyAuthDeps);

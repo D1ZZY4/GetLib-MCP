@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   long-running hosts cannot accumulate stale servers or streams.
 - Reject non-hostname allowlist entries at startup and align the
   documentation token budget with the retrieval contract.
+- Validate reflected install hosts before rendering snippets and
+  move security-state writes to the strict rate-limit tier.
 
 ### Changed
 

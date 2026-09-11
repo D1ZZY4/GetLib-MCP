@@ -88,6 +88,9 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
     // Fail closed without leaking configuration detail to the client.
     return jsonError("internal_error", SESSION_SECRET_MISSING_MESSAGE, 500, id);
   }
+  // Both 404 codes are intentional: unknown_tool names a missing MCP
+  // capability while not_found names a missing stored resource. Clients
+  // must handle the shared 404 status, not just one code.
   if (error instanceof UnknownToolError) {
     return jsonError("unknown_tool", error.message, 404, id);
   }

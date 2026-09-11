@@ -315,7 +315,25 @@ export function getInstallCatalog(baseUrl?: string): InstallCatalog {
   if (baseUrl === undefined || baseUrl.trim().length === 0) {
     return { assistants: ASSISTANTS, transports: transportDocs() };
   }
-  const host = baseUrl.replace(/\/+$/, "");
+  // The base URL comes from the request Host header, so validate it
+  // before reflecting it into install snippets. Only https origins and
+  // localhost http (development) are honored; anything else keeps the
+  // offline placeholder instead of a poisoned host.
+  let host: string;
+  try {
+    const parsed = new URL(baseUrl);
+    const isLocalhost =
+      parsed.hostname === "localhost" ||
+      parsed.hostname.endsWith(".localhost") ||
+      parsed.hostname === "127.0.0.1" ||
+      parsed.hostname === "::1";
+    if (!(parsed.protocol === "https:" || (parsed.protocol === "http:" && isLocalhost))) {
+      return { assistants: ASSISTANTS, transports: transportDocs() };
+    }
+    host = parsed.origin.replace(/\/+$/, "");
+  } catch {
+    return { assistants: ASSISTANTS, transports: transportDocs() };
+  }
   const assistants = ASSISTANTS.map((assistant) => ({
     ...assistant,
     snippet: assistant.snippet.split(REMOTE_HTTP_URL).join(`${host}/api/mcp/http`),

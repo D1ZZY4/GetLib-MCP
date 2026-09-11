@@ -1,7 +1,7 @@
 import { closeSseSession, openSseSession } from "@/server/mcp/transport/sse";
 import { requireManagementAuth } from "@/application/auth/session";
 import { liveApiKeyAuthDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
-import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
+import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import { assertOriginOr403, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
 import { noteUnexpectedHost } from "@/server/mcp/transport/request-guard";
 
@@ -11,7 +11,9 @@ export async function GET(req: Request) {
     noteUnexpectedHost(req);
     const originRejection = assertOriginOr403(req, id);
     if (originRejection) return originRejection;
-    checkRateLimit(req, "mcp/sse", READ_TIER);
+    // Opening a session allocates server-side state, so it shares the
+    // execution budget rather than the read budget.
+    checkRateLimit(req, "mcp/sse", EXECUTION_TIER);
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const { sessionId, stream } = await openSseSession();
     req.signal.addEventListener("abort", () => {

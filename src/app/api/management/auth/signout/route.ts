@@ -9,6 +9,8 @@ import { jsonOk, mapRouteError, requestId, assertOriginOr403 } from "@/app/api/_
 export async function POST(req: Request) {
   const id = requestId();
   try {
+    // Read budget on purpose: clearing a credential must stay available
+    // even under abuse pressure, otherwise users get locked into sessions.
     checkRateLimit(req, "management/auth/signout", READ_TIER);
     const originBlocked = assertOriginOr403(req, id);
     if (originBlocked) return originBlocked;

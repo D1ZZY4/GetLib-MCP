@@ -5,7 +5,7 @@ import {
   getDevelopmentSettings,
   updateDatabaseMode,
 } from "@/application/development/development.service";
-import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
+import { checkRateLimit, READ_TIER, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
 import { assertOriginOr403, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const ModeBody = z.object({
@@ -26,7 +26,8 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   const id = requestId();
   try {
-    checkRateLimit(req, "management/development", EXECUTION_TIER);
+    // Security-state write (database mode switch): strict budget.
+    checkRateLimit(req, "management/development", STRICT_TIER);
     const originBlocked = assertOriginOr403(req, id);
     if (originBlocked) return originBlocked;
     await requireManagementAuth(req, liveApiKeyAuthDeps);
