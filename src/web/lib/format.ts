@@ -18,6 +18,14 @@ export function formatActivityTime(iso: string): string {
   });
 }
 
+/**
+ * Single home for 0-1 rate formatting. One decimal place everywhere so
+ * dashboard cards never drift from each other at rounding edges.
+ */
+export function formatPercent(rate: number): string {
+  return `${(rate * 100).toFixed(1)}%`;
+}
+
 export function formatLogTime(iso: string): string {
   const date = parseIso(iso);
   if (date === null) return iso;

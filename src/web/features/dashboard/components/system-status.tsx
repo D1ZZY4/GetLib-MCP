@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@heroui/react";
-import { formatLogTime } from "@/web/lib/format";
+import { formatLogTime, formatPercent } from "@/web/lib/format";
 import type { DashboardSnapshot } from "../services/dashboard-api.service";
 
 export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot }) {
@@ -17,7 +17,7 @@ export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot 
     },
     {
       label: "Success rate",
-      value: `${Math.round(dashboard.mcp.successRate * 1000) / 10}%`,
+      value: formatPercent(dashboard.mcp.successRate),
     },
     {
       label: "Authentication",
@@ -69,7 +69,7 @@ export function SystemStatusPanel({ dashboard }: { dashboard: DashboardSnapshot 
                           ? "In-memory entries"
                           : item.label === "Latency"
                             ? `Checked ${formatLogTime(dashboard.database.checkedAt)}`
-                            : `${Math.round(dashboard.mcp.errorRate * 1000) / 10}% errors`}
+                            : `${formatPercent(dashboard.mcp.errorRate)} errors`}
             </p>
           </Card.Content>
         </Card>

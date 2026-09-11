@@ -6,6 +6,7 @@ import { LoadError } from "@/web/components/ui/load-error";
 import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { PanelCardSkeleton, StatCardSkeleton } from "@/web/components/ui/skeletons";
+import { formatPercent } from "@/web/lib/format";
 import { DocsShareChart } from "./docs-share-chart";
 import { FetchRadial } from "./fetch-radial";
 import { FetchRanking } from "./fetch-ranking";
@@ -83,8 +84,7 @@ export function StatisticsPage() {
                   Success rate
                 </p>
                 <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                  {(stats.usage.successRate * 100).toFixed(1)}
-                  <span className="text-base font-normal text-muted">%</span>
+                  {formatPercent(stats.usage.successRate)}
                 </p>
               </Card.Content>
             </Card>

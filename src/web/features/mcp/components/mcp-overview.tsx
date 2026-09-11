@@ -7,6 +7,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { StatCardSkeleton } from "@/web/components/ui/skeletons";
 import { useApiData } from "@/web/hooks/use-api-data";
+import { formatPercent } from "@/web/lib/format";
 import { fetchHealth } from "../services/health.service";
 import { fetchClients } from "../services/clients.service";
 import { fetchServers } from "../services/mcp.service";
@@ -146,7 +147,7 @@ export function McpOverview() {
               <Card.Content>
                 <p className="text-xs font-medium tracking-wide text-muted uppercase">Error rate</p>
                 <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">
-                  {health ? `${(health.telemetry.errorRate * 100).toFixed(1)}%` : "-"}
+                  {health ? formatPercent(health.telemetry.errorRate) : "-"}
                 </p>
               </Card.Content>
             </Card>

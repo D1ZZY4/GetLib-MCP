@@ -8,7 +8,7 @@ import { DefinitionGridSkeleton, StatCardSkeleton } from "@/web/components/ui/sk
 import { statusTone } from "@/web/components/ui/status-tone";
 import { Pill } from "@/web/components/ui/pill";
 import { useApiData } from "@/web/hooks/use-api-data";
-import { formatLogTime } from "@/web/lib/format";
+import { formatLogTime, formatPercent } from "@/web/lib/format";
 import type { HealthStatus } from "@/web/types/mcp";
 import { fetchHealth } from "../services/health.service";
 
@@ -98,19 +98,19 @@ export function McpHealth() {
                   <div>
                     <dt className="text-xs text-muted">Success</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">
-                      {(health.telemetry.successRate * 100).toFixed(1)}%
+                      {formatPercent(health.telemetry.successRate)}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Resolved</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">
-                      {(health.telemetry.resolveRate * 100).toFixed(1)}%
+                      {formatPercent(health.telemetry.resolveRate)}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted">Errors</dt>
                     <dd className="mt-0.5 font-semibold tabular-nums">
-                      {(health.telemetry.errorRate * 100).toFixed(1)}%
+                      {formatPercent(health.telemetry.errorRate)}
                     </dd>
                   </div>
                 </dl>

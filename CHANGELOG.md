@@ -73,6 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   external signal fires instead of letting it run past timeout.
 - Harden db:push with named helpers, postgres URL validation, and
   password delivery through PGPASSWORD instead of process argv.
+- Format every rate through one shared percent helper so dashboard
+  cards cannot drift at rounding edges.
 
 </details>
 

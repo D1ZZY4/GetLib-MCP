@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatPercent } from "@/web/lib/format";
 import { LoadError } from "@/web/components/ui/load-error";
 import { RankingBarList } from "@/web/components/ui/ranking-bar-list";
 import type { StatisticsSnapshot } from "@/web/features/statistics/services/statistics-api.service";
@@ -86,7 +87,7 @@ export function Overview({ stats, loading, error, retry }: OverviewProps) {
   const summaryItems = [
     { label: "Requests used", value: String(stats.usage.requestsUsed), hint: "Last 10 days" },
     { label: "Docs pages", value: String(stats.usage.docsPages), hint: "Indexed pages" },
-    { label: "Success rate", value: `${(stats.usage.successRate * 100).toFixed(1)}%`, hint: "Fetch success" },
+    { label: "Success rate", value: formatPercent(stats.usage.successRate), hint: "Fetch success" },
   ] as const;
   const topFetches = rankLibraryFetches(stats.fetches, 3);
 
