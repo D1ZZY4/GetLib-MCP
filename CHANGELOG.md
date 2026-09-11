@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+</details>
+
+## [1.5.1] - 2026-09-11
+
+<details>
+<summary>1.5.1 changes (click to expand)</summary>
+
 ### Added
 
 - Modern API keys: platform-generated names when the form leaves
