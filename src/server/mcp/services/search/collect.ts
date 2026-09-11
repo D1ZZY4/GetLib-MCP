@@ -50,8 +50,11 @@ export async function collectSearchSources(
 ): Promise<{ results: SearchSource[]; webSearched: boolean }> {
   const results: SearchSource[] = [];
 
-  // 1. Check registry (library-based query)
-  for (const match of fuzzySearch(query, 3)) {
+  // 1. Check registry (library-based query). reverseMatch is on here:
+  // freeform queries name the library plus a topic ("tailwindcss
+  // installation vite"), which never equals an alias. Resolution and
+  // routing callers keep the flag off so their behavior cannot shift.
+  for (const match of fuzzySearch(query, 3, 1, { reverseMatch: true })) {
     const entry = lookupById(match.id);
     if (!entry) continue;
     try {

@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Guard the revoked-keys purge on the column existing so the
   migration re-runs cleanly on databases whose api_keys table
   predates the flag and no longer aborts the production push.
+- Match registry libraries named inside freeform search queries
+  so `tailwindcss installation vite` style queries source
+  official docs instead of returning empty.
 
 </details>
 

@@ -7984,9 +7984,26 @@ export function lookupByAlias(name: string): LibraryEntry | undefined {
   return byAlias.get(name.toLowerCase());
 }
 
-export function fuzzySearch(query: string, limit = 5, minScore = 1): LibraryEntry[] {
+export interface FuzzySearchOptions {
+  /**
+   * Freeform-query recall: also match when a known name or alias appears
+   * INSIDE the query ("tailwindcss installation vite" contains
+   * "tailwindcss"). Name-resolution callers leave this off so generic
+   * words inside longer inputs cannot gain score toward a library.
+   */
+  reverseMatch?: boolean;
+}
+
+/** Collapse a name to alphanumerics so "Tailwind CSS" equals "tailwindcss". */
+function flatName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+export function fuzzySearch(query: string, limit = 5, minScore = 1, options: FuzzySearchOptions = {}): LibraryEntry[] {
   const q = query.toLowerCase();
   const scored: Array<{ entry: LibraryEntry; score: number }> = [];
+  // Reverse matching compares once per call, not once per entry.
+  const reverseFlat = options.reverseMatch === true ? flatName(q) : "";
 
   for (const entry of LIBRARY_REGISTRY) {
     let score = 0;
@@ -8005,6 +8022,23 @@ export function fuzzySearch(query: string, limit = 5, minScore = 1): LibraryEntr
 
     if (entry.npmPackage?.toLowerCase().includes(q)) score += 15;
     if (entry.tags.some((t) => t.includes(q))) score += 10;
+
+    // Reverse containment: the query names the library plus a topic
+    // ("tailwindcss installation vite"). Scored below every forward
+    // branch and below the intent-routing bar (20), so resolution and
+    // routing behavior cannot shift - only freeform search recall.
+    // Minimum flat length 4 keeps short tokens ("ai", "go", "ts")
+    // from matching inside unrelated words.
+    if (reverseFlat.length > 0) {
+      const candidates = [nameL, ...entry.aliases.map((alias) => alias.toLowerCase())];
+      for (const candidate of candidates) {
+        const flat = flatName(candidate);
+        if (flat.length >= 4 && reverseFlat.includes(flat)) {
+          score += 15;
+          break;
+        }
+      }
+    }
 
     // minScore default 1 == prior score>0 (scores are integers); detectLibrary
     // passes 20 so tag-only (10) / npm-only (15) matches cannot misroute.

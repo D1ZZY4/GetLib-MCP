@@ -27,6 +27,26 @@ describe("library registry", () => {
     expect(first?.id).toBe("facebook/react");
   });
 
+  test("reverse matching finds libraries named inside freeform queries", () => {
+    const ids = fuzzySearch("tailwindcss installation vite", 3, 1, { reverseMatch: true }).map(
+      (entry) => entry.id,
+    );
+    expect(ids).toContain("tailwindlabs/tailwindcss");
+  });
+
+  test("reverse matching stays off by default", () => {
+    expect(fuzzySearch("tailwindcss installation vite", 3)).toHaveLength(0);
+  });
+
+  test("reverse matching ignores short tokens inside unrelated words", () => {
+    // No entry may surface on a 2-3 char fragment: "ai"/"go"/"ts" style
+    // tokens appear inside ordinary words and must never recall a library.
+    const ids = fuzzySearch("plain domain words here", 5, 1, { reverseMatch: true }).map(
+      (entry) => entry.id,
+    );
+    expect(ids).toHaveLength(0);
+  });
+
   test("lookupById finds entries", () => {
     expect(lookupById("vercel/next.js")?.name).toBe("Next.js");
   });
