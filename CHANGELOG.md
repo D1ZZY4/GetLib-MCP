@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drop the update checker and the telemetry request-id re-export,
   dedupe paragraphs on the shared content hash, and keep envelope
   helpers ordered definition-before-use.
+- Document the stylesheet layering order in the global CSS entry.
 
 ### Changed
 

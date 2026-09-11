@@ -1,7 +1,8 @@
 /**
- * Global CSS entry. Design tokens flow: tokens.css -> utilities
- * (Tailwind) -> shared components (HeroUI primitives) -> feature
- * components -> page composition (`ui-ux.md` sections 2, 44, 50).
+ * Global CSS entry. Layered responsibilities, lowest first:
+ * design tokens (tokens.css), utilities (Tailwind), shared components
+ * (HeroUI primitives), feature components, page composition.
+ * See `ui-ux.md` sections 2, 44, 50.
  */
 @import "tailwindcss";
 @import "@heroui/styles";
