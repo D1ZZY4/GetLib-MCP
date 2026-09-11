@@ -13,6 +13,9 @@ export interface McpClientSession {
   connectedAt: string;
   lastSeenAt: string;
   userAgent?: string;
+  name?: string;
+  version?: string;
+  authType?: "anonymous" | "session" | "api_key";
 }
 
 export interface ClientsSnapshot {

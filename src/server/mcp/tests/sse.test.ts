@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   UnknownSseSessionError,
+  closeSseSession,
+  listSseSessions,
   openSseSession,
   postSseMessage,
 } from "../transport/sse";
@@ -56,6 +58,22 @@ describe("SSE transport", () => {
 
   test("unknown sessions and malformed bodies are rejected", () => {
     expect(() => postSseMessage("no-such-session", {})).toThrow(UnknownSseSessionError);
+  });
+
+  test("opened sessions resolve to a stable slug=uuid identity", async () => {
+    const first = await openSseSession({ userAgent: "opencode/9.9.9-test" });
+    const second = await openSseSession({ userAgent: "opencode/9.9.9-test" });
+    try {
+      const entries = listSseSessions().filter((entry) => entry.name === "opencode");
+      expect(entries).toHaveLength(2);
+      expect(entries[0]?.id).toBe(entries[1]?.id);
+      expect(entries[0]?.id).toMatch(/^opencode=[0-9a-f-]{36}$/);
+      expect(entries[0]?.version).toBe("9.9.9-test");
+      expect(entries[0]?.authType).toBe("anonymous");
+    } finally {
+      closeSseSession(first.sessionId);
+      closeSseSession(second.sessionId);
+    }
   });
 
   test("prompts/list answers over the SSE stream with all six prompts", async () => {

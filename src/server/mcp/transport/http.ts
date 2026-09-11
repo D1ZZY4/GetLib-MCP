@@ -9,6 +9,9 @@ import {
   UnauthorizedError,
 } from "@/application/auth/session";
 import { liveApiKeyAuthDeps } from "../infrastructure/deps/apikeys-deps";
+import { getDatabase } from "../infrastructure/database";
+import { identifyClient } from "../services/client-identity";
+import { log } from "../utils/logger";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER, RateLimitError } from "../utils/rate-limit";
 import { generateRequestId } from "../utils/guard";
 import { createServer } from "../server";
@@ -25,8 +28,14 @@ export interface ClientSession extends ClientSessionSnapshot {
 // not share memory, so a session created by one request is invisible to the
 // next and every post-initialize call fails with "Server not initialized".
 // What the dashboard shows instead is a bounded ring of recently seen
-// clients (user-agent + last-seen), which is honest on every host.
+// clients keyed by stable `<slug>=<uuid>` identity (user-agent, session
+// account, or API key name) plus a durable row in `mcp_clients`, which is
+// honest on every host including serverless.
 interface RecentClient {
+  id: string;
+  name: string;
+  version?: string;
+  authType: "anonymous" | "api_key" | "session";
   userAgent: string;
   firstSeenAt: number;
   lastSeenAt: number;
@@ -37,25 +46,71 @@ const MAX_RECENT_CLIENTS = 100;
 
 const recentClients = new Map<string, RecentClient>();
 
-function noteHttpClient(userAgent: string | undefined): void {
-  const key = userAgent ?? "unknown";
+function noteHttpClient(
+  userAgent: string | undefined,
+  auth: { email: string | null; apiKey?: { id: number; name: string } },
+): void {
+  const identity = identifyClient({
+    transport: "streamable-http",
+    ...(userAgent !== undefined ? { userAgent } : {}),
+    ...(auth.apiKey !== undefined
+      ? { apiKeyName: auth.apiKey.name, apiKeyId: auth.apiKey.id }
+      : {}),
+    ...(auth.apiKey === undefined && auth.email !== null ? { sessionEmail: auth.email } : {}),
+  });
+  const key = identity.id;
   const now = Date.now();
   const existing = recentClients.get(key);
   if (existing) {
     existing.lastSeenAt = now;
     existing.requestCount += 1;
-    return;
+    existing.name = identity.name;
+    if (identity.version !== undefined) existing.version = identity.version;
+    if (identity.userAgent !== undefined) existing.userAgent = identity.userAgent;
+    existing.authType = identity.authType;
+  } else {
+    if (recentClients.size >= MAX_RECENT_CLIENTS) {
+      const oldest = recentClients.keys().next().value;
+      if (oldest !== undefined) recentClients.delete(oldest);
+    }
+    recentClients.set(key, {
+      id: identity.id,
+      name: identity.name,
+      ...(identity.version !== undefined ? { version: identity.version } : {}),
+      authType: identity.authType,
+      userAgent: userAgent ?? "unknown",
+      firstSeenAt: now,
+      lastSeenAt: now,
+      requestCount: 1,
+    });
   }
-  if (recentClients.size >= MAX_RECENT_CLIENTS) {
-    const oldest = recentClients.keys().next().value;
-    if (oldest !== undefined) recentClients.delete(oldest);
+  // Durable sighting, best-effort: transport observation must never fail
+  // the request it observes. Failures stay in the server log only.
+  try {
+    void getDatabase()
+      .touchClient({
+        id: identity.id,
+        name: identity.name,
+        ...(identity.version !== undefined ? { clientVersion: identity.version } : {}),
+        transport: "streamable-http",
+        ...(identity.userAgent !== undefined ? { userAgent: identity.userAgent } : {}),
+        ...(identity.apiKeyId !== undefined ? { apiKeyId: identity.apiKeyId } : {}),
+        authType: identity.authType,
+      })
+      .catch((error: unknown) => {
+        log({ level: "debug", msg: "http.client.persist-failed", error: String(error) });
+      });
+  } catch (error) {
+    log({ level: "debug", msg: "http.client.persist-failed", error: String(error) });
   }
-  recentClients.set(key, { userAgent: key, firstSeenAt: now, lastSeenAt: now, requestCount: 1 });
 }
 
 export function listSessions(): ClientSession[] {
   return [...recentClients.values()].map((entry) => ({
-    id: entry.userAgent,
+    id: entry.id,
+    name: entry.name,
+    ...(entry.version !== undefined ? { version: entry.version } : {}),
+    authType: entry.authType,
     transport: "streamable-http" as const,
     connectedAt: new Date(entry.firstSeenAt).toISOString(),
     lastSeenAt: new Date(entry.lastSeenAt).toISOString(),
@@ -103,11 +158,12 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
     }
     throw error;
   }
+  let authContext: { email: string | null; apiKey?: { id: number; name: string } };
   try {
     // Writes execute tools - stricter budget. Reads (GET without a session
     // handshake aside) share the polling budget.
     checkRateLimit(req, "mcp/http", req.method === "GET" ? READ_TIER : EXECUTION_TIER);
-    await requireManagementAuth(req, liveApiKeyAuthDeps);
+    authContext = await requireManagementAuth(req, liveApiKeyAuthDeps);
   } catch (error) {
     if (error instanceof RateLimitError) {
       return errorBody(
@@ -153,7 +209,7 @@ export async function handleHttpRequest(req: Request): Promise<Response> {
     throw error;
   }
   const { server, transport } = await getTransport();
-  noteHttpClient(req.headers.get("user-agent") ?? undefined);
+  noteHttpClient(req.headers.get("user-agent") ?? undefined, authContext);
   try {
     // Correlate successful tool calls like every error path does: the SDK
     // owns the body, but the request id header stays ours.

@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persist stable MCP client identities (`slug=uuid`) in a new
   `mcp_clients` table with mock and Supabase repositories behind
   the database seam.
+- Resolve every Streamable HTTP and SSE sighting to one stable
+  identity (API key, session account, or user agent), dedupe live
+  entries, read the clients page from durable rows with live
+  fallback, and show name, version, and auth basis in the UI.
 
 ### Fixed
 

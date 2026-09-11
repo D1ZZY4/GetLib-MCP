@@ -55,6 +55,10 @@ export interface ClientSessionSnapshot {
   /** ISO-8601 last-seen timestamp. */
   lastSeenAt: string;
   userAgent?: string;
+  /** Stable-client display metadata; identity keying lives in client-identity. */
+  name?: string;
+  version?: string;
+  authType?: "anonymous" | "session" | "api_key";
 }
 
 /**

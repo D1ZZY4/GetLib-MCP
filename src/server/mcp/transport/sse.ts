@@ -6,6 +6,8 @@ import type { ClientSessionSnapshot } from "@/domain/mcp/catalog";
 import { registerClientLister } from "@/application/clients/clients.service";
 import { createServer } from "../server";
 import { getRuntimeSnapshot } from "../runtime";
+import { getDatabase } from "../infrastructure/database";
+import { identifyClient, type ClientIdentity } from "../services/client-identity";
 import { log } from "../utils/logger";
 import { pruneSessionMap } from "./sessions";
 
@@ -96,8 +98,30 @@ export class WebSseTransport implements Transport {
 interface SseSession {
   transport: WebSseTransport;
   server: McpServer;
+  identity: ClientIdentity;
   connectedAt: number;
   lastSeenAt: number;
+}
+
+/** Best-effort durable sighting: observation must never fail the session. */
+function persistSighting(identity: ClientIdentity): void {
+  try {
+    void getDatabase()
+      .touchClient({
+        id: identity.id,
+        name: identity.name,
+        ...(identity.version !== undefined ? { clientVersion: identity.version } : {}),
+        transport: "sse",
+        ...(identity.userAgent !== undefined ? { userAgent: identity.userAgent } : {}),
+        ...(identity.apiKeyId !== undefined ? { apiKeyId: identity.apiKeyId } : {}),
+        authType: identity.authType,
+      })
+      .catch((error: unknown) => {
+        log({ level: "debug", msg: "sse.client.persist-failed", error: String(error) });
+      });
+  } catch (error) {
+    log({ level: "debug", msg: "sse.client.persist-failed", error: String(error) });
+  }
 }
 
 const sessions = new Map<string, SseSession>();
@@ -130,8 +154,17 @@ function getSession(sessionId: string): SseSession {
   return session;
 }
 
+export interface OpenSseSessionOptions {
+  userAgent?: string;
+  apiKeyName?: string;
+  apiKeyId?: number;
+  sessionEmail?: string;
+}
+
 /** Opens a session: connects a fresh MCP server to a new SSE stream. */
-export async function openSseSession(): Promise<{ sessionId: string; stream: ReadableStream<Uint8Array> }> {
+export async function openSseSession(
+  options: OpenSseSessionOptions = {},
+): Promise<{ sessionId: string; stream: ReadableStream<Uint8Array> }> {
   closeEvicted(pruneSessionMap(sessions));
   if (getRuntimeSnapshot().vercelEnv !== undefined && !sseVercelWarned) {
     sseVercelWarned = true;
@@ -143,10 +176,18 @@ export async function openSseSession(): Promise<{ sessionId: string; stream: Rea
     });
   }
   const sessionId = crypto.randomUUID();
+  const identity = identifyClient({
+    transport: "sse",
+    ...(options.userAgent !== undefined ? { userAgent: options.userAgent } : {}),
+    ...(options.apiKeyName !== undefined ? { apiKeyName: options.apiKeyName } : {}),
+    ...(options.apiKeyId !== undefined ? { apiKeyId: options.apiKeyId } : {}),
+    ...(options.sessionEmail !== undefined ? { sessionEmail: options.sessionEmail } : {}),
+  });
   const server = createServer();
   const transport = new WebSseTransport(sessionId);
   const now = Date.now();
-  sessions.set(sessionId, { transport, server, connectedAt: now, lastSeenAt: now });
+  sessions.set(sessionId, { transport, server, identity, connectedAt: now, lastSeenAt: now });
+  persistSighting(identity);
   transport.onclose = () => {
     sessions.delete(sessionId);
   };
@@ -196,11 +237,15 @@ export interface SseClientSession extends ClientSessionSnapshot {
 /** Snapshot of live SSE sessions for the clients control plane. */
 export function listSseSessions(): SseClientSession[] {
   closeEvicted(pruneSessionMap(sessions));
-  return [...sessions.entries()].map(([id, entry]) => ({
-    id,
+  return [...sessions.values()].map((entry) => ({
+    id: entry.identity.id,
     transport: "sse" as const,
     connectedAt: new Date(entry.connectedAt).toISOString(),
     lastSeenAt: new Date(entry.lastSeenAt).toISOString(),
+    ...(entry.identity.userAgent !== undefined ? { userAgent: entry.identity.userAgent } : {}),
+    name: entry.identity.name,
+    ...(entry.identity.version !== undefined ? { version: entry.identity.version } : {}),
+    authType: entry.identity.authType,
   }));
 }
 

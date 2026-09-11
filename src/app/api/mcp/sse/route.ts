@@ -14,8 +14,15 @@ export async function GET(req: Request) {
     // Opening a session allocates server-side state, so it shares the
     // execution budget rather than the read budget.
     checkRateLimit(req, "mcp/sse", EXECUTION_TIER);
-    await requireManagementAuth(req, liveApiKeyAuthDeps);
-    const { sessionId, stream } = await openSseSession();
+    const auth = await requireManagementAuth(req, liveApiKeyAuthDeps);
+    const userAgent = req.headers.get("user-agent") ?? undefined;
+    const { sessionId, stream } = await openSseSession({
+      ...(userAgent !== undefined ? { userAgent } : {}),
+      ...(auth.apiKey !== undefined
+        ? { apiKeyName: auth.apiKey.name, apiKeyId: auth.apiKey.id }
+        : {}),
+      ...(auth.apiKey === undefined && auth.email !== null ? { sessionEmail: auth.email } : {}),
+    });
     req.signal.addEventListener("abort", () => {
       closeSseSession(sessionId);
     });

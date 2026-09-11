@@ -13,6 +13,12 @@ import { fetchClients } from "../services/clients.service";
 
 const LOAD_ERROR = "We couldn't load connected clients. Try again in a moment.";
 
+function authLabel(authType: string | undefined): string {
+  if (authType === "api_key") return "API key";
+  if (authType === "session") return "Session";
+  return "Anonymous";
+}
+
 export function McpClients() {
   const { data: snapshot, loading, error, retry } = useApiData(fetchClients, LOAD_ERROR, {
     refreshIntervalMs: 10_000,
@@ -22,7 +28,7 @@ export function McpClients() {
     <PageContainer>
       <PageHeader
         title="Clients"
-        description="AI agents recently seen on this server over Streamable HTTP. The transport is stateless, so this lists recently observed clients rather than live sessions. Agents using stdio run their own server process."
+        description="Stable client identities seen on this server over Streamable HTTP and SSE. Sightings persist in the database, so entries survive restarts and serverless churn. Agents using stdio run their own server process."
       />
 
       {loading ? (
@@ -49,13 +55,17 @@ export function McpClients() {
               {snapshot.clients.map((client) => (
                 <li key={client.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-sm" title={client.id}>
-                      <Link href={`/mcp/clients/${client.id}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-                        {client.id}
+                    <p className="truncate text-sm font-medium">
+                      <Link href={`/mcp/clients/${encodeURIComponent(client.id)}`} className="rounded hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        {client.name ?? client.id}
+                        {client.version !== undefined ? (
+                          <span className="text-muted"> {client.version}</span>
+                        ) : null}
                       </Link>
                     </p>
+                    <p className="truncate font-mono text-xs text-muted" title={client.id}>{client.id}</p>
                     <p className="text-xs text-muted">
-                      {client.transport} · last seen {formatLogTime(client.lastSeenAt)}
+                      {client.transport} · {authLabel(client.authType)} · last seen {formatLogTime(client.lastSeenAt)}
                     </p>
                     {client.userAgent !== undefined ? (
                       <p className="truncate text-xs text-muted" title={client.userAgent}>via {client.userAgent}</p>

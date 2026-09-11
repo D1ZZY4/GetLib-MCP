@@ -39,13 +39,13 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
       ) : client === null ? (
         <EmptyState
           title="Client not found"
-          description="No recently seen client with this id. Entries expire as new clients arrive."
+          description="No client with this id has been seen. Identities persist in the database once observed."
         />
       ) : (
         <>
           <PageHeader
-            title={<span className="truncate font-mono">{client.id}</span>}
-            description="Recently observed client. Streamable HTTP is stateless, so this is a sighting record, not a live session."
+            title={<span className="truncate">{client.name ?? client.id}{client.version !== undefined ? ` ${client.version}` : ""}</span>}
+            description="Stable client identity. Streamable HTTP is stateless, so HTTP rows are sighting records; SSE rows are live sessions on hosts with sticky connections."
             badge={
               <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
                 Seen
@@ -59,6 +59,28 @@ export function McpClientDetail({ clientId }: { clientId: string }) {
             </Card.Header>
             <Card.Content>
               <dl className="flex flex-col gap-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Client id</dt>
+                  <dd className="max-w-xs truncate font-mono text-xs" title={client.id}>{client.id}</dd>
+                </div>
+                {client.name !== undefined ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Name</dt>
+                    <dd className="font-medium">{client.name}</dd>
+                  </div>
+                ) : null}
+                {client.version !== undefined ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Version</dt>
+                    <dd className="font-medium">{client.version}</dd>
+                  </div>
+                ) : null}
+                {client.authType !== undefined ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Authentication</dt>
+                    <dd className="font-medium">{client.authType === "api_key" ? "API key" : client.authType === "session" ? "Session" : "Anonymous"}</dd>
+                  </div>
+                ) : null}
                 <div className="flex justify-between gap-4">
                   <dt className="text-muted">Transport</dt>
                   <dd className="font-medium">{client.transport}</dd>
