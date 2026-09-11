@@ -10,6 +10,7 @@ import { PageHeader } from "@/web/components/ui/page-header";
 import { PageContainer } from "@/web/components/layout/page-container";
 import { useApiData } from "@/web/hooks/use-api-data";
 import { formatLogTime } from "@/web/lib/format";
+import { SELECT_MENU_POPOVER_CLASS } from "@/web/components/ui/select-menu";
 import { fetchLogs } from "../services/mcp.service";
 import { SearchIcon } from "@/web/components/ui/icons";
 
@@ -80,7 +81,7 @@ export function McpLogViewer() {
                 <Select.Value />
                 <Select.Indicator />
               </Select.Trigger>
-              <Select.Popover>
+              <Select.Popover className={SELECT_MENU_POPOVER_CLASS}>
                 <ListBox>
                   <ListBox.Item id="all" textValue="All">
                     All
@@ -118,7 +119,7 @@ export function McpLogViewer() {
                 <Select.Value />
                 <Select.Indicator />
               </Select.Trigger>
-              <Select.Popover>
+              <Select.Popover className={SELECT_MENU_POPOVER_CLASS}>
                 <ListBox>
                   {LIMITS.map((value) => (
                     <ListBox.Item key={value} id={String(value)} textValue={String(value)}>

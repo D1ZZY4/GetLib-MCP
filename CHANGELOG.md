@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and runs persist the canonical subject on durable logs for
   per-library usage statistics.
 
+### Fixed
+
+- Inset every select menu so option backgrounds no longer butt
+  against the popover corners, and give toasts the same Card
+  border so overlay corners render crisply.
+
 </details>
 
 ## [1.3.1] - 2026-09-11

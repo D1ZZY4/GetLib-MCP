@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Key } from "@heroui/react";
 import { Button, Card, Label, ListBox, Select, Skeleton } from "@heroui/react";
+import { SELECT_MENU_POPOVER_CLASS } from "@/web/components/ui/select-menu";
 import { FormRowSkeleton } from "@/web/components/ui/skeletons";
 import { EmptyState } from "@/web/components/ui/empty-state";
 import { LoadError } from "@/web/components/ui/load-error";
@@ -99,7 +100,7 @@ export function McpPlayground() {
                     <Select.Value />
                     <Select.Indicator />
                   </Select.Trigger>
-                  <Select.Popover>
+                  <Select.Popover className={SELECT_MENU_POPOVER_CLASS}>
                     <ListBox>
                       {catalog.tools.map((entry) => (
                         <ListBox.Item key={entry.name} id={entry.name} textValue={entry.name}>
