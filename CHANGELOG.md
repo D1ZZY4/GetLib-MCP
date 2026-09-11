@@ -55,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dedupe paragraphs on the shared content hash, and keep envelope
   helpers ordered definition-before-use.
 - Document the stylesheet layering order in the global CSS entry.
+- Bound compat node search depth and breadth against hostile
+  payload shapes.
 
 ### Changed
 

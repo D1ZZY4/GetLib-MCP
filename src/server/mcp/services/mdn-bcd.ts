@@ -108,14 +108,19 @@ export async function fetchMdnDocMeta(docUrl: string): Promise<MdnDocMeta | null
   }
 }
 
-function findCompatNode(node: unknown): Record<string, unknown> | null {
-  if (!node || typeof node !== "object") return null;
+const FIND_COMPAT_MAX_DEPTH = 10;
+const FIND_COMPAT_MAX_KEYS = 100;
+
+function findCompatNode(node: unknown, depth = 0): Record<string, unknown> | null {
+  if (!node || typeof node !== "object" || depth > FIND_COMPAT_MAX_DEPTH) return null;
   const obj = node as Record<string, unknown>;
   if (obj["__compat"] && typeof obj["__compat"] === "object") {
     return obj["__compat"] as Record<string, unknown>;
   }
-  for (const value of Object.values(obj)) {
-    const found = findCompatNode(value);
+  // Bounded fan-out: hostile BCD payloads must not drive unbounded
+  // recursion or per-level iteration.
+  for (const value of Object.values(obj).slice(0, FIND_COMPAT_MAX_KEYS)) {
+    const found = findCompatNode(value, depth + 1);
     if (found) return found;
   }
   return null;
