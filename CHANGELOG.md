@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modern API keys: platform-generated names when the form leaves
   the name blank, rename, revoke-and-reissue rotation, and
   optional expiry enforced on verification.
+- Edit any key's name and expiry from the dashboard, revoke to
+  reissue a lost secret with the new value shown once, and copy
+  buttons that say exactly what landed in the clipboard.
 - Surface swallowed persistence write failures on the database
   status with a dashboard warning so a broken sink never looks
   like an idle one again.

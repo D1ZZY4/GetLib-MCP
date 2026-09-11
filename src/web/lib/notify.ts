@@ -22,9 +22,9 @@ export function notifyError(title: string, description: string): void {
   toast.danger(title, { description, timeout: 6000 });
 }
 
-/** Confirm a clipboard copy. */
-export function notifyCopied(what: string): void {
-  notifySuccess("Copied to clipboard", `${what} is ready to paste.`);
+/** Confirm a clipboard copy. Optional hint replaces the default paste line. */
+export function notifyCopied(what: string, hint?: string): void {
+  notifySuccess("Copied to clipboard", hint ?? `${what} is ready to paste.`);
 }
 
 /** Report a clipboard failure with the manual fallback. */

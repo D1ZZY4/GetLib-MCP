@@ -99,6 +99,13 @@ export class MockDatabaseRepository implements DatabaseRepository {
     return true;
   }
 
+  async updateApiKeyExpiry(id: number, expiresAt: string | null): Promise<boolean> {
+    const found = this.apiKeys.find((key) => key.id === id);
+    if (!found) return false;
+    found.expiresAt = expiresAt;
+    return true;
+  }
+
   async rotateApiKey(
     id: number,
     rotated: Pick<NewApiKey, "keyHash" | "keyPrefix">,

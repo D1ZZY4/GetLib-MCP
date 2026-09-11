@@ -339,6 +339,27 @@ export class SupabaseDatabaseRepository implements DatabaseRepository {
     }
   }
 
+  async updateApiKeyExpiry(id: number, expiresAt: string | null): Promise<boolean> {
+    const client = privilegedClient();
+    if (!client) {
+      reportUnconfigured("supabase.apikeys.unconfigured", this.mode);
+      return false;
+    }
+    try {
+      const update = client.from("api_keys").update({ expires_at: expiresAt }).eq("id", id).select("id");
+      const { data, error } = (await withTimeout(
+        update,
+        5000,
+        "Supabase api key expiry update timed out.",
+      )) as { data: Array<{ id: number }> | null; error: { message: string } | null };
+      if (error || !data) return false;
+      return data.length > 0;
+    } catch (error) {
+      log({ level: "warn", msg: "supabase.apikeys.expiry-failed", error: String(error) });
+      return false;
+    }
+  }
+
   async rotateApiKey(
     id: number,
     rotated: Pick<NewApiKey, "keyHash" | "keyPrefix">,

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { resetConfigOverride, setConfigOverride } from "@/server/mcp/config";
 import { resetRateLimits } from "@/server/mcp/utils/rate-limit";
 import { resetDatabaseCache } from "@/server/mcp/infrastructure/database";
-import { GET as apikeysGet, POST as apikeysPost, DELETE as apikeysDelete } from "./apikeys/route";
+import { GET as apikeysGet, PATCH as apikeysPatch, POST as apikeysPost, DELETE as apikeysDelete } from "./apikeys/route";
+import { POST as apikeysRegenerate } from "./apikeys/regenerate/route";
 import { POST as toolsRun } from "./tools/run/route";
 import { POST as signin } from "./auth/signin/route";
 import { POST as discoverPost } from "./discover/route";
@@ -113,16 +114,62 @@ describe("apikeys routes", () => {
     expect(relisted.keys.map((key) => key.id)).not.toContain(created.id);
   });
 
-  test("blank names are 422, unknown ids are 404", async () => {
+  test("blank names are generated, unknown ids are 404", async () => {
     setConfigOverride({ authEnabled: false });
     const blank = await apikeysPost(
       jsonRequest("http://localhost/api/management/apikeys", "POST", { name: "   " }),
     );
-    expect(blank.status).toBe(422);
+    expect(blank.status).toBe(201);
+    const generated = (await blank.json()) as { name: string; key: string };
+    expect(generated.name).toMatch(/^key-[0-9a-f]{6}$/);
+    expect(generated.key.startsWith("glk_")).toBe(true);
     const missing = await apikeysDelete(
       jsonRequest("http://localhost/api/management/apikeys", "DELETE", { id: 424242 }),
     );
     expect(missing.status).toBe(404);
+  });
+
+  test("rename, expiry update, and regenerate flow through the routes", async () => {
+    setConfigOverride({ authEnabled: false });
+    const createdRes = await apikeysPost(
+      jsonRequest("http://localhost/api/management/apikeys", "POST", {}),
+    );
+    expect(createdRes.status).toBe(201);
+    const created = (await createdRes.json()) as { id: number; key: string; name: string };
+    const future = new Date(Date.now() + 3_600_000).toISOString();
+    const patched = await apikeysPatch(
+      jsonRequest("http://localhost/api/management/apikeys", "PATCH", {
+        id: created.id,
+        name: "route-key",
+        expiresAt: future,
+      }),
+    );
+    expect(patched.status).toBe(200);
+    const relisted = (await (
+      await apikeysGet(jsonRequest("http://localhost/api/management/apikeys", "GET"))
+    ).json()) as { keys: Array<{ id: number; name: string; expiresAt: string | null }> };
+    const row = relisted.keys.find((key) => key.id === created.id);
+    expect(row?.name).toBe("route-key");
+    expect(row?.expiresAt).toBe(new Date(future).toISOString());
+    const rotatedRes = await apikeysRegenerate(
+      jsonRequest("http://localhost/api/management/apikeys/regenerate", "POST", { id: created.id }),
+    );
+    expect(rotatedRes.status).toBe(200);
+    const rotated = (await rotatedRes.json()) as { id: number; key: string };
+    expect(rotated.key.startsWith("glk_")).toBe(true);
+    expect(rotated.key).not.toBe(created.key);
+    const missingPatch = await apikeysPatch(
+      jsonRequest("http://localhost/api/management/apikeys", "PATCH", { id: 424242, name: "x" }),
+    );
+    expect(missingPatch.status).toBe(404);
+    const missingRotate = await apikeysRegenerate(
+      jsonRequest("http://localhost/api/management/apikeys/regenerate", "POST", { id: 424242 }),
+    );
+    expect(missingRotate.status).toBe(404);
+    const emptyPatch = await apikeysPatch(
+      jsonRequest("http://localhost/api/management/apikeys", "PATCH", { id: created.id }),
+    );
+    expect(emptyPatch.status).toBe(422);
   });
 });
 

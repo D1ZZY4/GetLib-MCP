@@ -7,6 +7,7 @@ import {
   listApiKeys,
   regenerateApiKey,
   renameApiKey,
+  updateApiKeyExpiry,
   verifyApiKey,
   type ApiKeyDeps,
 } from "../apikeys/apikeys.service";
@@ -143,6 +144,22 @@ describe("api key service with stubbed infrastructure", () => {
     expect(listed[0]?.expiresAt).toBe(new Date(future).toISOString());
     const plain = await createApiKey(deps, "plain");
     expect(plain.expiresAt).toBeNull();
+  });
+
+  test("expiry updates and clears through the service", async () => {
+    const { deps } = stubDeps();
+    const created = await createApiKey(deps, "ci");
+    const future = new Date(Date.now() + 3_600_000).toISOString();
+    expect(await updateApiKeyExpiry(deps, created.id, future)).toBe(true);
+    const listed = await listApiKeys(deps);
+    expect(listed[0]?.expiresAt).toBe(new Date(future).toISOString());
+    expect(await updateApiKeyExpiry(deps, created.id, null)).toBe(true);
+    expect((await listApiKeys(deps))[0]?.expiresAt).toBeNull();
+    expect(await updateApiKeyExpiry(deps, 999, future)).toBe(false);
+    await expect(updateApiKeyExpiry(deps, created.id, "yesterday")).rejects.toThrow(
+      ApiKeyValidationError,
+    );
+    await expect(updateApiKeyExpiry(deps, 0, future)).rejects.toThrow(ApiKeyValidationError);
   });
 
   test("stored rows hold hashes, never plaintext", async () => {

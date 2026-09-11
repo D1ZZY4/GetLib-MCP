@@ -6,6 +6,7 @@ import {
   deleteApiKey,
   listApiKeys,
   renameApiKey,
+  updateApiKeyExpiry,
 } from "@/application/apikeys/apikeys.service";
 import { liveApiKeyAuthDeps, liveApiKeyDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { checkRateLimit, READ_TIER, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
@@ -26,7 +27,12 @@ const DeleteBody = z.object({
 const RenameBody = z.object({
   id: z.number().int().min(1),
   // Optional: blank or absent names are platform-generated.
+  // Optional: ISO-8601 expiry, or null to clear back to never-expires.
+  // At least one of the two must be present.
   name: z.string().max(API_KEY_NAME_MAX).optional(),
+  expiresAt: z.string().nullable().optional(),
+}).refine((body) => body.name !== undefined || body.expiresAt !== undefined, {
+  message: "Nothing to update: provide a name, an expiry, or both.",
 });
 
 export async function GET(req: Request) {
@@ -77,9 +83,17 @@ export async function PATCH(req: Request) {
     if (originBlocked) return originBlocked;
     const actor = await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = RenameBody.parse(await readJsonBody(req));
-    const renamed = await renameApiKey(liveApiKeyDeps, body.id, body.name);
-    if (!renamed) {
-      return jsonError("not_found", `API key ${body.id} does not exist.`, 404, id);
+    if (body.name !== undefined) {
+      const renamed = await renameApiKey(liveApiKeyDeps, body.id, body.name);
+      if (!renamed) {
+        return jsonError("not_found", `API key ${body.id} does not exist.`, 404, id);
+      }
+    }
+    if (body.expiresAt !== undefined) {
+      const expiryUpdated = await updateApiKeyExpiry(liveApiKeyDeps, body.id, body.expiresAt);
+      if (!expiryUpdated) {
+        return jsonError("not_found", `API key ${body.id} does not exist.`, 404, id);
+      }
     }
     log({
       level: "info",

@@ -27,6 +27,8 @@ export interface ApiKeyView {
   id: number;
   name: string;
   prefix: string;
+  /** Null means the key never expires. */
+  expiresAt: string | null;
   createdAt: string;
   lastUsedAt: string | null;
 }

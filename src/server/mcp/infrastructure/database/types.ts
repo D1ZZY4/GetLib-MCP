@@ -146,6 +146,8 @@ export interface DatabaseRepository {
   deleteApiKey(id: number): Promise<boolean>;
   /** Rename by id. Never rejects: returns false when missing or unwritable. */
   renameApiKey(id: number, name: string): Promise<boolean>;
+  /** Replace the expiry by id. Null clears back to never-expires. Never rejects. */
+  updateApiKeyExpiry(id: number, expiresAt: string | null): Promise<boolean>;
   /**
    * Rotate the secret by id: replaces hash and prefix, keeps the row and
    * its history. The old secret stops working immediately. Returns the

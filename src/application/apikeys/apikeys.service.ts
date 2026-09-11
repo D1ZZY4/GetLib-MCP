@@ -16,7 +16,7 @@ export const GENERATED_KEY_NAME_PREFIX = "key-";
 export interface ApiKeyDeps {
   getDatabase: () => Pick<
     DatabaseRepository,
-    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "deleteApiKey" | "renameApiKey" | "rotateApiKey" | "touchApiKeyLastUsed"
+    "findApiKeyByHash" | "listApiKeys" | "saveApiKey" | "deleteApiKey" | "renameApiKey" | "rotateApiKey" | "updateApiKeyExpiry" | "touchApiKeyLastUsed"
   >;
 }
 
@@ -129,6 +129,20 @@ export async function renameApiKey(deps: ApiKeyDeps, id: number, name?: string):
     throw new ApiKeyValidationError("API key id must be a positive integer.");
   }
   return deps.getDatabase().renameApiKey(id, normalizeName(name));
+}
+
+export async function updateApiKeyExpiry(
+  deps: ApiKeyDeps,
+  id: number,
+  expiresAt?: string | null,
+): Promise<boolean> {
+  if (!Number.isInteger(id) || id < 1) {
+    throw new ApiKeyValidationError("API key id must be a positive integer.");
+  }
+  if (expiresAt === undefined || expiresAt === null) {
+    return deps.getDatabase().updateApiKeyExpiry(id, null);
+  }
+  return deps.getDatabase().updateApiKeyExpiry(id, normalizeExpiry(expiresAt));
 }
 
 /**
