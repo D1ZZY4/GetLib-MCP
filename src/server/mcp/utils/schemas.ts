@@ -32,6 +32,19 @@ export function toolNameSchema() {
   });
 }
 
+/**
+ * Optional free-text field shared by management routes. Blank optional
+ * text normalizes to undefined so "" and "   " behave like an omitted
+ * field instead of flowing into downstream detection or topic filtering
+ * as a distinct empty value.
+ */
+export function optionalNonBlank(max: number) {
+  return z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    nonBlankString(max).optional(),
+  );
+}
+
 export const LOG_LIMIT_DEFAULT = 50;
 export const LOG_LIMIT_MAX = 100;
 
@@ -47,9 +60,4 @@ export function parseLogLimitValue(raw: string | null): number {
     throw new Error(`Invalid limit: "${raw}" - must be an integer between 1 and ${LOG_LIMIT_MAX}`);
   }
   return Math.min(parsed, LOG_LIMIT_MAX);
-}
-
-export function clampLogLimit(limit: number): number {
-  if (!Number.isFinite(limit) || limit < 1) return LOG_LIMIT_DEFAULT;
-  return Math.min(Math.floor(limit), LOG_LIMIT_MAX);
 }

@@ -1,5 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import type { ApiKeyRecord, DatabaseRepository, NewApiKey } from "@/server/mcp/infrastructure/database";
+import { log } from "@/server/mcp/utils/logger";
 
 export const API_KEY_PREFIX = "glk_";
 export const API_KEY_NAME_MAX = 100;
@@ -108,9 +109,11 @@ export async function verifyApiKey(deps: ApiKeyDeps, presented: string): Promise
   if (stored.length !== candidate.length || !timingSafeEqual(stored, candidate)) return null;
   try {
     await deps.getDatabase().touchApiKeyLastUsed(record.id);
-  } catch {
+  } catch (error) {
     // Best-effort observability: a stamp failure must never turn valid
-    // credentials into a 500.
+    // credentials into a 500. Logged without the key id to keep key
+    // usage out of retained logs.
+    log({ level: "debug", msg: "apikeys.touch-last-used.failed", error: error instanceof Error ? error.message : String(error) });
   }
   return { id: record.id, name: record.name };
 }

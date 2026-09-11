@@ -75,6 +75,12 @@ const SENSITIVE_KEYS = new Set([
   "refreshtoken",
   "client_secret",
   "clientsecret",
+  "github_token",
+  "githubtoken",
+  "install_id",
+  "installid",
+  "installation_id",
+  "installationid",
   "private_key",
   "privatekey",
   "auth_token",
@@ -84,6 +90,8 @@ const SENSITIVE_KEYS = new Set([
   "account",
   "key_hash",
   "keyhash",
+  "password_hash",
+  "passwordhash",
   "key_prefix",
   "keyprefix",
   "presented_key",
@@ -105,7 +113,7 @@ const API_KEY_PATTERN = /\bglk_[A-Za-z0-9_-]+\b/g;
 // Header-style credentials in free text: api_key: <value>, x-api-key=<value>.
 const HEADER_KEY_PATTERN = /((?:api[_-]?key|x-api-key)\s*[:=]\s*)['"]?[A-Za-z0-9\-._~+/=]+['"]?/gi;
 // Query-string secrets in logged URLs: ?token=<value>&api_key=<value>.
-const QUERY_TOKEN_PATTERN = /([?&](?:token|api_key|apikey|access_token|secret|password|auth|key)=)[^&\s"']*/gi;
+const QUERY_TOKEN_PATTERN = /([?&](?:token|api_key|apikey|access_token|refresh_token|secret|client_secret|github_token|client_id|password|passwd|auth|session|code|key)=)[^&\s"']*/gi;
 
 const REDACT_MAX_DEPTH = 5;
 
@@ -118,6 +126,13 @@ function redactValue(key: string, value: unknown, seen: WeakSet<object>, depth: 
       .replace(API_KEY_PATTERN, "glk_[redacted]")
       .replace(HEADER_KEY_PATTERN, "$1[redacted]")
       .replace(QUERY_TOKEN_PATTERN, "$1[redacted]");
+  }
+  if (value instanceof Error) {
+    // Error messages often embed URLs, tokens, or session values from the
+    // failing operation. Redact them with the same string rules instead of
+    // passing the instance through untouched.
+    const message = redactValue("", value.message, seen, depth + 1);
+    return message;
   }
   if (Array.isArray(value)) {
     if (depth >= REDACT_MAX_DEPTH || seen.has(value)) return "[redacted]";

@@ -98,13 +98,20 @@ function hasSupabasePrivilegedConfig(): boolean {
 }
 
 /**
- * Auth-enabled presence for startup policy only. Mirrors
- * boolEnv("GETLIB_AUTHENTICATICATION_ENABLE", false) exactly ("true"/"1"
- * enable, anything else is disabled here); an invalid value still throws
- * at config load before this policy ever runs.
+ * Canonical auth-enable variable name. Only GETLIB_AUTHENTICATION_ENABLE
+ * is accepted; the deprecated typo alias has been removed.
+ */
+export const AUTH_ENABLE_KEYS: string[] = [
+  "GETLIB_AUTHENTICATION_ENABLE",
+];
+
+/**
+ * Auth-enabled presence for startup policy only. Reads the canonical
+ * GETLIB_AUTHENTICATION_ENABLE. Mirrors bool parsing in config.ts ("true"/"1" enable); an invalid value
+ * still throws at config load before this policy ever runs.
  */
 function authEnabledForPolicy(): boolean {
-  const raw = readEnv("GETLIB_AUTHENTICATICATION_ENABLE");
+  const raw = firstPresent(AUTH_ENABLE_KEYS);
   if (raw === undefined) return false;
   return raw === "true" || raw === "1";
 }
@@ -199,10 +206,13 @@ export function getDatabaseModePolicy(env: RuntimeEnvironment = detectEnvironmen
 }
 
 /**
- * Resolve the active database mode from environment policy. Production is
- * fixed to supabase-production. Development defaults to mock unless the
- * operator explicitly opts into a real development database via env or the
- * realtime Developments-page override.
+ * Resolve active database mode from environment policy.
+ * Production is fixed to `supabase-production`; development uses mock
+ * (default) or real development (`supabase-development` via env or the
+ * realtime Developments-page override).
+ * See `architecture-and-infrastructure.md` section 5 (database policy),
+ * `database-auth-and-deployment.md` sections 2-3, and `flows-and-runtime.md`
+ * section 9 (production database mode fixed to real database).
  */
 export function resolveDatabaseMode(env: RuntimeEnvironment = detectEnvironment()): DatabaseMode {
   return getDatabaseModePolicy(env).effective;

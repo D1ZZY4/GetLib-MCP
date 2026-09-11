@@ -49,4 +49,17 @@ describe("rate limiter", () => {
     checkRateLimit(req, "test/a", TIER, 3_000);
     expect(() => checkRateLimit(req, "test/b", TIER, 4_000)).not.toThrow();
   });
+
+  test("spoofed forwarded values share the fallback bucket", () => {
+    const spoofed = (value: string): Request =>
+      new Request("http://localhost/api/management/health", {
+        headers: { "x-forwarded-for": value },
+      });
+    checkRateLimit(spoofed("not an ip!!!"), "test/spoof", TIER, 1_000);
+    checkRateLimit(spoofed("attacker; rm -rf"), "test/spoof", TIER, 2_000);
+    checkRateLimit(spoofed(""), "test/spoof", TIER, 3_000);
+    expect(() => checkRateLimit(spoofed("different spoof!!!"), "test/spoof", TIER, 4_000)).toThrow(
+      RateLimitError,
+    );
+  });
 });

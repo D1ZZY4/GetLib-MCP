@@ -1,6 +1,6 @@
 import { clearSessionCookie } from "@/application/auth/session";
 import { checkRateLimit, READ_TIER } from "@/server/mcp/utils/rate-limit";
-import { jsonOk, mapRouteError, requestId } from "@/app/api/_lib/route-helpers";
+import { jsonOk, mapRouteError, requestId, assertOriginOr403 } from "@/app/api/_lib/route-helpers";
 
 /**
  * Destroys the session cookie. Intentionally unauthenticated: clearing a
@@ -10,6 +10,8 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/auth/signout", READ_TIER);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
     const response = jsonOk({ ok: true }, id);
     response.headers.set("Set-Cookie", clearSessionCookie());
     return response;

@@ -6,6 +6,7 @@ import { log } from "./utils/logger";
 import { detectEnvironment, resolveDatabaseMode, supabaseUrlSelection } from "./runtime";
 import { ensureRegistryLoaded } from "./registry/registry-loader";
 import { validateProductionPolicy } from "./runtime";
+import { diskDocCache } from "./services/cache";
 // Transport modules self-register their client-snapshot listers with the
 // application clients service on import. Importing them here guarantees the
 // control plane sees live sessions even when the first request in this
@@ -72,7 +73,7 @@ async function runInitialization(): Promise<void> {
     log({
       level: "error",
       msg: "init.auth-disabled-production",
-      detail: "GETLIB_AUTHENTICATICATION_ENABLE is not enabled: the dashboard and MCP serve without sign-in.",
+      detail: "GETLIB_AUTHENTICATION_ENABLE is not enabled: the dashboard and MCP serve without sign-in.",
     });
   }
   const urlSelection = supabaseUrlSelection();
@@ -88,10 +89,16 @@ async function runInitialization(): Promise<void> {
   }
   const databaseMode = resolveDatabaseMode(environment);
   ensureRegistryLoaded();
+  // Bounded disk cache: prune expired entries once per process start so
+  // persistent hosts (Docker volume, bare metal) do not accumulate stale
+  // files forever. Fire-and-forget - a prune failure must never block boot.
+  void diskDocCache.prune().then((removed) => {
+    if (removed > 0) log({ level: "debug", msg: "init.disk-cache-pruned", removed });
+  }).catch(() => void 0);
   // Health precondition runs before bootstrap on purpose: bootstrap
   // persists through the database, so it needs the database verdict
-  // first. (Blueprint section 64 lists bootstrap earlier; the enforced
-  // invariant is the same either way - no traffic before both complete.)
+  // first. The enforced invariant is the same either way - no traffic
+  // before both complete.
   try {
     const status = await getDatabaseStatus();
     log({
@@ -116,6 +123,16 @@ async function runInitialization(): Promise<void> {
       credentialsChanged: bootstrap.credentialsChanged,
       accountLength: bootstrap.account.length,
     });
+    if (environment === "production" && bootstrap.isFallback) {
+      // Production must never run on fallback bootstrap credentials
+      // outside an explicitly documented emergency mode. Fail fast with
+      // a safe audited error instead of serving with default credentials.
+      const fallbackError = new Error(
+        "Default bootstrap credentials are active in production. Set GETLIB_DEFAULT_ACCOUNT and GETLIB_DEFAULT_PASS.",
+      );
+      log({ level: "error", msg: "init.bootstrap-fallback-production", error: String(fallbackError) });
+      throw fallbackError;
+    }
   } catch (error) {
     log({ level: "error", msg: "init.bootstrap-failed", error: String(error) });
     // Production bootstrap writes are authoritative: a silent failure

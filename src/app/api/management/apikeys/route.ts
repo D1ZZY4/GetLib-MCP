@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { requireManagementAuth } from "@/application/auth/session";
 import {
-  ApiKeyValidationError,
   API_KEY_NAME_MAX,
   createApiKey,
   deleteApiKey,
@@ -9,8 +8,9 @@ import {
 } from "@/application/apikeys/apikeys.service";
 import { liveApiKeyAuthDeps, liveApiKeyDeps } from "@/server/mcp/infrastructure/deps/apikeys-deps";
 import { checkRateLimit, READ_TIER, STRICT_TIER } from "@/server/mcp/utils/rate-limit";
+import { log } from "@/server/mcp/utils/logger";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
-import { jsonError, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
+import { assertOriginOr403, jsonCreated, jsonError, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const CreateBody = z.object({
   name: nonBlankString(API_KEY_NAME_MAX),
@@ -37,13 +37,25 @@ export async function POST(req: Request) {
     // Credential issuance and deletion share the strict signin budget:
     // both write security state and must resist enumeration/fill.
     checkRateLimit(req, "management/apikeys", STRICT_TIER);
-    await requireManagementAuth(req, liveApiKeyAuthDeps);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
+    const actor = await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = CreateBody.parse(await readJsonBody(req));
-    return jsonOk(await createApiKey(liveApiKeyDeps, body.name), id);
+    const created = await createApiKey(liveApiKeyDeps, body.name);
+    // Audit trail for credential issuance: who created which key name,
+    // correlated by request id. The plaintext key itself is never logged.
+    log({
+      level: "info",
+      msg: "apikeys.created",
+      requestId: id,
+      actor: actor.email ?? `apikey:${actor.apiKey?.id ?? "unknown"}`,
+      keyId: created.id,
+      name: created.name,
+    });
+    return jsonCreated(created, id);
   } catch (error) {
-    if (error instanceof ApiKeyValidationError) {
-      return jsonError("validation_error", error.message, 422, id);
-    }
+    // ApiKeyValidationError maps to 422 inside mapRouteError - no local
+    // branch so the status mapping lives in exactly one place.
     return mapRouteError(error, id);
   }
 }
@@ -52,17 +64,24 @@ export async function DELETE(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/apikeys", STRICT_TIER);
-    await requireManagementAuth(req, liveApiKeyAuthDeps);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
+    const actor = await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = DeleteBody.parse(await readJsonBody(req));
     const deleted = await deleteApiKey(liveApiKeyDeps, body.id);
     if (!deleted) {
       return jsonError("not_found", `API key ${body.id} does not exist.`, 404, id);
     }
+    // Audit trail for credential revocation, correlated by request id.
+    log({
+      level: "info",
+      msg: "apikeys.deleted",
+      requestId: id,
+      actor: actor.email ?? `apikey:${actor.apiKey?.id ?? "unknown"}`,
+      keyId: body.id,
+    });
     return jsonOk({ deleted: body.id }, id);
   } catch (error) {
-    if (error instanceof ApiKeyValidationError) {
-      return jsonError("validation_error", error.message, 422, id);
-    }
     return mapRouteError(error, id);
   }
 }

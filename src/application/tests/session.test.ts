@@ -77,7 +77,7 @@ describe("session extraction", () => {
 });
 
 describe("management authorization boundary", () => {  test("allows anonymous context when authentication is disabled", async () => {
-    // Default test env leaves GETLIB_AUTHENTICATICATION_ENABLE unset (false).
+    // Default test env leaves GETLIB_AUTHENTICATION_ENABLE unset (false).
     await expect(requireManagementAuth(requestWith(), { verifyApiKey: async () => null })).resolves.toEqual({
       email: null,
     });

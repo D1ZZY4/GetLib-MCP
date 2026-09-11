@@ -64,6 +64,30 @@ describe("logger redaction", () => {
     expect(out).not.toContain("getlib_session=x");
   });
 
+  test("redacts password hash fields", () => {
+    log({ level: "error", msg: "bootstrap", password_hash: "abcdef123456", passwordHash: "abcdef123456" });
+    const out = capturedError.join("\n");
+    expect(out).not.toContain("abcdef123456");
+    expect(out).toContain("[redacted]");
+  });
+
+  test("redacts github token and install id fields", () => {
+    log({ level: "error", msg: "fetch", githubToken: "ghp_secret123", installId: "abcdef12" });
+    const out = capturedError.join("\n");
+    expect(out).not.toContain("ghp_secret123");
+    expect(out).not.toContain("abcdef12");
+    expect(out).toContain("[redacted]");
+  });
+
+  test("scrubs github_token and client_id query params", () => {
+    log({ level: "warn", msg: "fetch", url: "https://api.example.com/x?github_token=ghp_abc&client_id=cid123" });
+    const out = capturedError.join("\n");
+    expect(out).not.toContain("ghp_abc");
+    expect(out).not.toContain("cid123");
+    expect(out).toContain("github_token=[redacted]");
+    expect(out).toContain("client_id=[redacted]");
+  });
+
   test("scrubs API keys and PII-ish fields", () => {
     log({ level: "warn", msg: "mcp", error: "denied glk_abcDEF123_-" });
     log({ level: "error", msg: "auth", email: "ops@example.com", key_hash: "deadbeef" });

@@ -15,12 +15,15 @@ describe("server config", () => {
   });
 
   test("auth variables keep their exact contract spelling", async () => {
-    // Environment rules mandate these names byte-identically. This guards
-    // against well-meaning renames breaking deployments and clients.
-    const source = await Bun.file(new URL("../config.ts", import.meta.url)).text();
-    expect(source).toContain('"GETLIB_AUTHENTICATICATION_ENABLE"');
-    expect(source).toContain('"GETLIB_DEFAULT_ACCOUNT"');
-    expect(source).toContain('"GETLIB_DEFAULT_PASS"');
+    // Only canonical GETLIB_AUTHENTICATION_ENABLE is accepted; the deprecated
+    // typo alias has been removed from runtime policy.
+    const runtimeSource = await Bun.file(new URL("../runtime.ts", import.meta.url)).text();
+    expect(runtimeSource).toContain('"GETLIB_AUTHENTICATION_ENABLE"');
+    expect(runtimeSource).not.toContain('"GETLIB_AUTHENTICATICATION_ENABLE"');
+    const configSource = await Bun.file(new URL("../config.ts", import.meta.url)).text();
+    expect(configSource).toContain("AUTH_ENABLE_KEYS");
+    expect(configSource).toContain('"GETLIB_DEFAULT_ACCOUNT"');
+    expect(configSource).toContain('"GETLIB_DEFAULT_PASS"');
     expect(typeof config.authEnabled).toBe("boolean");
   });
 });

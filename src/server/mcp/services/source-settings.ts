@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 import { DISK_CACHE_DIR } from "../constants";
 import { log } from "../utils/logger";
+import { safeJsonParse } from "../utils/validate-external";
 
 /**
  * Runtime settings for documentation sources - the enforcement backend of
@@ -30,6 +31,10 @@ export const KNOWN_SOURCE_IDS = [
 ] as const;
 
 export type KnownSourceId = (typeof KNOWN_SOURCE_IDS)[number];
+
+function isKnownSourceId(id: string): id is KnownSourceId {
+  return (KNOWN_SOURCE_IDS as readonly string[]).includes(id);
+}
 
 const MAX_LIST_ENTRIES = 200;
 const MAX_ENTRY_LENGTH = 200;
@@ -62,11 +67,11 @@ function normalizeList(value: unknown): string[] {
 function loadState(): SourceSettingsState {
   try {
     const raw = readFileSync(settingsPath(), "utf-8");
-    const parsed = JSON.parse(raw) as Partial<SourceSettingsState>;
+    // Never throws: null (missing/corrupt file) flows into the guarded
+    // shape reads below, which coerce to defaults entry by entry.
+    const parsed = (safeJsonParse(raw) ?? {}) as Partial<SourceSettingsState>;
     return {
-      disabled: normalizeList(parsed.disabled).filter((id) =>
-        (KNOWN_SOURCE_IDS as readonly string[]).includes(id),
-      ),
+      disabled: normalizeList(parsed.disabled).filter(isKnownSourceId),
       blocked: normalizeList(parsed.blocked),
       wildcards: normalizeList(parsed.wildcards),
     };
@@ -155,9 +160,7 @@ export async function updateSourceSettings(input: {
   wildcards?: unknown;
 }): Promise<SourceSettingsState> {
   const disabled = normalizeList(input.disabled);
-  const unknown = disabled.filter(
-    (id) => !(KNOWN_SOURCE_IDS as readonly string[]).includes(id),
-  );
+  const unknown = disabled.filter((id) => !isKnownSourceId(id));
   if (unknown.length > 0) {
     throw new SourceSettingsValidationError(
       `Unknown source ids: ${unknown.join(", ")}. Known ids: ${KNOWN_SOURCE_IDS.join(", ")}.`,

@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateRequestId } from "@/server/mcp/utils/guard";
 import { SESSION_SECRET_MISSING_MESSAGE, SessionSecretMissingError, UNAUTHORIZED_MESSAGE, UnauthorizedError } from "@/application/auth/session";
+import { ApiKeyValidationError } from "@/application/apikeys/apikeys.service";
 import { DevelopmentForbiddenError } from "@/application/development/development.service";
 import { LogLimitError, ToolNameValidationError, UnknownToolError } from "@/application/mcp/mcp-catalog.service";
 import { SourceSettingsValidationError } from "@/application/sources/sources.service";
 import { RateLimitError } from "@/server/mcp/utils/rate-limit";
+import { log } from "@/server/mcp/utils/logger";
 import { OriginRejectedError, assertAllowedOrigin } from "@/server/mcp/transport/request-guard";
 
 export type ErrorCode =
@@ -14,8 +16,12 @@ export type ErrorCode =
   | "not_found"
   | "unauthorized"
   | "forbidden"
+  | "conflict"
   | "rate_limited"
   | "payload_too_large"
+  | "bad_gateway"
+  | "service_unavailable"
+  | "gateway_timeout"
   | "internal_error";
 
 interface ErrorBody {
@@ -45,6 +51,12 @@ export function jsonOk<T>(data: T, id?: string): NextResponse {
   return response;
 }
 
+export function jsonCreated<T>(data: T, id?: string): NextResponse {
+  const response = NextResponse.json(data, { status: 201 });
+  if (id !== undefined) response.headers.set("X-Request-Id", id);
+  return response;
+}
+
 export function jsonError(
   code: ErrorCode,
   message: string,
@@ -62,6 +74,9 @@ export function jsonError(
 
 export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBody> {
   if (error instanceof RateLimitError) {
+    // Audit trail for abuse analysis. No identity or headers logged,
+    // only the correlation id and retry hint already sent to the client.
+    log({ level: "warn", msg: "api.rate_limited", requestId: id, retryAfterSeconds: error.retryAfterSeconds });
     return jsonError("rate_limited", error.message, 429, id, {
       "Retry-After": String(error.retryAfterSeconds),
     });
@@ -89,6 +104,9 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
     // Syntactically valid JSON that fails semantic policy - 422 per contract.
     return jsonError("validation_error", error.message, 422, id);
   }
+  if (error instanceof ApiKeyValidationError) {
+    return jsonError("validation_error", error.message, 422, id);
+  }
   if (error instanceof DevelopmentForbiddenError) {
     return jsonError("forbidden", error.message, 403, id);
   }
@@ -100,6 +118,9 @@ export function mapRouteError(error: unknown, id: string): NextResponse<ErrorBod
     // it from malformed requests (400) per HTTP semantics.
     return jsonError("validation_error", "Request body failed validation.", 422, id);
   }
+  // Audit trail for root-cause analysis. The client only gets the generic
+  // message below; details stay server-side in the redacted logger.
+  log({ level: "error", msg: "api.internal_error", requestId: id });
   return jsonError("internal_error", "Unexpected error while handling the request.", 500, id);
 }
 
@@ -132,9 +153,12 @@ export async function readJsonBody(req: Request): Promise<unknown> {
   }
   const text = await req.text();
   if (text.length === 0) return undefined;
-  if (text.length > MAX_JSON_BYTES) {
+  // Measure bytes, not UTF-16 code units, so multibyte payloads cannot
+  // bypass the byte limit by char count.
+  const byteLength = typeof Buffer !== "undefined" ? Buffer.byteLength(text, "utf-8") : new TextEncoder().encode(text).length;
+  if (byteLength > MAX_JSON_BYTES) {
     throw new PayloadTooLargeError(
-      `Request body too large: ${text.length} bytes - limit is ${MAX_JSON_BYTES} bytes.`,
+      `Request body too large: ${byteLength} bytes - limit is ${MAX_JSON_BYTES} bytes.`,
     );
   }
   return JSON.parse(text) as unknown;

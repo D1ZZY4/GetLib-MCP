@@ -5,7 +5,7 @@ import { executeTool } from "@/application/mcp/mcp-catalog.service";
 import { liveMcpCatalogDeps } from "@/server/mcp/infrastructure/deps/mcp-catalog-deps";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import { toolNameSchema } from "@/server/mcp/utils/schemas";
-import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
+import { assertOriginOr403, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const RunBody = z.object({
   tool: toolNameSchema(),
@@ -16,6 +16,8 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/tools/run", EXECUTION_TIER);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = RunBody.parse(await readJsonBody(req));
     return jsonOk(await executeTool(liveMcpCatalogDeps, body.tool, body.args, id), id);

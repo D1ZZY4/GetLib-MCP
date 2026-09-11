@@ -32,7 +32,9 @@ export async function POST(req: Request) {
         return jsonError("not_found", error.message, 404, id);
       }
       if (error instanceof Error) {
-        return jsonError("validation_error", error.message, 400, id);
+        // Never relay transport internals to the client. Unknown failures
+        // stay a generic validation error with correlation via X-Request-Id.
+        return jsonError("validation_error", "Invalid SSE message body.", 400, id);
       }
       throw error;
     }

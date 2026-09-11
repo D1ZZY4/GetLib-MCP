@@ -11,15 +11,15 @@ import {
 import { SEARCH_TOKENS_DEFAULT, SEARCH_TOKENS_MAX, SEARCH_TOKENS_MIN } from "@/application/library/search.service";
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import { liveDocsDeps } from "@/server/mcp/infrastructure/deps/docs-deps";
-import { nonBlankString } from "@/server/mcp/utils/schemas";
-import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
+import { nonBlankString, optionalNonBlank } from "@/server/mcp/utils/schemas";
+import { jsonOk, mapRouteError, readJsonBody, requestId, assertOriginOr403 } from "@/app/api/_lib/route-helpers";
 
 const DocsBody = z.object({
   libraryId: nonBlankString(DOCS_LIBRARY_ID_MAX),
-  topic: z.string().max(DOCS_TOPIC_MAX).optional(),
-  version: z.string().max(DOCS_VERSION_MAX).optional(),
+  topic: optionalNonBlank(DOCS_TOPIC_MAX),
+  version: optionalNonBlank(DOCS_VERSION_MAX),
   tokens: z.number().int().min(SEARCH_TOKENS_MIN).max(SEARCH_TOKENS_MAX).optional(),
-  projectPath: z.string().max(DOCS_PROJECT_PATH_MAX).optional(),
+  projectPath: optionalNonBlank(DOCS_PROJECT_PATH_MAX),
 });
 
 /**
@@ -31,6 +31,8 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/docs", EXECUTION_TIER);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = DocsBody.parse(await readJsonBody(req));
     const started = Date.now();

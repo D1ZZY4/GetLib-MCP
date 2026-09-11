@@ -3,8 +3,8 @@ import {
   LOG_LIMIT_DEFAULT,
   LOG_LIMIT_MAX,
   TOOL_NAME_PATTERN,
-  clampLogLimit,
   nonBlankString,
+  optionalNonBlank,
   parseLogLimitValue,
   toolNameSchema,
 } from "./schemas";
@@ -22,6 +22,14 @@ describe("shared schemas", () => {
     expect(toolNameSchema().safeParse("").success).toBe(false);
   });
 
+  test("optionalNonBlank normalizes blanks to undefined", () => {
+    expect(optionalNonBlank(10).parse("   ")).toBeUndefined();
+    expect(optionalNonBlank(10).parse("")).toBeUndefined();
+    expect(optionalNonBlank(10).parse(undefined)).toBeUndefined();
+    expect(optionalNonBlank(10).parse("react")).toBe("react");
+    expect(optionalNonBlank(10).safeParse("   ").success).toBe(true);
+  });
+
   test("parseLogLimitValue returns default, clamps, and rejects invalid", () => {
     expect(parseLogLimitValue(null)).toBe(LOG_LIMIT_DEFAULT);
     expect(parseLogLimitValue("")).toBe(LOG_LIMIT_DEFAULT);
@@ -31,10 +39,4 @@ describe("shared schemas", () => {
     expect(() => parseLogLimitValue("abc")).toThrow();
   });
 
-  test("clampLogLimit never throws and stays in range", () => {
-    expect(clampLogLimit(10)).toBe(10);
-    expect(clampLogLimit(9999)).toBe(LOG_LIMIT_MAX);
-    expect(clampLogLimit(0)).toBe(LOG_LIMIT_DEFAULT);
-    expect(clampLogLimit(Number.NaN)).toBe(LOG_LIMIT_DEFAULT);
-  });
 });

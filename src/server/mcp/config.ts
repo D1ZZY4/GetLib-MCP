@@ -1,6 +1,11 @@
 // Shared with runtime policy (hasSupabaseConfig) so a new accepted
 // variable name cannot silently diverge parsing from policy.
-import { SUPABASE_ANON_KEYS, SUPABASE_SERVICE_KEYS, SUPABASE_URL_KEYS } from "./runtime";
+import {
+  AUTH_ENABLE_KEYS,
+  SUPABASE_ANON_KEYS,
+  SUPABASE_SERVICE_KEYS,
+  SUPABASE_URL_KEYS,
+} from "./runtime";
 
 export interface GetLibConfig {
   tokenLimit: number;
@@ -21,9 +26,7 @@ export interface GetLibConfig {
   cacheDir: string;
   concurrency: number;
   watermarkDisabled: boolean;
-  // Exact contract spelling per environment rules (section 24):
-  // GETLIB_AUTHENTICATICATION_ENABLE. Keep it byte-identical - deployment
-  // manifests and clients depend on the exact name.
+  // Auth enable flag. Only GETLIB_AUTHENTICATION_ENABLE is accepted.
   authEnabled: boolean;
   defaultAccount: string | undefined;
   defaultPass: string | undefined;
@@ -89,6 +92,24 @@ function boolEnv(name: string, fallback: boolean): boolean {
   throw new Error(`Invalid ${name}: "${raw}" -- must be true or false`);
 }
 
+/**
+ * Boolean env with precedence order. Reads names in order and uses the
+ * first set value. Only the canonical name is configured today; the
+ * ordered read keeps precedence explicit if an alias is ever added.
+ * Throws on the winning name when invalid so a typo value cannot
+ * silently disable auth.
+ */
+function boolEnvFirst(names: string[], fallback: boolean): boolean {
+  for (const name of names) {
+    const raw = emptyToUndefined(process.env[name]);
+    if (raw === undefined) continue;
+    if (raw === "true" || raw === "1") return true;
+    if (raw === "false" || raw === "0") return false;
+    throw new Error(`Invalid ${name}: "${raw}" -- must be true or false`);
+  }
+  return fallback;
+}
+
 function cacheDirEnv(): string {
   const raw = stringEnv("GETLIB_CACHE_DIR");
   if (raw !== undefined) return raw;
@@ -133,7 +154,7 @@ const baseConfig: GetLibConfig = {
   cacheDir: cacheDirEnv(),
   concurrency: intEnv("GETLIB_CONCURRENCY", 8, 1),
   watermarkDisabled: boolEnv("GETLIB_NO_WATERMARK", false),
-  authEnabled: boolEnv("GETLIB_AUTHENTICATICATION_ENABLE", false),
+  authEnabled: boolEnvFirst(AUTH_ENABLE_KEYS, false),
   defaultAccount: stringEnv("GETLIB_DEFAULT_ACCOUNT"),
   defaultPass: stringEnv("GETLIB_DEFAULT_PASS"),
   sessionSecret: stringEnv("GETLIB_SESSION_SECRET"),

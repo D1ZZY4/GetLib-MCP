@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details open>
 <summary>Unreleased changes (click to collapse)</summary>
 
+### Fixed
+
+- Correct the authentication env var spelling to
+  `GETLIB_AUTHENTICATION_ENABLE` and require trusted browser origins
+  on all management and MCP mutations (breaking: deployments using
+  the old spelling must migrate).
+- Harden request handling with byte-exact body limits, capped search
+  bodies, safe settings parsing, and generic SSE message errors.
+- Redact GitHub tokens and install ids in logs and harden
+  rate-limit client identity against header spoofing.
+- Fail production startup on fallback bootstrap credentials and
+  audit API key issuance and revocation with correlation ids.
+
 ### Changed
 
 - Add a db:push script that applies Supabase migrations in order

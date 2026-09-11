@@ -6,7 +6,7 @@ import {
   updateDatabaseMode,
 } from "@/application/development/development.service";
 import { checkRateLimit, EXECUTION_TIER, READ_TIER } from "@/server/mcp/utils/rate-limit";
-import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
+import { assertOriginOr403, jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
 
 const ModeBody = z.object({
   mode: z.enum(["mock", "supabase"]).nullable(),
@@ -27,6 +27,8 @@ export async function PUT(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/development", EXECUTION_TIER);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = ModeBody.parse(await readJsonBody(req));
     return jsonOk(updateDatabaseMode(body.mode), id);

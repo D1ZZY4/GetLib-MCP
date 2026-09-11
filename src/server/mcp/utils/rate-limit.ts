@@ -3,8 +3,9 @@
  *
  * One bucket per client identity (forwarded IP, else local) and route
  * scope. Bounded: expired entries are pruned on every check and the map
- * itself is capped. Serverless instances each enforce locally, which is
- * stricter (never looser) than a shared budget.
+ * itself is capped. Each serverless instance enforces its own local
+ * budget, so the effective global budget scales with instance count.
+ * Treat limits as per-instance, not as a distributed global budget.
  */
 
 export class RateLimitError extends Error {
@@ -35,8 +36,12 @@ const buckets = new Map<string, number[]>();
 function clientIdentity(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
+    const first = forwarded.split(",")[0]?.trim().toLowerCase();
+    // Validate before trusting: an attacker can send an arbitrary header
+    // value to rotate buckets and bypass limits. Accept only plausible
+    // IP literals or hostnames of bounded length, otherwise fall through
+    // to the shared bucket so spoofed values cannot mint fresh budgets.
+    if (first && first.length <= 45 && /^[a-z0-9.:_-]+$/.test(first)) return first;
   }
   return "local";
 }

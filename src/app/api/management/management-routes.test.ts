@@ -5,6 +5,8 @@ import { resetDatabaseCache } from "@/server/mcp/infrastructure/database";
 import { GET as apikeysGet, POST as apikeysPost, DELETE as apikeysDelete } from "./apikeys/route";
 import { POST as toolsRun } from "./tools/run/route";
 import { POST as signin } from "./auth/signin/route";
+import { POST as discoverPost } from "./discover/route";
+import { POST as docsPost } from "./docs/route";
 import { GET as logsGet } from "./logs/route";
 import { PUT as sourcesPut } from "./sources/route";
 
@@ -151,5 +153,54 @@ describe("validation mapping", () => {
       }),
     );
     expect(res.status).toBe(422);
+  });
+
+  test("forged cross-site origins are 403 on mutations", async () => {
+    setConfigOverride({ authEnabled: false });
+    const forged = await sourcesPut(
+      jsonRequest(
+        "http://localhost/api/management/sources",
+        "PUT",
+        { blocked: ["example.com"] },
+        { origin: "https://evil.example" },
+      ),
+    );
+    expect(forged.status).toBe(403);
+    const forgedKeys = await apikeysPost(
+      jsonRequest(
+        "http://localhost/api/management/apikeys",
+        "POST",
+        { name: "x" },
+        { origin: "https://evil.example" },
+      ),
+    );
+    expect(forgedKeys.status).toBe(403);
+    const forgedDiscover = await discoverPost(
+      jsonRequest(
+        "http://localhost/api/management/discover",
+        "POST",
+        { query: "react" },
+        { origin: "https://evil.example" },
+      ),
+    );
+    expect(forgedDiscover.status).toBe(403);
+    const forgedDocs = await docsPost(
+      jsonRequest(
+        "http://localhost/api/management/docs",
+        "POST",
+        { libraryId: "react" },
+        { origin: "https://evil.example" },
+      ),
+    );
+    expect(forgedDocs.status).toBe(403);
+    const forgedSignin = await signin(
+      jsonRequest(
+        "http://localhost/api/management/auth/signin",
+        "POST",
+        { email: "ops@example.com", password: "x" },
+        { origin: "https://evil.example" },
+      ),
+    );
+    expect(forgedSignin.status).toBe(403);
   });
 });

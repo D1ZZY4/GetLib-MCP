@@ -11,7 +11,7 @@ import {
 import { checkRateLimit, EXECUTION_TIER } from "@/server/mcp/utils/rate-limit";
 import { liveSearchDeps } from "@/server/mcp/infrastructure/deps/search-deps";
 import { nonBlankString } from "@/server/mcp/utils/schemas";
-import { jsonOk, mapRouteError, readJsonBody, requestId } from "@/app/api/_lib/route-helpers";
+import { jsonOk, mapRouteError, readJsonBody, requestId, assertOriginOr403 } from "@/app/api/_lib/route-helpers";
 
 const DiscoverBody = z.object({
   query: nonBlankString(SEARCH_QUERY_MAX),
@@ -26,6 +26,8 @@ export async function POST(req: Request) {
   const id = requestId();
   try {
     checkRateLimit(req, "management/discover", EXECUTION_TIER);
+    const originBlocked = assertOriginOr403(req, id);
+    if (originBlocked) return originBlocked;
     await requireManagementAuth(req, liveApiKeyAuthDeps);
     const body = DiscoverBody.parse(await readJsonBody(req));
     const started = Date.now();

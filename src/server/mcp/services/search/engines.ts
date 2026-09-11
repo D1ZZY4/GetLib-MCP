@@ -166,17 +166,19 @@ export async function webSearch(query: string): Promise<string[]> {
         { Accept: "text/html", "User-Agent": BROWSER_UA },
       );
       if (res.ok) {
-        const html = await res.text();
-        const urls = extractDDGUrls(html);
-        if (urls.length > 0) {
-          return urls
-            .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-            .sort((a, b) => b.score - a.score)
-            .map((r) => r.url);
+        const html = await readBodyCapped(res, 256 * 1024);
+        if (html !== null) {
+          const urls = extractDDGUrls(html);
+          if (urls.length > 0) {
+            return urls
+              .map((url) => ({ url, score: scoreDocUrl(url, query) }))
+              .sort((a, b) => b.score - a.score)
+              .map((r) => r.url);
+          }
+          // Fallback to generic extraction if uddg pattern missing
+          const legacyUrls = extractUrlsFromHtml(html);
+          if (legacyUrls.length > 0) return legacyUrls;
         }
-        // Fallback to generic extraction if uddg pattern missing
-        const legacyUrls = extractUrlsFromHtml(html);
-        if (legacyUrls.length > 0) return legacyUrls;
       }
     } catch { /* DDG HTML failed */ }
 
@@ -188,13 +190,15 @@ export async function webSearch(query: string): Promise<string[]> {
         { Accept: "text/html", "User-Agent": BROWSER_UA },
       );
       if (res.ok) {
-        const html = await res.text();
-        const urls = extractDDGUrls(html);
-        if (urls.length > 0) {
-          return urls
-            .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-            .sort((a, b) => b.score - a.score)
-            .map((r) => r.url);
+        const html = await readBodyCapped(res, 256 * 1024);
+        if (html !== null) {
+          const urls = extractDDGUrls(html);
+          if (urls.length > 0) {
+            return urls
+              .map((url) => ({ url, score: scoreDocUrl(url, query) }))
+              .sort((a, b) => b.score - a.score)
+              .map((r) => r.url);
+          }
         }
       }
     } catch { /* DDG Lite failed */ }
@@ -222,14 +226,16 @@ export async function webSearch(query: string): Promise<string[]> {
         { Accept: "text/html", "User-Agent": BROWSER_UA },
       );
       if (res.ok) {
-        const html = await res.text();
-        // Mojeek uses direct hrefs - no redirect wrapping
-        const urls = extractUrlsFromHtml(html);
-        if (urls.length > 0) {
-          return urls
-            .map((url) => ({ url, score: scoreDocUrl(url, query) }))
-            .sort((a, b) => b.score - a.score)
-            .map((r) => r.url);
+        const html = await readBodyCapped(res, 256 * 1024);
+        if (html !== null) {
+          // Mojeek uses direct hrefs - no redirect wrapping
+          const urls = extractUrlsFromHtml(html);
+          if (urls.length > 0) {
+            return urls
+              .map((url) => ({ url, score: scoreDocUrl(url, query) }))
+              .sort((a, b) => b.score - a.score)
+              .map((r) => r.url);
+          }
         }
       }
     } catch { /* Mojeek failed */ }
